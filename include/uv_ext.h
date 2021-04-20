@@ -306,4 +306,51 @@ int uv_rsa_decrypt_base64(uv_rsa_t *ctx,
 
 void uv_rsa_free(uv_rsa_t *ctx);
 
+/****************************************************************************
+ * topic
+ ****************************************************************************/
+
+typedef struct uv_topic_s uv_topic_t;
+typedef void (*uv_topic_cb)(uv_topic_t *topic, int status,
+                            void *data, size_t datalen);
+
+struct uv_topic_s {
+  uv_poll_t handle;
+  uv_topic_cb cb;
+  size_t datalen;
+  void *data;
+};
+
+/****************************************************************************
+ * Name: uv_topic_subscribe
+ *
+ * Description:
+ *   topic subscription.
+ *
+ ****************************************************************************/
+
+int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
+                       const char *name, uv_topic_cb cb);
+
+/****************************************************************************
+ * Name: uv_topic_unsubscribe
+ *
+ * Description:
+ *   topic unsubscribe.
+ *
+ ****************************************************************************/
+
+int uv_topic_unsubscribe(uv_topic_t *topic);
+
+/****************************************************************************
+ * Name: uv_topic_set_frequency
+ *
+ * Description:
+ *   set topic sampling rate. The maximum sampling value of all subscribers
+ *   of this topic is valid.
+ *
+ ****************************************************************************/
+
+int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency);
+
 #endif
