@@ -26,4 +26,7 @@ MAINSRC  += uv-aes-test.c
 PROGNAME += uv_rsa
 MAINSRC  += uv-rsa-test.c
 
+PROGNAME += uv_topic
+MAINSRC  += uv-topic-test.c
+
 include $(APPDIR)/Application.mk
