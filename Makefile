@@ -23,9 +23,10 @@ include $(APPDIR)/Make.defs
 VPATH += src
 DEPPATH += --dep-path src
 
-CSRCS += uv_misc.c
-CSRCS += uv_locale.c
 CSRCS += uv_aes.c
+CSRCS += uv_locale.c
+CSRCS += uv_misc.c
 CSRCS += uv_rsa.c
+CSRCS += uv_topic.c
 
 include $(APPDIR)/Application.mk
