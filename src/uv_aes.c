@@ -1,0 +1,215 @@
+/*
+ * Copyright (C) 2020 Xiaomi Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <alloca.h>
+#include <uv_ext.h>
+#include <mbedtls/platform.h>
+#include <mbedtls/cipher_internal.h>
+#include <mbedtls/base64.h>
+
+int uv_aes_init(uv_aes_t *ctx, int aestype, int mode) {
+  if (!ctx)
+    return UV_EINVAL;
+
+  const mbedtls_cipher_info_t *info;
+  uv_aes_context_t *pctx = &ctx->aes_context;
+
+  mbedtls_cipher_init(pctx);
+  info = mbedtls_cipher_info_from_type(aestype);
+  if (!info) {
+    return UV_EFAULT;
+  }
+
+  if (!(pctx->cipher_ctx = info->base->ctx_alloc_func())) {
+    return UV_EFAULT;
+  }
+  pctx->cipher_info = info;
+
+  mbedtls_cipher_set_padding_mode(pctx, mode);
+
+  return 0;
+}
+
+int uv_aes_set_iv(uv_aes_t *ctx,
+                  const unsigned char *iv,
+                  int ivoffset,
+                  int iv_len) {
+  if (!ctx || !(iv_len == 0 || iv != NULL))
+    return UV_EINVAL;
+
+  const unsigned char *pivoffset = iv + ivoffset;
+  uv_aes_context_t *pctx = &ctx->aes_context;
+
+  return mbedtls_cipher_set_iv(pctx, pivoffset, iv_len);
+}
+
+int uv_aes_set_iv_base64(uv_aes_t *ctx,
+                         const unsigned char *iv,
+                         int ivoffset,
+                         int iv_len) {
+  if (!ctx || !iv)
+    return UV_EINVAL;
+
+  unsigned char ivbuff[64] = {0};
+  size_t ivlen;
+  int ret;
+
+  ret = mbedtls_base64_decode(ivbuff, sizeof(ivbuff), &ivlen, iv, strlen((const char*)iv));
+  if (ret != 0) {
+    return ret;
+  }
+
+  return uv_aes_set_iv(ctx, ivbuff, ivoffset, iv_len);
+}
+
+int uv_aes_set_key(uv_aes_t *ctx,
+                   int optype,
+                   const unsigned char *key,
+                   int key_bitlen) {
+  if (!ctx || !key)
+    return UV_EINVAL;
+
+  uv_aes_context_t *pctx = &ctx->aes_context;
+
+  return mbedtls_cipher_setkey(pctx, key, key_bitlen, optype);
+}
+
+int uv_aes_set_key_base64(uv_aes_t *ctx,
+                          int optype,
+                          const unsigned char *key,
+                          int key_bitlen) {
+  if (!ctx || !key)
+    return UV_EINVAL;
+
+  unsigned char keybuff[64] = {0};
+  size_t keylen;
+  int ret;
+
+  ret = mbedtls_base64_decode(keybuff, sizeof(keybuff), &keylen, key, strlen((const char*)key));
+  if (ret != 0) {
+    return ret;
+  }
+
+  return uv_aes_set_key(ctx, optype, keybuff, key_bitlen);
+}
+
+int uv_aes_encrypt(uv_aes_t *ctx,
+                   const unsigned char *input,
+                   size_t ilen,
+                   unsigned char *output,
+                   size_t *olen) {
+  if (!ctx || !input || !ilen || !output || !olen) {
+    return UV_EINVAL;
+  }
+
+  uv_aes_context_t *pctx = &ctx->aes_context;
+  int ret, outlen = 0;
+  size_t len;
+
+  ret = mbedtls_cipher_update(pctx, input, ilen, output, &len);
+  if (ret != 0) {
+    return ret;
+  }
+
+  outlen += len;
+  ret = mbedtls_cipher_finish(pctx, output + (char)outlen, &len);
+  if (ret != 0) {
+    return ret;
+  }
+  outlen += len;
+  *olen = outlen;
+
+  return ret;
+}
+
+int uv_aes_decrypt(uv_aes_t *ctx,
+                   const unsigned char *input,
+                   size_t ilen,
+                   unsigned char *output,
+                   size_t *olen) {
+  if (!ctx || !input || !ilen || !output || !olen) {
+    return UV_EINVAL;
+  }
+
+  uv_aes_context_t *pctx = &ctx->aes_context;
+  int ret, outlen = 0;
+  size_t len;
+
+  ret = mbedtls_cipher_update(pctx, input, ilen, output, &len);
+  if (ret !=0) {
+    return ret;
+  }
+
+  outlen += len;
+  ret = mbedtls_cipher_finish(pctx, output + (char)outlen, &len);
+  if (ret != 0) {
+    return ret;
+  }
+  outlen += len;
+  *olen = outlen;
+
+  return ret;
+}
+
+int uv_aes_encrypt_base64(uv_aes_t *ctx,
+                          const unsigned char *input,
+                          size_t ilen,
+                          unsigned char *output,
+                          int outsize,
+                          size_t *olen) {
+  int ret;
+  size_t outlen=0;
+  unsigned char *buff = alloca(outsize);
+
+  if (!buff) {
+    return UV_EFAULT;
+  }
+
+  ret = uv_aes_encrypt(ctx, input, ilen, buff, &outlen);
+  if (ret != 0)
+    return ret;
+
+  return mbedtls_base64_encode(output, outsize, olen, buff, outlen);
+}
+
+int uv_aes_decrypt_base64(uv_aes_t *ctx,
+                          const unsigned char *input,
+                          size_t ilen,
+                          unsigned char *output,
+                          size_t *olen) {
+  int ret;
+  size_t len;
+  unsigned char *buff = alloca(ilen);
+
+  if (!buff) {
+    return UV_EFAULT;
+  }
+
+  ret = mbedtls_base64_decode(buff, ilen, &len, input, ilen);
+  if (ret != 0) {
+    return ret;
+  }
+
+  return uv_aes_decrypt(ctx, buff, len, output, olen);
+}
+
+void uv_aes_free(uv_aes_t *ctx) {
+  mbedtls_cipher_free(&ctx->aes_context);
+}
