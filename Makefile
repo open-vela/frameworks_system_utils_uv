@@ -25,5 +25,7 @@ DEPPATH += --dep-path src
 
 CSRCS += uv_misc.c
 CSRCS += uv_locale.c
+CSRCS += uv_aes.c
+CSRCS += uv_rsa.c
 
 include $(APPDIR)/Application.mk
