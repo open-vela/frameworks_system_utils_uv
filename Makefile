@@ -24,5 +24,6 @@ VPATH += src
 DEPPATH += --dep-path src
 
 CSRCS += uv_misc.c
+CSRCS += uv_locale.c
 
 include $(APPDIR)/Application.mk

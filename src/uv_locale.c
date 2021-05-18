@@ -14,42 +14,28 @@
  * limitations under the License.
  */
 
-#ifndef __SYSTEM_LIBUV_EXT_INCLUDE_UV_EXT_H
-#define __SYSTEM_LIBUV_EXT_INCLUDE_UV_EXT_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <uv.h>
-
-typedef struct uv_devinfo_s uv_devinfo_t;
-
-struct uv_devinfo_s
-{
-  const char *brand;
-  const char *manufacturer;
-  const char *model;
-  const char *product;
-  const char *os_type;
-  const char *os_version_name;
-  const char *platform_version_code;
-  const char *device_type;
-};
-
-void uv_get_devinfo(FAR uv_devinfo_t *devinfo);
+#include <uv_ext.h>
 
 /****************************************************************************
- * locale
+ * Name: uv_getlocale
+ *
+ * Description:
+ *   TODO：完善NuttX的libc locale支持.
+ *   https://doc.quickapp.cn/features/system/configuration.html
+ *
  ****************************************************************************/
 
-typedef struct uv_locale_s uv_locale_t;
+int uv_getlocale(uv_locale_t *locale) {
+  if (!locale) {
+    return UV_EINVAL;
+  }
 
-struct uv_locale_s {
-  const char *language;
-  const char *country_region;
-};
+  locale->language = "zh";
+  locale->country_region = "CN";
 
-int uv_getlocale(uv_locale_t *locale);
-
-#endif
+  return 0;
+}
