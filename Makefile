@@ -42,4 +42,8 @@ ifeq ($(CONFIG_KVDB),y)
 CSRCS += uv_property.c
 endif
 
+ifeq ($(CONFIG_LCD_DEV)$(CONFIG_UORB),yy)
+CSRCS += uv_brightness.c
+endif
+
 include $(APPDIR)/Application.mk

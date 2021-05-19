@@ -24,6 +24,7 @@
 #include <nuttx/version.h>
 #include <fcntl.h>
 #include <sys/utsname.h>
+#include <sys/ioctl.h>
 #include <uv_ext.h>
 
 #if defined(CONFIG_ARCH_SIM) && defined(CONFIG_SIM_X11FB)
