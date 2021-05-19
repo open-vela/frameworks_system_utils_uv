@@ -29,4 +29,7 @@ MAINSRC  += uv-rsa-test.c
 PROGNAME += uv_topic
 MAINSRC  += uv-topic-test.c
 
+PROGNAME += uv_kvdb
+MAINSRC  += uv-kvdb-test.c
+
 include $(APPDIR)/Application.mk

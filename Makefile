@@ -28,5 +28,8 @@ CSRCS += uv_locale.c
 CSRCS += uv_misc.c
 CSRCS += uv_rsa.c
 CSRCS += uv_topic.c
+ifeq ($(CONFIG_KVDB),y)
+CSRCS += uv_kvdb.c
+endif
 
 include $(APPDIR)/Application.mk
