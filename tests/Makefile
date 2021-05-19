@@ -43,4 +43,9 @@ PROGNAME += uv_property
 MAINSRC  += uv-property-test.c
 endif
 
+ifeq ($(CONFIG_LCD_DEV)$(CONFIG_UORB), yy)
+PROGNAME += uv_brightness
+MAINSRC  += uv-brightness-test.c
+endif
+
 include $(APPDIR)/Application.mk
