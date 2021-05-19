@@ -474,6 +474,176 @@ int uv_property_commit(uv_loop_t *loop, uv_property_cb cb, void *arg);
 
 #endif
 
+/****************************************************************************
+ * brightness
+ ****************************************************************************/
+
+#if defined(CONFIG_LCD_DEV) && defined(CONFIG_UORB)
+
+typedef struct uv_brightness_s uv_brightness_t;
+
+struct uv_brightness_s {
+  uv_timer_t handle;
+
+  /* Whether the application is on the current screen. 0: no 1: yes*/
+
+  int active;
+
+  /* Each application saves brightness information separately */
+
+  int devid;
+  int lightvalue;
+  int lightmode;
+  int keepon;
+};
+
+/****************************************************************************
+ * Name: uv_system_brightness_setval
+ *
+ * Description:
+ *   Set the system brightness value and the screen brightness.
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *   val     - brightness value. 0 - CONFIG_LCD_MAXPOWER.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_system_brightness_setval(uv_brightness_t *handle, int val);
+
+/****************************************************************************
+ * Name: uv_system_brightness_getval
+ *
+ * Description:
+ *   Gets the system brightness value.
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *   val     - system brightness value.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_system_brightness_getval(uv_brightness_t *handle, int *val);
+
+/****************************************************************************
+ * Name: uv_brightness_setval
+ *
+ * Description:
+ *   Set screen brightness.The system brightness value does not change.
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *   val     - brightness value. 0 - CONFIG_LCD_MAXPOWER.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_setval(uv_brightness_t *handle, int val);
+
+/****************************************************************************
+ * Name: uv_brightness_getval
+ *
+ * Description:
+ *   Gets the screen brightness. Does not change the system brightness value
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *   val     - brightness value.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_getval(uv_brightness_t *handle, int *val);
+
+/****************************************************************************
+ * Name: uv_brightness_setmode
+ *
+ * Description:
+ *   Setting Brightness Mode.
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *   mode    - brightness mode. 0: Manual 1: Automatic
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_setmode(uv_brightness_t *handle, int mode);
+
+/****************************************************************************
+ * Name: uv_brightness_getmode
+ *
+ * Description:
+ *   Get Brightness Mode.
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *   mode    - brightness mode. 0: Manual 1: Automatic
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_getmode(uv_brightness_t *handle, int *mode);
+
+/****************************************************************************
+ * Name: uv_brightness_setkeepon
+ *
+ * Description:
+ *   Set whether to keep on light.
+ *   Note: Currently there is only constant light.
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *   keep    - Keep the screen always bright. 0: false 1: true
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_setkeepon(uv_brightness_t *handle, int keep);
+
+/****************************************************************************
+ * Name: uv_brightness_init
+ *
+ * Description:
+ *   Brightness initialization.
+ *   Note: Each application calls the initialization function only once.
+ *
+ * Input Parameters:
+ *   loop    - event loop.
+ *   handle  - brightness handle. There can only be one per application.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_init(uv_loop_t *loop, uv_brightness_t *handle);
+
+/****************************************************************************
+ * Name: uv_brightness_free
+ *
+ * Description:
+ *   Brightness free.
+ *   Note: Each application is called when it finally closes.
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_free(uv_brightness_t *handle);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
