@@ -357,8 +357,57 @@ int uv_topic_unsubscribe(uv_topic_t *topic);
 
 int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency);
 
+/******************************** kvdb **************************************/
+
+#ifdef CONFIG_KVDB
+typedef void (*uv_property_cb)(int status, const char *key, char *value, void *arg);
+
+/****************************************************************************
+ * Name: uv_property_get
+ *
+ * Description:
+ *   Retrieve Key-Values from database.
+ *
+ ****************************************************************************/
+
+int uv_property_get(uv_loop_t *loop, const char *key, char *value,
+                    const char *default_value, uv_property_cb cb, void *arg);
+
+/****************************************************************************
+ * Name: uv_property_set
+ *
+ * Description:
+ *   Store Key-Values to database.
+ *
+ ****************************************************************************/
+
+int uv_property_set(uv_loop_t *loop, const char *key, const char *value,
+                    uv_property_cb cb, void *arg);
+
+/****************************************************************************
+ * Name: uv_property_delete
+ *
+ * Description:
+ *   Delete a KV pair by key.
+ *
+ ****************************************************************************/
+
+int uv_property_delete(uv_loop_t *loop, const char *key, uv_property_cb cb,
+                       void *arg);
+
+/****************************************************************************
+ * Name: property_commit
+ *
+ * Description:
+ *   Actively commit all property changes
+ *
+ ****************************************************************************/
+
+int uv_property_commit(uv_loop_t *loop, uv_property_cb cb, void *arg);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
