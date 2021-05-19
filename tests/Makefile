@@ -38,6 +38,11 @@ PROGNAME += uv_locale
 MAINSRC  += uv-locale-test.c
 endif
 
+ifeq ($(CONFIG_LIB_CURL), y)
+PROGNAME += uv_request
+MAINSRC  += uv-request-test.c
+endif
+
 ifeq ($(CONFIG_KVDB), y)
 PROGNAME += uv_property
 MAINSRC  += uv-property-test.c

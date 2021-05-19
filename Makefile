@@ -49,4 +49,8 @@ ifeq ($(CONFIG_UORB), y)
 CSRCS += uv_topic.c
 endif
 
+ifeq ($(CONFIG_LIB_CURL),y)
+CSRCS += uv_request.c
+endif
+
 include $(APPDIR)/Application.mk

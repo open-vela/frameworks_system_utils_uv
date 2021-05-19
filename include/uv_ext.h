@@ -671,6 +671,166 @@ int uv_brightness_close(uv_brightness_t *handle);
 int uv_brightness_free(void);
 #endif
 
+#if defined(__NuttX__) && defined(CONFIG_LIB_CURL) || defined(MOCK_LIBUV_FEATURE)
+
+struct uv_response_s {
+    int httpcode;
+    char* headers;
+    char* body;
+    uint16_t size;
+    void* userp;
+};
+
+enum {
+    UV_REQUEST,
+    UV_DOWNLOAD,
+    UV_UPLOAD
+};
+
+enum {
+    UV_REQUEST_DONE,
+    UV_REQUEST_ERROR
+};
+
+typedef struct uv_request_session_s uv_request_session_t;
+typedef struct uv_request_s uv_request_t;
+typedef struct uv_response_s uv_response_t;
+
+typedef void (*uv_request_cb)(int state, uv_response_t* response);
+
+/****************************************************************************
+ * Name: uv_request_init
+ *
+ * Description:
+ *   Initialize the request global environment
+ *
+ ****************************************************************************/
+
+int uv_request_init(uv_loop_t* loop, uv_request_session_t** handle);
+
+/****************************************************************************
+ * Name: uv_request_close
+ *
+ * Description:
+ *   Release memory
+ *
+ ****************************************************************************/
+
+int uv_request_close(uv_request_session_t* handle);
+
+/****************************************************************************
+ * Name: uv_request_create
+ *
+ * Description:
+ *   Add url request
+ * Note:
+ *   The request pointer can be reused, you need to call uv_request_delete after use .
+ *
+ ****************************************************************************/
+
+int uv_request_create(uv_request_t** request);
+
+/****************************************************************************
+ * Name: uv_request_delete
+ *
+ * Description:
+ *   Release uv_request_t n memory
+ *
+ ****************************************************************************/
+
+int uv_request_delete(uv_request_t* request);
+
+/****************************************************************************
+ * Name: uv_request_set_url
+ *
+ * Description:
+ *   set url
+ *
+ ****************************************************************************/
+
+int uv_request_set_url(uv_request_t* request, const char* url);
+
+/****************************************************************************
+ * Name: uv_request_append_header
+ *
+ * Description:
+ *   append http request header
+ *
+ ****************************************************************************/
+
+int uv_request_append_header(uv_request_t* request, const char* header);
+
+/****************************************************************************
+ * Name: uv_request_escape
+ *
+ * Description:
+ *    URL encodes the given string
+ *
+ ****************************************************************************/
+
+char* uv_request_escape(uv_request_t* request, const void* data, ssize_t size);
+
+/****************************************************************************
+ * Name: uv_request_append_header
+ *
+ * Description:
+ *   Set post data
+ *
+ ****************************************************************************/
+
+int uv_request_set_data(uv_request_t* request, const void* data, ssize_t size);
+
+/****************************************************************************
+ * Name: uv_request_set_userp
+ *
+ * Description:
+ *   Set user data point
+ *
+ ****************************************************************************/
+
+int uv_request_set_userp(uv_request_t* request, void* userp);
+
+/****************************************************************************
+ * Name: uv_request_get_header
+ *
+ * Description:
+ *   Include header in the returned data
+ *
+ ****************************************************************************/
+int uv_request_get_header(uv_request_t* request);
+
+/****************************************************************************
+ * Name: uv_request_set_method
+ *
+ * Description:
+ *   set fetch methodb
+ *
+ ****************************************************************************/
+
+int uv_request_set_method(uv_request_t* request, const char* method);
+
+/****************************************************************************
+ * Name: uv_request_set_atrribute
+ *
+ * Description:
+ *   set request atrribute
+ *
+ ****************************************************************************/
+
+int uv_request_set_atrribute(uv_request_t* request, int type, void* data);
+
+/****************************************************************************
+ * Name: uv_request
+ *
+ * Description:
+ *   Process request
+ *
+ ****************************************************************************/
+
+int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_request_cb cb);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
