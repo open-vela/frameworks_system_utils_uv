@@ -26,6 +26,10 @@
 #include <mbedtls/rsa.h>
 #include <mbedtls/pk.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct uv_devinfo_s uv_devinfo_t;
 
 struct uv_devinfo_s
@@ -352,5 +356,9 @@ int uv_topic_unsubscribe(uv_topic_t *topic);
  ****************************************************************************/
 
 int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
