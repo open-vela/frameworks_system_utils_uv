@@ -23,13 +23,23 @@ include $(APPDIR)/Make.defs
 VPATH += src
 DEPPATH += --dep-path src
 
-CSRCS += uv_aes.c
 CSRCS += uv_locale.c
-CSRCS += uv_misc.c
+CSRCS += uv_devinfo.c
+
+ifeq ($(CONFIG_LIB_MBEDTLS), y)
+CSRCS += uv_aes.c
+endif
+
+ifeq ($(CONFIG_LIB_MBEDTLS), y)
 CSRCS += uv_rsa.c
+endif
+
+ifeq ($(CONFIG_UORB), y)
 CSRCS += uv_topic.c
+endif
+
 ifeq ($(CONFIG_KVDB),y)
-CSRCS += uv_kvdb.c
+CSRCS += uv_property.c
 endif
 
 include $(APPDIR)/Application.mk

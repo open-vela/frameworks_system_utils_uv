@@ -56,7 +56,7 @@
  * Public Function
  ****************************************************************************/
 
-void uv_get_devinfo(FAR uv_devinfo_t *devinfo)
+int uv_get_devinfo(uv_devinfo_t *devinfo)
 {
   DEBUGASSERT(devinfo != NULL);
 
@@ -68,4 +68,6 @@ void uv_get_devinfo(FAR uv_devinfo_t *devinfo)
   devinfo->os_type = "RTOS";
   devinfo->os_version_name = CONFIG_VERSION_STRING;
   devinfo->platform_version_code = CONFIG_VERSION_BUILD;
+
+  return 0;
 }

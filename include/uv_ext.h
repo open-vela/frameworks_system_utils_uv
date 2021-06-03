@@ -44,7 +44,7 @@ struct uv_devinfo_s
   const char *device_type;
 };
 
-void uv_get_devinfo(FAR uv_devinfo_t *devinfo);
+int uv_get_devinfo(uv_devinfo_t *devinfo);
 
 /****************************************************************************
  * locale
@@ -62,6 +62,8 @@ int uv_getlocale(uv_locale_t *locale);
 /****************************************************************************
  * AES encryption and decryption
  ****************************************************************************/
+
+#ifdef CONFIG_LIB_MBEDTLS
 
 typedef mbedtls_cipher_context_t uv_aes_context_t;
 
@@ -203,9 +205,13 @@ int uv_aes_decrypt_base64(uv_aes_t *ctx,
 
 void uv_aes_free(uv_aes_t *ctx);
 
+#endif
+
 /****************************************************************************
  * RSA encryption and decryption
  ****************************************************************************/
+
+#ifdef CONFIG_LIB_MBEDTLS
 
 typedef mbedtls_pk_context uv_pk_context_t;
 typedef mbedtls_rsa_context uv_rsa_context_t;
@@ -310,9 +316,13 @@ int uv_rsa_decrypt_base64(uv_rsa_t *ctx,
 
 void uv_rsa_free(uv_rsa_t *ctx);
 
+#endif
+
 /****************************************************************************
  * topic
  ****************************************************************************/
+
+#ifdef CONFIG_UORB
 
 typedef struct uv_topic_s uv_topic_t;
 typedef void (*uv_topic_cb)(uv_topic_t *topic, int status,
@@ -357,9 +367,14 @@ int uv_topic_unsubscribe(uv_topic_t *topic);
 
 int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency);
 
-/******************************** kvdb **************************************/
+#endif
+
+/****************************************************************************
+ * property
+ ****************************************************************************/
 
 #ifdef CONFIG_KVDB
+
 typedef void (*uv_property_cb)(int status, const char *key, char *value, void *arg);
 
 /****************************************************************************
