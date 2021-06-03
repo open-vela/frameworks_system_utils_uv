@@ -29,7 +29,9 @@ MAINSRC  += uv-rsa-test.c
 PROGNAME += uv_topic
 MAINSRC  += uv-topic-test.c
 
+ifeq ($(CONFIG_KVDB), y)
 PROGNAME += uv_kvdb
 MAINSRC  += uv-kvdb-test.c
+endif
 
 include $(APPDIR)/Application.mk
