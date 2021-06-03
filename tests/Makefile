@@ -20,18 +20,24 @@ PRIORITY  = $(CONFIG_LIBUV_EXTENSION_TEST_PRIORITY)
 STACKSIZE = $(CONFIG_LIBUV_EXTENSION_TEST_TASK_STACKSIZE)
 MODULE    = $(CONFIG_LIBUV_EXTENSION_TEST)
 
+ifeq ($(CONFIG_LIB_MBEDTLS), y)
 PROGNAME += uv_aes
 MAINSRC  += uv-aes-test.c
+endif
 
+ifeq ($(CONFIG_LIB_MBEDTLS), y)
 PROGNAME += uv_rsa
 MAINSRC  += uv-rsa-test.c
+endif
 
+ifeq ($(CONFIG_UORB), y)
 PROGNAME += uv_topic
 MAINSRC  += uv-topic-test.c
+endif
 
 ifeq ($(CONFIG_KVDB), y)
-PROGNAME += uv_kvdb
-MAINSRC  += uv-kvdb-test.c
+PROGNAME += uv_property
+MAINSRC  += uv-property-test.c
 endif
 
 include $(APPDIR)/Application.mk
