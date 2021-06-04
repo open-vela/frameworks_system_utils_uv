@@ -22,12 +22,13 @@
 #include <debug.h>
 #include <nuttx/config.h>
 #include <nuttx/version.h>
-#include <uv_ext.h>
 #include <fcntl.h>
+#include <sys/utsname.h>
+#include <uv_ext.h>
 
-#if CONFIG_ARCH_BOARD_SIM
+#if defined(CONFIG_ARCH_SIM) && defined(CONFIG_SIM_X11FB)
 #include <nuttx/video/fb.h>
-#elif CONFIG_ARCH_BOARD_CUSTOM
+#elif defined(CONFIG_ARCH_BOARD_CUSTOM) && defined(CONFIG_LCD_DEV)
 #include <nuttx/lcd/lcd_dev.h>
 #endif
 
@@ -58,33 +59,94 @@
 #ifndef CONFIG_PRODUCT_NAME
 #define CONFIG_PRODUCT_NAME "Dev Product"
 #endif
-#define DEVINFO_BARND 1
+
+#ifndef CONFIG_LANGUAGE_NAME
+#define CONFIG_LANGUAGE_NAME "zh"
+#endif
+
+#ifndef CONFIG_REGION_NAME
+#define CONFIG_REGION_NAME "CN"
+#endif
+
 /****************************************************************************
  * Public Function
  ****************************************************************************/
 
-int uv_get_devinfo(uv_devinfo_t *devinfo)
-{
-  int fd, ret;
-  struct fb_videoinfo_s videinfo;
+int uv_get_devinfo(char *devinfo, int size, int id) {
+  struct utsname uv_uanme;
+  int ret;
 
-  if (!devinfo) {
+  if (!devinfo || !size) {
     return UV_EINVAL;
   }
 
-  devinfo->brand = CONFIG_PRODUCT_BRAND;
-  devinfo->device_type = CONFIG_PRODUCT_DEVICE_TYPE;
-  devinfo->manufacturer = CONFIG_PRODUCT_MANUFACTURER;
-  devinfo->model = CONFIG_PRODUCT_MODEL;
-  devinfo->product = CONFIG_PRODUCT_NAME;
-  devinfo->os_type = "RTOS";
-  devinfo->os_version_name = CONFIG_VERSION_STRING;
-  devinfo->os_version_code = CONFIG_VERSION_BUILD;
-  devinfo->lanuage = "zh";
-  devinfo->region = "CN";
+  switch (id) {
+    case UV_EXT_DEVINFO_BRAND:
+      snprintf((char*)devinfo, size, "%s", CONFIG_PRODUCT_BRAND);
+    break;
+    case UV_EXT_DEVINFO_MANUFACTURER:
+      snprintf((char*)devinfo, size, "%s", CONFIG_PRODUCT_MANUFACTURER);
+    break;
+    case UV_EXT_DEVINFO_MODEL:
+      snprintf((char*)devinfo, size, "%s", CONFIG_PRODUCT_MODEL);
+    break;
+    case UV_EXT_DEVINFO_PRODUCT:
+      snprintf((char*)devinfo, size, "%s", CONFIG_PRODUCT_NAME);
+    break;
+    case UV_EXT_DEVINFO_OSTYPE:
+      if ((ret = uname(&uv_uanme)) != 0) {
+        return ret;
+      }
+      snprintf(devinfo, size, "%s", uv_uanme.sysname);
+    break;
+    case UV_EXT_DEVINFO_OSVERSIONNAME:
+      if ((ret = uname(&uv_uanme)) != 0) {
+        return ret;
+      }
+      snprintf(devinfo, size, "%s", uv_uanme.release);
+    break;
+    case UV_EXT_DEVINFO_OSVERSIONCODE:
+      if ((ret = uname(&uv_uanme)) != 0) {
+        return ret;
+      }
+      snprintf(devinfo, size, "%s", uv_uanme.version);
+    break;
+    case UV_EXT_DEVINFO_LANGUAGE:
+      snprintf((char*)devinfo, size, "%s", CONFIG_LANGUAGE_NAME);
+    break;
+    case UV_EXT_DEVINFO_REGION:
+      snprintf((char*)devinfo, size, "%s", CONFIG_REGION_NAME);
+    break;
+    default:
+      return UV_EINVAL;
+  }
 
-#if CONFIG_ARCH_BOARD_SIM
-  fd = open("dev/fb0", O_RDWR);
+  return 0;
+}
+
+int uv_get_versioncode(int *vsersioncode, int id) {
+  if (!vsersioncode) {
+    return UV_EINVAL;
+  }
+
+  if (id == UV_EXT_DEVINFO_OSVERSIONCODE) {
+    *vsersioncode = CONFIG_VERSION;
+    return 0;
+  } else {
+    return UV_EINVAL;
+  }
+}
+
+int uv_get_resolution(int *wh, int id) {
+  int fd, ret;
+  struct fb_videoinfo_s videinfo = {};
+
+  if (!wh) {
+    return UV_EINVAL;
+  }
+
+#if defined(CONFIG_ARCH_SIM) && defined(CONFIG_SIM_X11FB)
+  fd = open("/dev/fb0", O_RDWR);
   if (fd < 0) {
     return -errno;
   }
@@ -93,11 +155,8 @@ int uv_get_devinfo(uv_devinfo_t *devinfo)
   if (ret != 0) {
     return ret;
   }
-
-  devinfo->screenwidth = videinfo.xres;
-  devinfo->screenheight = videinfo.yres;
-#elif CONFIG_ARCH_BOARD_CUSTOM
-  fd = open("dev/lcd", O_RDWR);
+#elif defined(CONFIG_ARCH_BOARD_CUSTOM) && defined(CONFIG_LCD_DEV)
+  fd = open("/dev/lcd0", O_RDWR);
   if (fd < 0) {
     return -errno;
   }
@@ -106,13 +165,16 @@ int uv_get_devinfo(uv_devinfo_t *devinfo)
   if (ret != 0) {
     return ret;
   }
-
-  devinfo->screenwidth = videinfo.xres;
-  devinfo->screenheight = videinfo.yres;
-#else
-  devinfo->screenwidth = 0;
-  devinfo->screenheight = 0;
 #endif
+  close(fd);
+
+  if (UV_EXT_DEVINFO_SCREENWIDTH == id) {
+    *wh = videinfo.xres;
+  } else if (UV_EXT_DEVINFO_SCREENHEIGHT == id) {
+    *wh = videinfo.yres;
+  } else {
+    return UV_EINVAL;
+  }
 
   return 0;
 }

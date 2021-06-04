@@ -30,25 +30,73 @@
 extern "C" {
 #endif
 
-typedef struct uv_devinfo_s uv_devinfo_t;
+/****************************************************************************
+ * devinfo
+ ****************************************************************************/
 
-struct uv_devinfo_s
-{
-  const char *brand;
-  const char *manufacturer;
-  const char *model;
-  const char *product;
-  const char *os_type;
-  const char *os_version_name;
-  const char *os_version_code;
-  const char *lanuage;
-  const char *region;
-  int16_t screenwidth;
-  int16_t screenheight;
-  const char *device_type;
-};
+#define UV_EXT_DEVINFO_BRAND            1
+#define UV_EXT_DEVINFO_MANUFACTURER     2
+#define UV_EXT_DEVINFO_MODEL            3
+#define UV_EXT_DEVINFO_PRODUCT          4
+#define UV_EXT_DEVINFO_OSTYPE           5
+#define UV_EXT_DEVINFO_OSVERSIONNAME    6
+#define UV_EXT_DEVINFO_OSVERSIONCODE    7
+#define UV_EXT_DEVINFO_LANGUAGE         8
+#define UV_EXT_DEVINFO_REGION           9
+#define UV_EXT_DEVINFO_SCREENWIDTH      10
+#define UV_EXT_DEVINFO_SCREENHEIGHT     11
+#define UV_EXT_DEVINFO_MAX              12
+/****************************************************************************
+ * Name: uv_get_devinfo
+ *
+ * Description:
+ *   get device information.
+ *
+ * Input Parameters:
+ *   devinfo  - handle.
+ *   id       - device information id.
+ *              1: brand 2: manufacturer 3: model 4: product 5: os_type
+ *              6: os_version_name 7: os_version_code 8: language
+ *              9: region
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
 
-int uv_get_devinfo(uv_devinfo_t *devinfo);
+int uv_get_devinfo(char *devinfo, int size, int id);
+
+/****************************************************************************
+ * Name: uv_get_devinfo
+ *
+ * Description:
+ *   get screen resolution.
+ *
+ * Input Parameters:
+ *   devinfo  - handle.
+ *   id       - device information id.
+ *              10: screenwidth 11: screenheight
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_get_resolution(int *wh, int id);
+
+/****************************************************************************
+ * Name: uv_get_devinfo
+ *
+ * Description:
+ *   get screen resolution.
+ *
+ * Input Parameters:
+ *   vsersioncode   - versioncode.
+ *   id             - device information id.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_get_versioncode(int *vsersioncode, int id);
 
 /****************************************************************************
  * locale
