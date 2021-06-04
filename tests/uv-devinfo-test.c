@@ -22,23 +22,25 @@
 
 int main(int argc, char *argv[])
 {
-  uv_devinfo_t devinfo;
+  char devinfo[32];
+  int wh, i;
 
-  if (uv_get_devinfo(&devinfo) != 0) {
-    goto testfail;
+  for (i = UV_EXT_DEVINFO_BRAND; i <= UV_EXT_DEVINFO_REGION; i++) {
+    if (uv_get_devinfo(devinfo, sizeof(devinfo), i) != 0) {
+      goto testfail;
+    }
+    printf("[%02d], %s\n", i, devinfo);
   }
 
-  printf("brand = %s\n", devinfo.brand);
-  printf("manufacturer = %s\n", devinfo.manufacturer);
-  printf("model = %s\n", devinfo.model);
-  printf("product = %s\n", devinfo.product);
-  printf("os_type = %s\n", devinfo.os_type);
-  printf("os_version_name = %s\n", devinfo.os_version_name);
-  printf("os_version_code = %s\n", devinfo.os_version_code);
-  printf("lanuage = %s\n", devinfo.lanuage);
-  printf("region = %s\n", devinfo.region);
-  printf("screenwidth = %d\n", devinfo.screenwidth);
-  printf("screenheight = %d\n\n", devinfo.screenheight);
+  if (uv_get_resolution(&wh, UV_EXT_DEVINFO_SCREENWIDTH) != 0) {
+    goto testfail;
+  }
+  printf("[%02d], %d\n", UV_EXT_DEVINFO_SCREENWIDTH, wh);
+
+  if (uv_get_resolution(&wh, UV_EXT_DEVINFO_SCREENHEIGHT) != 0) {
+    goto testfail;
+  }
+  printf("[%02d], %d\n", UV_EXT_DEVINFO_SCREENHEIGHT, wh);
 
   printf("TEST PASSED !\n");
   exit(0);
