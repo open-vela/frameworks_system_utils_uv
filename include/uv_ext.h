@@ -40,7 +40,11 @@ struct uv_devinfo_s
   const char *product;
   const char *os_type;
   const char *os_version_name;
-  const char *platform_version_code;
+  const char *os_version_code;
+  const char *lanuage;
+  const char *region;
+  int16_t screenwidth;
+  int16_t screenheight;
   const char *device_type;
 };
 
