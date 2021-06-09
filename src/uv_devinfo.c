@@ -27,9 +27,9 @@
 #include <sys/ioctl.h>
 #include <uv_ext.h>
 
-#if defined(CONFIG_ARCH_SIM) && defined(CONFIG_SIM_X11FB)
+#ifdef CONFIG_VIDEO_FB
 #include <nuttx/video/fb.h>
-#elif defined(CONFIG_ARCH_BOARD_CUSTOM) && defined(CONFIG_LCD_DEV)
+#elif defined(CONFIG_LCD_DEV)
 #include <nuttx/lcd/lcd_dev.h>
 #endif
 
@@ -143,6 +143,7 @@ int uv_get_versioncode(int *vsersioncode, int id) {
 }
 
 int uv_get_resolution(int *wh, int id) {
+#if defined(CONFIG_VIDEO_FB) || defined(CONFIG_LCD_DEV)
   int fd, ret;
   struct fb_videoinfo_s videinfo = {};
 
@@ -150,7 +151,7 @@ int uv_get_resolution(int *wh, int id) {
     return UV_EINVAL;
   }
 
-#if defined(CONFIG_ARCH_SIM) && defined(CONFIG_SIM_X11FB)
+#ifdef CONFIG_VIDEO_FB
   fd = open("/dev/fb0", O_RDWR);
   if (fd < 0) {
     return -errno;
@@ -160,7 +161,7 @@ int uv_get_resolution(int *wh, int id) {
   if (ret != 0) {
     return ret;
   }
-#elif defined(CONFIG_ARCH_BOARD_CUSTOM) && defined(CONFIG_LCD_DEV)
+#elif defined(CONFIG_LCD_DEV)
   fd = open("/dev/lcd0", O_RDWR);
   if (fd < 0) {
     return -errno;
@@ -182,4 +183,7 @@ int uv_get_resolution(int *wh, int id) {
   }
 
   return 0;
+#else
+  return UV_ENXIO;
+#endif
 }

@@ -46,6 +46,7 @@ extern "C" {
 #define UV_EXT_DEVINFO_SCREENWIDTH      10
 #define UV_EXT_DEVINFO_SCREENHEIGHT     11
 #define UV_EXT_DEVINFO_MAX              12
+
 /****************************************************************************
  * Name: uv_get_devinfo
  *
@@ -483,8 +484,6 @@ int uv_property_commit(uv_loop_t *loop, uv_property_cb cb, void *arg);
 typedef struct uv_brightness_s uv_brightness_t;
 
 struct uv_brightness_s {
-  uv_timer_t handle;
-
   /* Whether the application is on the current screen. 0: no 1: yes*/
 
   int active;
@@ -494,7 +493,7 @@ struct uv_brightness_s {
   int devid;
   int lightvalue;
   int lightmode;
-  int keepon;
+  bool keepon;
 };
 
 /****************************************************************************
@@ -504,14 +503,13 @@ struct uv_brightness_s {
  *   Set the system brightness value and the screen brightness.
  *
  * Input Parameters:
- *   handle  - brightness handle. There can only be one per application.
  *   val     - brightness value. 0 - CONFIG_LCD_MAXPOWER.
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_system_brightness_setval(uv_brightness_t *handle, int val);
+int uv_system_brightness_setval(int val);
 
 /****************************************************************************
  * Name: uv_system_brightness_getval
@@ -520,14 +518,25 @@ int uv_system_brightness_setval(uv_brightness_t *handle, int val);
  *   Gets the system brightness value.
  *
  * Input Parameters:
- *   handle  - brightness handle. There can only be one per application.
  *   val     - system brightness value.
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_system_brightness_getval(uv_brightness_t *handle, int *val);
+int uv_system_brightness_getval(int *val);
+
+/****************************************************************************
+ * Name: uv_system_brightness_recovery
+ *
+ * Description:
+ *   Recovery the system brightness value.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_system_brightness_recovery(void);
 
 /****************************************************************************
  * Name: uv_brightness_setval
@@ -607,7 +616,7 @@ int uv_brightness_getmode(uv_brightness_t *handle, int *mode);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_setkeepon(uv_brightness_t *handle, int keep);
+int uv_brightness_setkeepon(uv_brightness_t *handle, bool keep);
 
 /****************************************************************************
  * Name: uv_brightness_init
@@ -627,6 +636,22 @@ int uv_brightness_setkeepon(uv_brightness_t *handle, int keep);
 int uv_brightness_init(uv_loop_t *loop, uv_brightness_t *handle);
 
 /****************************************************************************
+ * Name: uv_brightness_close
+ *
+ * Description:
+ *   Brightness close.
+ *   Note: Each application is called when it finally closes.
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_close(uv_brightness_t *handle);
+
+/****************************************************************************
  * Name: uv_brightness_free
  *
  * Description:
@@ -640,8 +665,7 @@ int uv_brightness_init(uv_loop_t *loop, uv_brightness_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_free(uv_brightness_t *handle);
-
+int uv_brightness_free(void);
 #endif
 
 #ifdef __cplusplus
