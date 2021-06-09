@@ -29,10 +29,13 @@
 /* System brightness information. */
 
 typedef struct uv_sysbrightness_s {
-  int count;        /* Number of brightness applications used. */
+  uv_timer_t handle;
+  int fd;
+  int count;          /* Number of brightness applications used. */
   int lightvalue;
   int lightmode;
-  int keepon;
+  bool keepon;
+  bool sysflag;       /* Flag of whether it is currently on the system page */
   float topic_light;
 }uv_sysbrightness_t;
 
@@ -56,29 +59,30 @@ static void uv_brightness_cb(uv_timer_t *handle) {
   }
 }
 
-int uv_system_brightness_setval(uv_brightness_t *handle, int val) {
+int uv_system_brightness_setval(int val) {
   int ret;
 
-  if (!handle || !val)
+  if (val < 0)
     return UV_EINVAL;
 
-  ret = ioctl(handle->devid, LCDDEVIO_SETPOWER, val);
+  ret = ioctl(sysbrightness.fd, LCDDEVIO_SETPOWER, val);
   if (ret != 0) {
       return ret;
   }
   sysbrightness.lightvalue = val;
+  sysbrightness.sysflag = true;
 
   return 0;
 }
 
-int uv_system_brightness_getval(uv_brightness_t *handle, int *val) {
+int uv_system_brightness_getval(int *val) {
   int ret;
 
-  if (!handle || !val)
+  if (!val)
     return UV_EINVAL;
 
   if (sysbrightness.count == 0) {
-    ret = ioctl(handle->devid, LCDDEVIO_GETPOWER, val);
+    ret = ioctl(sysbrightness.fd, LCDDEVIO_GETPOWER, val);
     if (ret != 0) {
        return ret;
     }
@@ -90,8 +94,22 @@ int uv_system_brightness_getval(uv_brightness_t *handle, int *val) {
   return 0;
 }
 
+int uv_system_brightness_recovery(void) {
+  int ret;
+
+  ret = ioctl(sysbrightness.fd, LCDDEVIO_SETPOWER, sysbrightness.lightvalue);
+  if (ret != 0) {
+      return ret;
+  }
+  sysbrightness.sysflag = true;
+
+  return 0;
+}
+
 int uv_brightness_setval(uv_brightness_t *handle, int val) {
   int ret;
+
+  sysbrightness.sysflag = false;
 
   if (!handle)
     return UV_EINVAL;
@@ -108,6 +126,8 @@ int uv_brightness_setval(uv_brightness_t *handle, int val) {
 int uv_brightness_getval(uv_brightness_t *handle, int *val) {
   int ret;
 
+  sysbrightness.sysflag = false;
+
   if (!handle || *val)
     return UV_EINVAL;
 
@@ -115,7 +135,6 @@ int uv_brightness_getval(uv_brightness_t *handle, int *val) {
   if (ret != 0) {
     return ret;
   }
-  handle->lightvalue = *val;
 
   return 0;
 }
@@ -123,26 +142,27 @@ int uv_brightness_getval(uv_brightness_t *handle, int *val) {
 int uv_brightness_setmode(uv_brightness_t *handle, int mode) {
   int ret;
 
+  sysbrightness.sysflag = false;
+
   if (!handle)
     return UV_EINVAL;
 
-  handle->lightmode = mode;
-  if (handle->lightmode) {
-    ret = uv_timer_start(&handle->handle, uv_brightness_cb, 1000, 1000);
+  if (mode && sysbrightness.lightmode == 0) {
+    ret = uv_timer_start(&sysbrightness.handle, uv_brightness_cb, 1000, 1000);
     if (ret != 0) {
       return ret;
     }
-  } else {
-    ret = uv_timer_stop(&handle->handle);
-    if (ret != 0) {
-      return ret;
-    }
+    sysbrightness.lightmode = 1;
   }
+
+  handle->lightmode = mode;
 
   return 0;
 }
 
 int uv_brightness_getmode(uv_brightness_t *handle, int *mode) {
+  sysbrightness.sysflag = false;
+
   if (!handle || *mode)
     return UV_EINVAL;
 
@@ -150,7 +170,9 @@ int uv_brightness_getmode(uv_brightness_t *handle, int *mode) {
   return 0;
 }
 
-int uv_brightness_setkeepon(uv_brightness_t *handle, int keep) {
+int uv_brightness_setkeepon(uv_brightness_t *handle, bool keep) {
+  sysbrightness.sysflag = false;
+
   if (!handle)
     return UV_EINVAL;
 
@@ -159,19 +181,19 @@ int uv_brightness_setkeepon(uv_brightness_t *handle, int keep) {
 }
 
 int uv_brightness_init(uv_loop_t *loop, uv_brightness_t *handle) {
-  int val, ret;
+  int val, ret, fd;
 
   if (!loop || !handle) {
     return UV_EINVAL;
   }
 
-  int fd = open(CONFIG_UV_LCD_DEVNAME, O_RDWR);
-  if (fd < 0) {
-    return -errno;
-  }
+  if (sysbrightness.count == 0) {
+    fd = open(CONFIG_UV_LCD_DEVNAME, O_RDWR);
+    if (fd < 0) {
+      return -errno;
+    }
 
-  if (sysbrightness.count++ == 0) {
-    ret = uv_system_brightness_getval(handle, &val);
+    ret = uv_system_brightness_getval(&val);
     if (ret != 0) {
       goto initfail;
     }
@@ -183,17 +205,24 @@ int uv_brightness_init(uv_loop_t *loop, uv_brightness_t *handle) {
     }
 
     if (uv_topic_set_frequency(&topic, 2) != 0) {
+      uv_topic_unsubscribe(&topic);
       goto initfail;
     }
+
+    ret = uv_timer_init(loop, &sysbrightness.handle);
+    if (ret != 0) {
+      uv_topic_unsubscribe(&topic);
+      goto initfail;
+    }
+
+    sysbrightness.fd = fd;
+    sysbrightness.lightmode = 0;
   }
 
-  ret = uv_timer_init(loop, &handle->handle);
-  if (ret != 0) {
-    goto initfail;
-  }
-
-  handle->active = 0;
-  handle->devid = fd;
+  sysbrightness.count++;
+  sysbrightness.sysflag = false;
+  handle->active = 1;
+  handle->devid = sysbrightness.fd;
   handle->keepon = 1;
   handle->lightmode = 0;
   handle->lightvalue = val;
@@ -205,16 +234,23 @@ initfail:
   return ret;
 }
 
-int uv_brightness_free(uv_brightness_t *handle) {
+int uv_brightness_close(uv_brightness_t *handle) {
   if (!handle) {
     return UV_EINVAL;
   }
 
-  close(handle->devid);
-  uv_close((uv_handle_t*)&handle->handle, NULL);
+  sysbrightness.sysflag = false;
   if (--sysbrightness.count == 0) {
+    close(sysbrightness.fd);
+    uv_close((uv_handle_t*)&sysbrightness.handle, NULL);
     return uv_topic_unsubscribe(&topic);
   }
 
   return 0;
+}
+
+int uv_brightness_free(void) {
+  close(sysbrightness.fd);
+  uv_close((uv_handle_t*)&sysbrightness.handle, NULL);
+  return uv_topic_unsubscribe(&topic);
 }

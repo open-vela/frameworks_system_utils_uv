@@ -25,7 +25,7 @@ static int resultflag;
 
 static void timer_run_cb(uv_timer_t* handle) {
 
-    if (uv_brightness_free(&brightness) == 0) {
+    if (uv_brightness_close(&brightness) == 0) {
       resultflag = 1;
     }
 
@@ -47,13 +47,13 @@ int main(int argc, char *argv[])
     goto testfail;
   }
 
-  ret = uv_system_brightness_setval(&brightness, 10);
+  ret = uv_system_brightness_setval(10);
   if (ret != 0) {
     goto testfail;
   }
   printf("set system brightness value: 10\n");
 
-  ret = uv_system_brightness_getval(&brightness, &lightvalue);
+  ret = uv_system_brightness_getval(&lightvalue);
   if (ret != 0 && lightvalue != 0) {
     goto testfail;
   }
