@@ -58,4 +58,11 @@ PROGNAME += uv_topic
 MAINSRC  += uv-topic-test.c
 endif
 
+ifeq ($(CONFIG_MIWEAR_APPS), y)
+PROGNAME += miwear_server
+MAINSRC  += uv-miwear-server-test.c
+PROGNAME += miwear_client
+MAINSRC  += uv-miwear-client-test.c
+endif
+
 include $(APPDIR)/Application.mk

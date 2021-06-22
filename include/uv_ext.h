@@ -831,6 +831,209 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
 
 #endif
 
+#ifdef CONFIG_MIWEAR_APPS
+
+typedef enum {
+  MIWEAR_MESSAGE_TYPE_CLIENT_ID = 0,
+  MIWEAR_MESSAGE_TYPE_RESPONSE,
+  MIWEAR_MESSAGE_TYPE_DATA,
+  MIWEAR_MESSAGE_TYPE_STATUS,
+} miwear_message_type_t;
+
+typedef enum {
+  MIWEAR_CLIENT_ID_SENT = 0,
+  MIWEAR_CONNECT_FAILED, /* Failed to connect server */
+  MIWEAR_CONNECTION_CLOSED, /* Connection closed */
+  MIWEAR_CLIENT_ONLINE, /* A new client connected to server. */
+
+  MIWEAR_PHONE_CONNECTED, /* TBD */
+} miwear_status_t;
+
+typedef struct message_status_data_s {
+    miwear_status_t status;
+    void *parameter;
+} message_status_data_t;
+
+typedef struct uv_miwear_s uv_miwear_t;
+typedef void (*uv_miwear_cb)(uv_miwear_t* miwear, int status,
+                             const void* data, uint32_t len,
+                             miwear_message_type_t type);
+
+struct uv_miwear_s {
+  union {
+    struct server* server;
+    struct client* client;
+  };
+  uv_miwear_cb cb; /* Callback will be made when received data. */
+  bool is_server; /* To mark this instance is for a server or client. */
+  void* data; /* User data. */
+};
+
+
+/****************************************************************************
+ * Name: uv_miwear_connect
+ *
+ * Description:
+ *   Connect to miwear to send and receive data to/from phone.
+ *   Connect must be made before sending data to miwear.
+ *
+ * Input Parameters:
+ *   loop     - the loop that data transfer uses.
+ *   miwear   - the handler to miwear. Each connection uses one handle.
+ *   pkg_name - the quickapp package name. Used by miwear to identify which
+ *              quickapp is sending/receiving data.
+ *   cb       - the callback function. This callback will be called when
+ *              received data from miwear. The data originally comes from
+ *              3rd-party app on phone.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_miwear_connect(uv_loop_t* loop, uv_miwear_t* miwear,
+                      const char* pkg_name, uv_miwear_cb cb);
+
+/****************************************************************************
+ * Name: uv_miwear_send
+ *
+ * Description:
+ *   Send data to phone.
+ *   Note: there could be various of reasons failing to deliver data.
+ *
+ * Input Parameters:
+ *   miwear   - the handler to miwear. Each connection uses one handle.
+ *   data     - the data to be sent. Memory should be kept until data sent.
+ *   len      - data length in bytes.
+ *   cb       - the callback function. When data sent or failed, this callback
+ *              will be made.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_miwear_send(uv_miwear_t* miwear, const void* data, uint32_t len,
+                   uv_miwear_cb cb);
+
+
+/****************************************************************************
+ * Name: uv_miwear_close
+ *
+ * Description:
+ *   Close the miwear handler.
+ *   Note: any ongoing transfer will be properly terminated, callback will be
+ *         made with error code.
+ *
+ * Input Parameters:
+ *   miwear   - the handler to miwear. Each connection uses one handle.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+int uv_miwear_close(uv_miwear_t* miwear);
+
+/****************************************************************************
+ * Name: uv_miwear_start_client
+ *
+ * Description:
+ *   Start miwear client.
+ *
+ * Input Parameters:
+ *
+ *   loop     - the loop used to handle events.
+ *   miwear   - the miwear instance, which is initialized when returned.
+ *   name     - the client name, used to identify between clients by server.
+ *   path     - the server path.
+ *   cb       - the callback when client received data or connection status
+ *              changed.
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
+                           const char* name, const char* path, uv_miwear_cb cb);
+
+/****************************************************************************
+ * Name: uv_miwear_stop_client
+ *
+ * Description:
+ *   Stop miwear client.
+ *
+ * Input Parameters:
+ *
+ *   miwear   - the miwear instance, which is initialized when returned.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_miwear_stop_client(uv_miwear_t* miwear);
+
+
+/****************************************************************************
+ * Name: uv_miwear_send_to_client
+ *
+ * Description:
+ *   Send data to connected client.
+ *
+ * Input Parameters:
+ *
+ *   miwear   - the miwear instance, which is initialized when returned.
+ *   data     - Data going to be sent, memory should be kept until cb called.
+ *   len      - Data bytes.
+ *   type     - Message type, should always use MIWEAR_MESSAGE_TYPE_DATA.
+ *   cb       - the callback will be made when data sent or error occurs.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
+                             const void* data, uint32_t len,
+                             miwear_message_type_t type, uv_miwear_cb cb);
+
+/****************************************************************************
+ * Name: uv_miwear_send_to_server
+ *
+ * Description:
+ *   send data to connected server.
+ *
+ * Input Parameters:
+ *
+ *   miwear   - the miwear instance, which is initialized when returned.
+ *   data     - Data going to be sent, memory should be kept until cb called.
+ *   len      - Data bytes.
+ *   type     - Message type, should always use MIWEAR_MESSAGE_TYPE_DATA.
+ *   cb       - the callback will be made when data sent or error occurs.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+int uv_miwear_send_to_server(uv_miwear_t* miwear, const void* data,
+                             uint32_t len, miwear_message_type_t type,
+                             uv_miwear_cb cb);
+
+/****************************************************************************
+ * Name: uv_miwear_start_server
+ *
+ * Description:
+ *   Start miwear server.
+ *
+ * Input Parameters:
+ *
+ *   loop     - the loop used to handle events.
+ *   miwear   - the miwear instance, which is initialized when returned.
+ *   path     - the server path.
+ *   cb       - the callback when server received data or connection status
+ *              changed.
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
+                           const char* path, uv_miwear_cb cb);
+
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
