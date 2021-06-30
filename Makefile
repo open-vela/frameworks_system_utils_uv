@@ -23,11 +23,22 @@ include $(APPDIR)/Make.defs
 VPATH += src
 DEPPATH += --dep-path src
 
-CSRCS += uv_locale.c
 CSRCS += uv_devinfo.c
 
 ifeq ($(CONFIG_LIB_MBEDTLS), y)
 CSRCS += uv_aes.c
+endif
+
+ifeq ($(CONFIG_LCD_DEV)$(CONFIG_UORB), yy)
+CSRCS += uv_brightness.c
+endif
+
+ifeq ($(CONFIG_KVDB), y)
+CSRCS += uv_locale.c
+endif
+
+ifeq ($(CONFIG_KVDB), y)
+CSRCS += uv_property.c
 endif
 
 ifeq ($(CONFIG_LIB_MBEDTLS), y)
@@ -36,14 +47,6 @@ endif
 
 ifeq ($(CONFIG_UORB), y)
 CSRCS += uv_topic.c
-endif
-
-ifeq ($(CONFIG_KVDB), y)
-CSRCS += uv_property.c
-endif
-
-ifeq ($(CONFIG_LCD_DEV)$(CONFIG_UORB), yy)
-CSRCS += uv_brightness.c
 endif
 
 include $(APPDIR)/Application.mk

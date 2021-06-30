@@ -28,6 +28,21 @@ PROGNAME += uv_aes
 MAINSRC  += uv-aes-test.c
 endif
 
+ifeq ($(CONFIG_LCD_DEV)$(CONFIG_UORB), yy)
+PROGNAME += uv_brightness
+MAINSRC  += uv-brightness-test.c
+endif
+
+ifeq ($(CONFIG_KVDB), y)
+PROGNAME += uv_locale
+MAINSRC  += uv-locale-test.c
+endif
+
+ifeq ($(CONFIG_KVDB), y)
+PROGNAME += uv_property
+MAINSRC  += uv-property-test.c
+endif
+
 ifeq ($(CONFIG_LIB_MBEDTLS), y)
 PROGNAME += uv_rsa
 MAINSRC  += uv-rsa-test.c
@@ -36,16 +51,6 @@ endif
 ifeq ($(CONFIG_UORB), y)
 PROGNAME += uv_topic
 MAINSRC  += uv-topic-test.c
-endif
-
-ifeq ($(CONFIG_KVDB), y)
-PROGNAME += uv_property
-MAINSRC  += uv-property-test.c
-endif
-
-ifeq ($(CONFIG_LCD_DEV)$(CONFIG_UORB), yy)
-PROGNAME += uv_brightness
-MAINSRC  += uv-brightness-test.c
 endif
 
 include $(APPDIR)/Application.mk
