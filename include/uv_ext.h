@@ -103,11 +103,14 @@ int uv_get_versioncode(int *vsersioncode, int id);
  * locale
  ****************************************************************************/
 
+#define UV_EXT_LOCALE_LANG_KEY "persist.language_region"
+#define UV_EXT_LOCALE_MAX_SIZE 10
+
 typedef struct uv_locale_s uv_locale_t;
 
 struct uv_locale_s {
-  const char *language;
-  const char *country_region;
+  char language[UV_EXT_LOCALE_MAX_SIZE];
+  char country_region[UV_EXT_LOCALE_MAX_SIZE];
 };
 
 int uv_getlocale(uv_locale_t *locale);

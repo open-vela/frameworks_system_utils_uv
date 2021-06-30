@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include <uv_ext.h>
+#include <string.h>
 
 /****************************************************************************
  * Name: uv_getlocale
@@ -30,12 +31,35 @@
  ****************************************************************************/
 
 int uv_getlocale(uv_locale_t *locale) {
+  int ret;
+  char buff[20];
+  char *pbuff, *pstr;
+
+
   if (!locale) {
     return UV_EINVAL;
   }
 
-  locale->language = "zh";
-  locale->country_region = "CN";
+  ret = uv_property_get(NULL, UV_EXT_LOCALE_LANG_KEY, buff, NULL, NULL, NULL);
+  if (ret <= 0) {
+    return ret;
+  }
 
-  return 0;
+  pbuff = buff;
+
+  pstr = strsep(&pbuff, "_");
+  if (!pstr) {
+    return UV_ENOENT;
+  }
+
+  snprintf(locale->language, sizeof(locale->language), "%s", pstr);
+
+  pstr = strsep(&pbuff, "_");
+  if (!pstr) {
+    return UV_ENOENT;
+  }
+
+  snprintf(locale->country_region, sizeof(locale->country_region), "%s", pstr);
+
+  return ret;
 }
