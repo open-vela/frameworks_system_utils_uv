@@ -25,14 +25,15 @@ int main(int argc, char *argv[])
   uv_locale_t locale;
   int ret;
 
-  ret = uv_property_set(NULL, (const char*)UV_EXT_LOCALE_LANG_KEY, "zh_CN", NULL, NULL);
-  if (ret != 0) {
-    goto testfail;
-  }
-
-
   if (uv_getlocale(&locale) <= 0) {
-    goto testfail;
+    ret = uv_property_set(NULL, (const char*)UV_EXT_LOCALE_LANG_KEY, "zh_CN", NULL, NULL);
+    if (ret != 0) {
+      goto testfail;
+    }
+
+    if (uv_getlocale(&locale) <= 0) {
+      goto testfail;
+    }
   }
 
   printf("language:%s\n", locale.language);
