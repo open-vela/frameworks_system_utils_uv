@@ -19,6 +19,7 @@
  ****************************************************************************/
 #include <uv_ext.h>
 
+#include <assert.h>
 #include <debug.h>
 #include <netpacket/rpmsg.h>
 #include <nuttx/list.h>
