@@ -14,7 +14,10 @@
 # limitations under the License.
 ############################################################################
 
-include $(APPDIR)/Make.defs
+ifneq ($(CONFIG_LIBUV_EXTENSION_TEST),)
+
+VPATH += ext/tests
+DEPPATH += --dep-path ext/tests
 
 PRIORITY  = $(CONFIG_LIBUV_EXTENSION_TEST_PRIORITY)
 STACKSIZE = $(CONFIG_LIBUV_EXTENSION_TEST_TASK_STACKSIZE)
@@ -65,4 +68,4 @@ PROGNAME += miwear_client
 MAINSRC  += uv-miwear-client-test.c
 endif
 
-include $(APPDIR)/Application.mk
+endif #CONFIG_LIBUV_EXTENSION_TEST
