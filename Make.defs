@@ -19,12 +19,10 @@
 ############################################################################
 
 ifneq ($(CONFIG_LIBUV_EXTENSION),)
-CONFIGURED_APPS += $(APPDIR)/system/libuv/ext
 
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" \
 	$(APPDIR)/system/libuv/ext/include}
 CXXFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" \
 	$(APPDIR)/system/libuv/ext/include}
-endif
 
-include $(APPDIR)/system/libuv/ext/tests/Make.defs
+endif
