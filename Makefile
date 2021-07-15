@@ -18,10 +18,12 @@
 #
 ############################################################################
 
-include $(APPDIR)/Make.defs
+ifneq ($(CONFIG_LIBUV_EXTENSION),)
 
-VPATH += src
-DEPPATH += --dep-path src
+include ext/tests/Makefile
+
+VPATH += ext/src
+DEPPATH += --dep-path ext/src
 
 CSRCS += uv_devinfo.c
 
@@ -57,4 +59,4 @@ ifeq ($(CONFIG_MIWEAR_APPS), y)
 CSRCS += uv_miwear.c
 endif
 
-include $(APPDIR)/Application.mk
+endif #CONFIG_LIBUV_EXTENSION
