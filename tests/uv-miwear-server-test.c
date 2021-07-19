@@ -23,6 +23,10 @@
 #include <debug.h>
 #include <string.h>
 
+#ifndef CONFIG_MIWEAR_QAPP_PROXY_SERVER
+#define CONFIG_MIWEAR_QAPP_PROXY_SERVER "miwear-server"
+#endif
+
 #define warn _warn
 #define info _info
 #define err _err

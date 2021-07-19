@@ -335,9 +335,6 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
 
 int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_request_cb cb)
 {
-    struct curl_httppost* formpost = NULL;
-    struct curl_httppost* lastptr = NULL;
-
     if (!handle || !request || !cb) {
         return -EINVAL;
     }
