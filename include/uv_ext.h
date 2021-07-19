@@ -25,6 +25,7 @@
 #include <mbedtls/cipher.h>
 #include <mbedtls/rsa.h>
 #include <mbedtls/pk.h>
+#include <media_api.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1032,6 +1033,289 @@ int uv_miwear_send_to_server(uv_miwear_t* miwear, const void* data,
 int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
                            const char* path, uv_miwear_cb cb);
 
+#endif
+
+/****************************************************************************
+ * audio
+ ****************************************************************************/
+
+#ifdef CONFIG_MEDIA_SERVICE
+
+#define UV_EXT_AUDIO_FILE_MAX         64
+#define UV_EXT_AUDIO_STREAMTYPE_MAX   20
+
+#define UV_EXT_AUDIO_STATE_PLAY       1
+#define UV_EXT_AUDIO_STATE_PAUSE      2
+#define UV_EXT_AUDIO_STATE_STOP       3
+#define UV_EXT_AUDIO_STATE_COMPLETE   4
+
+#define UV_EXT_AUDIO_EVENT_ERROR              MEDIA_EVENT_ERROR
+#define UV_EXT_AUDIO_EVENT_STARTED            MEDIA_EVENT_STARTED
+#define UV_EXT_AUDIO_EVENT_STOPPED            MEDIA_EVENT_STOPPED
+#define UV_EXT_AUDIO_EVENT_COMPLETE           MEDIA_EVENT_PLAYBACK_COMPLETE
+#define UV_EXT_AUDIO_EVENT_EVENT_PREPARED     MEDIA_EVENT_PREPARED
+#define UV_EXT_AUDIO_EVENT_PAUSED             MEDIA_EVENT_PAUSED
+
+typedef struct uv_audio_chain_s uv_audio_t;
+
+struct uv_audio_chain_s {
+  void      *iofhandle;
+
+  char      url[UV_EXT_AUDIO_FILE_MAX];
+  char      streamtype[UV_EXT_AUDIO_STREAMTYPE_MAX];
+
+  bool      muted;
+  bool      loop;
+  bool      exit;
+  bool      playback;
+  int       playstate;
+  int       init;
+  double    volume;
+};
+
+/****************************************************************************
+ * Name: uv_audio_create
+ *
+ * Description:
+ *   audio initialization.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *   callback  - Callback function of audio event
+ *   parame    - parame of callback
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_create(uv_audio_t *handle, notify_callback_f callback,
+                    void* parame);
+
+/****************************************************************************
+ * Name: uv_audio_set_url
+ *
+ * Description:
+ *   Set playback link.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *   url       - Play link
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_set_url(uv_audio_t *handles, const char *url);
+
+/****************************************************************************
+ * Name: uv_audio_play
+ *
+ * Description:
+ *   Play, need to set url in advance.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_play(uv_audio_t *handles);
+
+/****************************************************************************
+ * Name: uv_audio_pause
+ *
+ * Description:
+ *   Pause play.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_pause(uv_audio_t *handles);
+
+/****************************************************************************
+ * Name: uv_audio_stop
+ *
+ * Description:
+ *   Stop play.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_stop(uv_audio_t *handles);
+
+/****************************************************************************
+ * Name: uv_audio_loop
+ *
+ * Description:
+ *   Set loop playback.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *   loop      - true: loop    false: not loop
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_loop(uv_audio_t *handles, bool loop);
+
+/****************************************************************************
+ * Name: uv_audio_set_volume
+ *
+ * Description:
+ *   Set playback volume.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *   volume    - volume. 0 ~ 1
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_set_volume(uv_audio_t *handles, double volume);
+
+/****************************************************************************
+ * Name: uv_audio_get_volume
+ *
+ * Description:
+ *   Get playback volume.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Output Parameters:
+ *   volume    - volume. 0 ~ 1
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_get_volume(uv_audio_t *handles, double *volume);
+
+/****************************************************************************
+ * Name: uv_audio_muted
+ *
+ * Description:
+ *   Set mute.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *   muted     - true: Turn on mute  false: mute off
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_muted(uv_audio_t *handles, bool muted);
+
+/****************************************************************************
+ * Name: uv_audio_streamtype
+ *
+ * Description:
+ *   Set the playback mode. The settable values are
+ *   music and voicecall.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *   type      - music: uspeaker, voicecall: earpiece. The default is music
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_streamtype(uv_audio_t *handles, const char *type);
+
+/****************************************************************************
+ * Name: uv_audio_set_currenttime
+ *
+ * Description:
+ *   Set playback position.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *   sec       - Playback position, seconds.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_set_currenttime(uv_audio_t *handles, int sec);
+
+/****************************************************************************
+ * Name: uv_audio_get_currenttime
+ *
+ * Description:
+ *   Get the current playback position.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Output Parameters:
+ *   sec       - playback position,(s).
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_get_currenttime(uv_audio_t *handles, int *sec);
+
+/****************************************************************************
+ * Name: uv_audio_get_duration
+ *
+ * Description:
+ *   Get the total time.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Output Parameters:
+ *   sec       - total time,(s).
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_get_duration(uv_audio_t *handles, int *sec);
+
+/****************************************************************************
+ * Name: uv_audio_get_isplay
+ *
+ * Description:
+ *   Get whether it is currently playing.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_get_isplay(uv_audio_t *handle);
+
+/****************************************************************************
+ * Name: uv_audio_close
+ *
+ * Description:
+ *   Close this audio.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_close(uv_audio_t *handles);
 
 #endif
 

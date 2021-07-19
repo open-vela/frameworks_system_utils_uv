@@ -68,4 +68,12 @@ PROGNAME += miwear_client
 MAINSRC  += uv-miwear-client-test.c
 endif
 
+ifeq ($(CONFIG_MEDIA_SERVICE), y)
+PROGNAME += uv_audio
+MAINSRC  += uv-audio-test.c
+endif
+
 endif #CONFIG_LIBUV_EXTENSION_TEST
+
+include $(APPDIR)/Application.mk
+
