@@ -59,4 +59,11 @@ ifeq ($(CONFIG_MIWEAR_APPS), y)
 CSRCS += uv_miwear.c
 endif
 
+ifeq ($(CONFIG_MEDIA_SERVICE), y)
+CSRCS += uv_audio.c
+endif
+
 endif #CONFIG_LIBUV_EXTENSION
+
+include $(APPDIR)/Application.mk
+
