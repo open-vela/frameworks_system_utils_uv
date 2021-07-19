@@ -319,7 +319,6 @@ static void uv__miwear_client_close(struct client* client)
 
   if (client->miwear->is_server) {
     /* For server also need to remove client from list */
-    struct server* server = client->miwear->server;
     list_delete(&client->node);
   }
 
@@ -342,8 +341,6 @@ static void pipe_close_callback_no_reader(uv_handle_t* handle)
 
 static void message_reader_stop(uv_stream_t* stream)
 {
-  struct reader* reader = stream->data;
-
   uv_close((uv_handle_t*)stream, pipe_close_callback);
 }
 
@@ -723,7 +720,6 @@ static void client_on_connect_callback(uv_connect_t* req, int status)
     return;
   }
 
-  int error;
   info("server connected, send CLIENT_ID message now.\n");
 
   client->state = CLIENT_STATE_HANDSHAKING;
@@ -854,5 +850,5 @@ int uv_miwear_send(uv_miwear_t* miwear, const void* data, uint32_t len,
 }
 
 int uv_miwear_close(uv_miwear_t* miwear) {
-  uv_miwear_stop_client(miwear);
+  return uv_miwear_stop_client(miwear);
 }
