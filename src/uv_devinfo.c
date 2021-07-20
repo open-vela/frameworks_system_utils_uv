@@ -18,13 +18,12 @@
  * Included Files
  ****************************************************************************/
 
-#include <assert.h>
-#include <debug.h>
 #include <nuttx/config.h>
 #include <nuttx/version.h>
-#include <fcntl.h>
+#include <nuttx/board.h>
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
 #include <uv_ext.h>
 
 #ifdef CONFIG_VIDEO_FB
@@ -122,6 +121,11 @@ int uv_get_devinfo(char *devinfo, int size, int id) {
     case UV_EXT_DEVINFO_REGION:
       snprintf((char*)devinfo, size, "%s", CONFIG_REGION_NAME);
     break;
+#if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
+    case UV_EXT_DEVINFO_DID:
+      boardctl(BOARDIOC_UNIQUEID, devinfo);
+    break;
+#endif
     default:
       return UV_EINVAL;
   }

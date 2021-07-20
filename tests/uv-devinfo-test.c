@@ -25,11 +25,10 @@ int main(int argc, char *argv[])
   char devinfo[32];
   int wh, i;
 
-  for (i = UV_EXT_DEVINFO_BRAND; i <= UV_EXT_DEVINFO_REGION; i++) {
-    if (uv_get_devinfo(devinfo, sizeof(devinfo), i) != 0) {
-      goto testfail;
+  for (i = UV_EXT_DEVINFO_BRAND; i < UV_EXT_DEVINFO_MAX; i++) {
+    if (uv_get_devinfo(devinfo, sizeof(devinfo), i) == 0) {
+      printf("[%02d], %s\n", i, devinfo);
     }
-    printf("[%02d], %s\n", i, devinfo);
   }
 
   if (uv_get_resolution(&wh, UV_EXT_DEVINFO_SCREENWIDTH) != 0) {
