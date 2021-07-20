@@ -34,18 +34,19 @@ extern "C" {
  * devinfo
  ****************************************************************************/
 
-#define UV_EXT_DEVINFO_BRAND            1
-#define UV_EXT_DEVINFO_MANUFACTURER     2
-#define UV_EXT_DEVINFO_MODEL            3
-#define UV_EXT_DEVINFO_PRODUCT          4
-#define UV_EXT_DEVINFO_OSTYPE           5
-#define UV_EXT_DEVINFO_OSVERSIONNAME    6
-#define UV_EXT_DEVINFO_OSVERSIONCODE    7
-#define UV_EXT_DEVINFO_LANGUAGE         8
-#define UV_EXT_DEVINFO_REGION           9
-#define UV_EXT_DEVINFO_SCREENWIDTH      10
-#define UV_EXT_DEVINFO_SCREENHEIGHT     11
-#define UV_EXT_DEVINFO_MAX              12
+#define UV_EXT_DEVINFO_SCREENWIDTH      1
+#define UV_EXT_DEVINFO_SCREENHEIGHT     2
+#define UV_EXT_DEVINFO_BRAND            3
+#define UV_EXT_DEVINFO_MANUFACTURER     4
+#define UV_EXT_DEVINFO_MODEL            5
+#define UV_EXT_DEVINFO_PRODUCT          6
+#define UV_EXT_DEVINFO_OSTYPE           7
+#define UV_EXT_DEVINFO_OSVERSIONNAME    8
+#define UV_EXT_DEVINFO_OSVERSIONCODE    9
+#define UV_EXT_DEVINFO_LANGUAGE         10
+#define UV_EXT_DEVINFO_REGION           11
+#define UV_EXT_DEVINFO_DID              12
+#define UV_EXT_DEVINFO_MAX              13
 
 /****************************************************************************
  * Name: uv_get_devinfo
