@@ -843,40 +843,54 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
 
 #endif
 
-#ifdef CONFIG_MIWEAR_APPS
+#ifdef CONFIG_MIWEAR_COMMON
 
-typedef enum {
-  MIWEAR_MESSAGE_TYPE_CLIENT_ID = 0,
-  MIWEAR_MESSAGE_TYPE_RESPONSE,
-  MIWEAR_MESSAGE_TYPE_DATA,
-  MIWEAR_MESSAGE_TYPE_STATUS,
-} miwear_message_type_t;
+typedef uint8_t miwear_message_type_t;
 
-typedef enum {
-  MIWEAR_CLIENT_ID_SENT = 0,
-  MIWEAR_CONNECT_FAILED, /* Failed to connect server */
-  MIWEAR_CONNECTION_CLOSED, /* Connection closed */
-  MIWEAR_CLIENT_ONLINE, /* A new client connected to server. */
+#define MIWEAR_MESSAGE_NEED_REPLY_MASK  0x80
 
-  MIWEAR_PHONE_CONNECTED, /* TBD */
-} miwear_status_t;
+#define MIWEAR_MESSAGE_TYPE_CLIENT_ID   0
+#define MIWEAR_MESSAGE_TYPE_RESPONSE    1
+#define MIWEAR_MESSAGE_TYPE_STATUS      2
+#define MIWEAR_MESSAGE_TYPE_DATA        (3 | MIWEAR_MESSAGE_NEED_REPLY_MASK)
+/**
+ * Send a custom type message, receiver could identify message through this type.
+ * Ored the mask MIWEAR_MESSAGE_NEED_REPLY_MASK if this message needs response
+ * to confirm it's received.
+*/
+#define MIWEAR_MESSAGE_TYPE_CUSTOM      10
+
+#define MIWEAR_STATUS_CLIENT_ID_SENT    1 /* Client sent out ID to server. */
+#define MIWEAR_STATUS_CONNECT_FAILED    2 /* Failed to connect server */
+#define MIWEAR_STATUS_CONNECTION_CLOSED 3 /* Connection closed */
+#define MIWEAR_STATUS_CLIENT_ONLINE     4 /* A new client connected to server. */
+#define MIWEAR_STATUS_PHONE_CONNECTED   5 /* TBD */
 
 typedef struct message_status_data_s {
-    miwear_status_t status;
-    void *parameter;
-} message_status_data_t;
+    int status; /* Miwear status value. */
+    void *parameter; /* Parameter for some status. */
+} uv_miwear_status_t;
+
+typedef struct uv_miwear_msg_s {
+    miwear_message_type_t type;
+    uint32_t len;
+    uint32_t id; /* The id auto generated for this message. */
+    const void* data;
+} uv_miwear_message_t;
 
 typedef struct uv_miwear_s uv_miwear_t;
-typedef void (*uv_miwear_cb)(uv_miwear_t* miwear, int status,
-                             const void* data, uint32_t len,
-                             miwear_message_type_t type);
+
+typedef void(*uv_miwear_sent_cb)(uv_miwear_t* miwear, int status,
+                                 uv_miwear_message_t* msg, void* cb_para);
+typedef void(*uv_miwear_recv_cb)(uv_miwear_t* miwear, int status,
+                                 uv_miwear_message_t* msg, const char* client);
 
 struct uv_miwear_s {
   union {
     struct server* server;
     struct client* client;
   };
-  uv_miwear_cb cb; /* Callback will be made when received data. */
+  uv_miwear_recv_cb cb; /* Callback will be made when received data. */
   bool is_server; /* To mark this instance is for a server or client. */
   void* data; /* User data. */
 };
@@ -903,7 +917,7 @@ struct uv_miwear_s {
  ****************************************************************************/
 
 int uv_miwear_connect(uv_loop_t* loop, uv_miwear_t* miwear,
-                      const char* pkg_name, uv_miwear_cb cb);
+                      const char* pkg_name, uv_miwear_recv_cb cb);
 
 /****************************************************************************
  * Name: uv_miwear_send
@@ -923,8 +937,8 @@ int uv_miwear_connect(uv_loop_t* loop, uv_miwear_t* miwear,
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_miwear_send(uv_miwear_t* miwear, const void* data, uint32_t len,
-                   uv_miwear_cb cb);
+int uv_miwear_send(uv_miwear_t* miwear, const char* to, uv_miwear_message_t* message,
+                   uv_miwear_sent_cb cb, void* cb_para);
 
 
 /****************************************************************************
@@ -962,66 +976,35 @@ int uv_miwear_close(uv_miwear_t* miwear);
  ****************************************************************************/
 
 int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
-                           const char* name, const char* path, uv_miwear_cb cb);
+                           const char* name, const char* path,
+                           uv_miwear_recv_cb cb);
 
+#ifdef CONFIG_NET_RPMSG
 /****************************************************************************
- * Name: uv_miwear_stop_client
+ * Name: uv_miwear_start_rpmsg_client
  *
  * Description:
- *   Stop miwear client.
+ *   Start miwear client to connect server on another CPU using rpmsg.
  *
  * Input Parameters:
  *
+ *   loop     - the loop used to handle events.
  *   miwear   - the miwear instance, which is initialized when returned.
- *
+ *   name     - the client name, used to identify between clients by server.
+ *   path     - the server path.
+ *   cpu_name - the remote CPU name where server runs on.
+ *   cb       - the callback when client received data or connection status
+ *              changed.
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_miwear_stop_client(uv_miwear_t* miwear);
-
-
-/****************************************************************************
- * Name: uv_miwear_send_to_client
- *
- * Description:
- *   Send data to connected client.
- *
- * Input Parameters:
- *
- *   miwear   - the miwear instance, which is initialized when returned.
- *   data     - Data going to be sent, memory should be kept until cb called.
- *   len      - Data bytes.
- *   type     - Message type, should always use MIWEAR_MESSAGE_TYPE_DATA.
- *   cb       - the callback will be made when data sent or error occurs.
- *
- * Returned Value:
- *   Zero (OK) on success;
- ****************************************************************************/
-int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
-                             const void* data, uint32_t len,
-                             miwear_message_type_t type, uv_miwear_cb cb);
-
-/****************************************************************************
- * Name: uv_miwear_send_to_server
- *
- * Description:
- *   send data to connected server.
- *
- * Input Parameters:
- *
- *   miwear   - the miwear instance, which is initialized when returned.
- *   data     - Data going to be sent, memory should be kept until cb called.
- *   len      - Data bytes.
- *   type     - Message type, should always use MIWEAR_MESSAGE_TYPE_DATA.
- *   cb       - the callback will be made when data sent or error occurs.
- *
- * Returned Value:
- *   Zero (OK) on success;
- ****************************************************************************/
-int uv_miwear_send_to_server(uv_miwear_t* miwear, const void* data,
-                             uint32_t len, miwear_message_type_t type,
-                             uv_miwear_cb cb);
+int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
+                                 const char* client_name,
+                                 const char* server_path,
+                                 const char* cpu_name,
+                                 uv_miwear_recv_cb cb);
+#endif
 
 /****************************************************************************
  * Name: uv_miwear_start_server
@@ -1041,7 +1024,7 @@ int uv_miwear_send_to_server(uv_miwear_t* miwear, const void* data,
  ****************************************************************************/
 
 int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
-                           const char* path, uv_miwear_cb cb);
+                           const char* path, uv_miwear_recv_cb cb);
 
 #endif
 

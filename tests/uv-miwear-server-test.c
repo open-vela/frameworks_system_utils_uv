@@ -27,54 +27,52 @@
 #define CONFIG_MIWEAR_QAPP_PROXY_SERVER "miwear-server"
 #endif
 
-#define warn _warn
-#define info _info
-#define err _err
-
 static uv_miwear_t server;
 
-static void server_recv_cb(uv_miwear_t* miwear, int status, const void* data,
-                           uint32_t len, miwear_message_type_t type)
+static void server_recv_cb(uv_miwear_t* miwear, int status,
+                           uv_miwear_message_t* msg, const char* client)
 {
-  if (type == MIWEAR_MESSAGE_TYPE_STATUS) {
-    const message_status_data_t* miwear_status = data;
-    if (miwear_status->status == MIWEAR_CLIENT_ONLINE) {
-      info("Server got connection from %s.\n", (char*)miwear_status->parameter);
-    } else if (miwear_status->status == MIWEAR_CONNECTION_CLOSED) {
-      info("Server closed connection with [%s]\n",
-           (char*)miwear_status->parameter);
+  if (msg->type == MIWEAR_MESSAGE_TYPE_STATUS) {
+    const uv_miwear_status_t* miwear_status = msg->data;
+    if (miwear_status->status == MIWEAR_STATUS_CLIENT_ONLINE) {
+      printf("Server got connection from %s.\n",
+             (char*)miwear_status->parameter);
+    } else if (miwear_status->status == MIWEAR_STATUS_CONNECTION_CLOSED) {
+      printf("Server closed connection with [%s]\n",
+             (char*)miwear_status->parameter);
     } else {
-      info("Server got status message: %d\n", miwear_status->status);
+      printf("Server got status message: %d\n", miwear_status->status);
     }
     return;
   }
 
   if (status != 0) {
-    err("server got unexpected status: %d\n", status);
+    printf("server got unexpected status: %d\n", status);
     return;
   }
 
-  static char tmp[1024];
-  len = len >= 1023 ? 1022 : len;
-  memcpy(tmp, data, len);
-  tmp[len] = '\0';
-
-  info("server got message: %s, len: %d, status: %d\n", tmp, len, status);
+  printf("server got message: %s, len: %d, status: %d\n",
+         (const char*)msg->data, msg->len, status);
 }
 
-void server_sent_cb(uv_miwear_t* miwear, int status, const void* data,
-                    uint32_t len, miwear_message_type_t type)
+void server_sent_cb(uv_miwear_t* miwear, int status, uv_miwear_message_t* msg,
+                    void* cb_para)
 {
-  info("server sent message: %s, len: %d, status: %d\n", data, len, status);
+  printf("server sent message: %s, len: %d, status: %d\n",
+         (const char*)msg->data, msg->len, status);
 }
 
 static void timer_run_cb(uv_timer_t* handle)
 {
   static uint32_t count;
-  static char msg[64];
-  snprintf(msg, 64, "Hello from server. %d", count++);
-  uv_miwear_send_to_client(&server, "client123", msg, strlen(msg) + 1,
-                           MIWEAR_MESSAGE_TYPE_DATA, server_sent_cb);
+  static char data[64];
+  snprintf(data, 64, "Hello from server. %d", count++);
+  uv_miwear_message_t msg;
+  msg.data = data;
+  msg.len = strlen(data) + 1;
+  msg.type = MIWEAR_MESSAGE_TYPE_DATA;
+  uv_miwear_send(&server, "com.xiaomi.xms.wearable.demo", &msg, server_sent_cb,
+                 NULL);
 }
 
 int miwear_server_main(int argc, char* argv[])

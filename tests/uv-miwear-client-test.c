@@ -28,59 +28,54 @@
 #define CONFIG_MIWEAR_QAPP_PROXY_SERVER "miwear-server"
 #endif
 
-#define warn _warn
-#define info _info
-#define err _err
-
 static uv_miwear_t client;
 static uv_loop_t* loop;
 static uint32_t count;
 
-static void client_recv_cb(uv_miwear_t* miwear, int status, const void* data,
-                           uint32_t len, miwear_message_type_t type)
+static void client_recv_cb(uv_miwear_t* miwear, int status,
+                           uv_miwear_message_t* msg, const char* client)
+
 {
-  if (type == MIWEAR_MESSAGE_TYPE_STATUS) {
-    const message_status_data_t* miwear_status = data;
-    if(miwear_status->status == MIWEAR_CLIENT_ID_SENT){
-        info("Client ID sent.\n");
-    }
-    else if(miwear_status->status == MIWEAR_CONNECTION_CLOSED){
-        info("Client closed.\n");
-    }
-    else if(miwear_status->status == MIWEAR_CONNECT_FAILED){
-        info("Client failed to connect server.\n");
+  if (msg->type == MIWEAR_MESSAGE_TYPE_STATUS) {
+    const uv_miwear_status_t* miwear_status = msg->data;
+    if (miwear_status->status == MIWEAR_STATUS_CLIENT_ID_SENT) {
+      printf("Client ID sent.\n");
+    } else if (miwear_status->status == MIWEAR_STATUS_CONNECTION_CLOSED) {
+      printf("Client closed.\n");
+    } else if (miwear_status->status == MIWEAR_STATUS_CONNECT_FAILED) {
+      printf("Client failed to connect server.\n");
     }
     return;
   }
 
   if (status != 0) {
-    err("client got unexpected status: %d\n", status);
+    printf("client got unexpected status: %d\n", status);
     return;
   }
 
-  static char tmp[1024];
-  len = len >= 1023 ? 1022 : len;
-  memcpy(tmp, data, len);
-  tmp[len] = '\0';
-
-  info("client got message: %s, len: %d, status: %d\n", tmp, len, status);
+  printf("client got message: %s, len: %d, status: %d\n",
+         (const char*)msg->data, msg->len, status);
 }
 
-void client_sent_cb(uv_miwear_t* miwear, int status, const void* data,
-                    uint32_t len, miwear_message_type_t type)
+void client_sent_cb(uv_miwear_t* miwear, int status, uv_miwear_message_t* msg,
+                    void* cb_para)
 {
-  info("client sent message: %s, len: %d, status: %d\n", data, len, status);
+  printf("client sent message: %s, len: %d, status: %d\n",
+         (const char*)msg->data, msg->len, status);
 }
 
 static void timer_run_cb(uv_timer_t* handle)
 {
-  static char msg[64];
-  snprintf(msg, 64, "Hello from client. %d", count++);
-  uv_miwear_send_to_server(&client, msg, strlen(msg) + 1,
-                           MIWEAR_MESSAGE_TYPE_DATA, client_sent_cb);
+  static char data[64];
+  snprintf(data, 64, "Hello from client. %d", count++);
+  uv_miwear_message_t msg;
+  msg.data = data;
+  msg.len = strlen(data) + 1;
+  msg.type = MIWEAR_MESSAGE_TYPE_DATA;
+  uv_miwear_send(&client, NULL, &msg, client_sent_cb, NULL);
   if (count == 5) {
     uv_close((uv_handle_t*)handle, NULL);
-    uv_miwear_stop_client(&client);
+    uv_miwear_close(&client);
     uv_stop(loop);
   }
 }
@@ -94,8 +89,7 @@ int miwear_client_main(int argc, char* argv[])
   count = 0;
 
   uv_miwear_start_client(loop, &client, "com.xiaomi.xms.wearable.demo",
-                         CONFIG_MIWEAR_QAPP_PROXY_SERVER,
-                         client_recv_cb);
+                         CONFIG_MIWEAR_QAPP_PROXY_SERVER, client_recv_cb);
 
   /* Sends message to client using timer */
   if (uv_timer_init(loop, &timer_handle) != 0) {
