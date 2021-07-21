@@ -64,6 +64,3 @@ CSRCS += uv_audio.c
 endif
 
 endif #CONFIG_LIBUV_EXTENSION
-
-include $(APPDIR)/Application.mk
-
