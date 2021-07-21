@@ -50,20 +50,16 @@
 #define CONFIG_CLIENT_ID_LEN 64
 #endif
 
-#ifndef CONFIG_MIWEAR_REMOTE_SERVER_CPU
-#define CONFIG_MIWEAR_REMOTE_SERVER_CPU "ap"
-#endif
-
 typedef struct message_header_s {
   miwear_message_type_t type;
-  uint32_t id;
   uint32_t len;
+  uint32_t id;
 } message_header_t;
 
-typedef struct message_s {
-  message_header_t header;
-  const void* data;
-} message_t;
+/**
+ * The actual message send over socket, added id field for auto response
+ * process.
+*/
 
 typedef struct message_response_s {
   uint32_t id;
@@ -74,13 +70,14 @@ typedef struct miwear_wreq_s {
 
   struct list_node node; /* The data sending out that needs response will
                             be inserted to a list. */
-  uv_miwear_cb cb; /* The callback will be made for every write request. */
-  message_t message;
+  uv_miwear_sent_cb cb;
+  void* cb_para;
+  uv_miwear_message_t message;
   uv_miwear_t* miwear;
   struct client* client;
 } miwear_wreq_t;
 
-typedef void (*msg_reader_cb)(uv_stream_t* stream, message_t* msg,
+typedef void (*msg_reader_cb)(uv_stream_t* stream, uv_miwear_message_t* msg,
                               struct client* client);
 
 enum client_state {
@@ -139,7 +136,7 @@ struct reader {
   message_header_t header;
 
   /* The message received. */
-  message_t message;
+  uv_miwear_message_t message;
 
   /* Message body(message.data) bytes received. */
   uint32_t recv_len;
@@ -148,9 +145,17 @@ struct reader {
   struct client* client; /* the client connected to this stream */
 };
 
-static int uv__miwear_send_to_client(struct client* client, const void* data,
-                                     uint32_t len, miwear_message_type_t type,
-                                     uv_miwear_cb cb);
+static int uv__miwear_send_to_client(struct client* client,
+                                     uv_miwear_message_t* message,
+                                     uv_miwear_sent_cb cb, void* cb_para);
+
+static int uv_miwear_send_to_server(uv_miwear_t* miwear,
+                                    uv_miwear_message_t* message,
+                                    uv_miwear_sent_cb cb, void* cb_para);
+
+static int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
+                                    uv_miwear_message_t* message,
+                                    uv_miwear_sent_cb cb, void* cb_para);
 
 static void reader_state_reset(struct reader* reader)
 {
@@ -200,7 +205,7 @@ static void message_reader_alloc_cb(uv_handle_t* handle, size_t suggested_size,
     }
 
     /* Copy the header to packet */
-    memcpy(&reader->message.header, &reader->header, sizeof(message_header_t));
+    memcpy(&reader->message, &reader->header, sizeof(message_header_t));
     reader->message.data = body;
 
     buf->base = (char*)reader->message.data;
@@ -302,19 +307,23 @@ static void uv__miwear_client_close(struct client* client)
     list_delete(&wreq->node);
     if (wreq->cb) {
       /** Let application known write request failed. */
-      wreq->cb(wreq->miwear, UV_ECANCELED, wreq->message.data,
-               wreq->message.header.len, wreq->message.header.type);
+      wreq->cb(wreq->miwear, UV_ECANCELED, &wreq->message, wreq->cb_para);
     }
     free(wreq);
   }
 
   /* Make callback to let application know connection lost. */
   if (client->miwear->cb) {
-    message_status_data_t data;
-    data.status = MIWEAR_CONNECTION_CLOSED;
+    uv_miwear_status_t data;
+    data.status = MIWEAR_STATUS_CONNECTION_CLOSED;
     data.parameter = client->name;
-    client->miwear->cb(client->miwear, 0, &data, sizeof(message_status_data_t),
-                       MIWEAR_MESSAGE_TYPE_STATUS);
+
+    uv_miwear_message_t msg;
+    msg.type = MIWEAR_MESSAGE_TYPE_STATUS;
+    msg.data = &data;
+    msg.len = sizeof(data);
+    msg.id = 0;
+    client->miwear->cb(client->miwear, 0, &msg, client->name);
   }
 
   if (client->miwear->is_server) {
@@ -345,14 +354,14 @@ static void message_reader_stop(uv_stream_t* stream)
 }
 
 static void response_sent_callback(uv_miwear_t* miwear, int status,
-                                   const void* data, uint32_t len,
-                                   miwear_message_type_t type)
+                                   uv_miwear_message_t* message,
+                                   void* cb_para)
 {
-  free((void*)data);
+  free((void*)message->data);
 }
 
 /* Callback when server/client received data from socket. */
-static void stream_read_callback(uv_stream_t* stream, message_t* msg,
+static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
                                  struct client* client)
 {
   if (msg == NULL) {
@@ -364,7 +373,7 @@ static void stream_read_callback(uv_stream_t* stream, message_t* msg,
     return;
   }
 
-  if (msg->header.type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
+  if (msg->type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
     /* The first message from client. Only server could receive this message. */
     struct server* server = client->miwear->server;
     info("Got connection from client: %s\n", (char*)msg->data);
@@ -377,20 +386,24 @@ static void stream_read_callback(uv_stream_t* stream, message_t* msg,
 
     /* Let server know that a new client connected. */
     if (server->miwear->cb) {
-      message_status_data_t data;
-      data.status = MIWEAR_CLIENT_ONLINE;
+      uv_miwear_status_t data;
+      data.status = MIWEAR_STATUS_CLIENT_ONLINE;
       data.parameter = client->name;
-      server->miwear->cb(client->miwear, 0, &data,
-                         sizeof(message_status_data_t),
-                         MIWEAR_MESSAGE_TYPE_STATUS);
+
+      uv_miwear_message_t msg;
+      msg.type = MIWEAR_MESSAGE_TYPE_STATUS;
+      msg.data = &data;
+      msg.len = sizeof(data);
+      msg.id = 0;
+      client->miwear->cb(client->miwear, 0, &msg, client->name);
     }
 
     info("client count: %d\n", server->client_count);
     return;
   }
 
-  if (msg->header.type == MIWEAR_MESSAGE_TYPE_RESPONSE) {
-    if (msg->header.len != sizeof(message_response_t)) {
+  if (msg->type == MIWEAR_MESSAGE_TYPE_RESPONSE) {
+    if (msg->len != sizeof(message_response_t)) {
       err("Unrecognized response packet, client: %s\n", client->name);
       return;
     }
@@ -405,7 +418,7 @@ static void stream_read_callback(uv_stream_t* stream, message_t* msg,
     bool found = false;
     list_for_every_entry(&client->sending_list, wreq, miwear_wreq_t, node)
     {
-      if (wreq->message.header.id == response->id) {
+      if (wreq->message.id == response->id) {
         found = true;
         break;
       }
@@ -419,50 +432,53 @@ static void stream_read_callback(uv_stream_t* stream, message_t* msg,
     list_delete(&wreq->node);
 
     if (wreq->cb) {
-      wreq->cb(wreq->miwear, 0, wreq->message.data, wreq->message.header.len,
-               wreq->message.header.type);
+      wreq->cb(wreq->miwear, 0, &wreq->message, wreq->cb_para);
     }
     free(wreq);
 
     return;
   }
 
-  if (msg->header.type == MIWEAR_MESSAGE_TYPE_STATUS) {
+  if (msg->type == MIWEAR_MESSAGE_TYPE_STATUS) {
     err("Missing logic\n");
     return;
   }
 
-  if (msg->header.type != MIWEAR_MESSAGE_TYPE_DATA) {
-    err("Unknown message type: %d\n", msg->header.type);
-    return;
-  }
+  /**
+   * All other types are data, if MIWEAR_MESSAGE_NEED_REPLY_MASK is set, then
+   * this data message needs reply, otherwise, simply receive it.
+  */
 
   info("got message to/from client:%s, msg:%d, len:%d\n", client->name,
-       msg->header.type, msg->header.len);
+       msg->type, msg->len);
 
   if (client->state != CLIENT_STATE_CONNECTED) {
     err("Data received when client not connected.");
   }
 
-  message_response_t* response = malloc(sizeof(message_response_t));
-  if (response == NULL) {
-    err("No memory for response.");
-    return;
-  }
-  response->id = msg->header.id;
+  if(msg->type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
+      message_response_t* response = malloc(sizeof(message_response_t));
+      if (response == NULL) {
+        err("No memory for response.");
+        return;
+      }
+      response->id = msg->id;
 
-  int ret = uv__miwear_send_to_client(
-    client, response, sizeof(message_response_t), MIWEAR_MESSAGE_TYPE_RESPONSE,
-    response_sent_callback);
-  if (ret != 0) {
-    /* Client should send the message again. */
-    err("Cannot send response to client.\n");
-    return;
+      uv_miwear_message_t msg;
+      msg.data = response;
+      msg.len = sizeof(message_response_t);
+      msg.type = MIWEAR_MESSAGE_TYPE_RESPONSE;
+      int ret = uv__miwear_send_to_client(client, &msg,
+                                          response_sent_callback, NULL);
+      if (ret != 0) {
+        /* Sender should send the message again because of missing response. */
+        err("Cannot send response to client.\n");
+        return;
+      }
   }
 
   if (client->miwear->cb) {
-    client->miwear->cb(client->miwear, 0, msg->data, msg->header.len,
-                       MIWEAR_MESSAGE_TYPE_DATA);
+    client->miwear->cb(client->miwear, 0, msg, client->name);
   }
 }
 
@@ -501,7 +517,7 @@ static void server_listen_callback(uv_stream_t* stream, int status)
 }
 
 int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
-                           const char* path, uv_miwear_cb cb)
+                           const char* path, uv_miwear_recv_cb cb)
 {
   if (!loop || !miwear || !path || !cb)
     return UV_EINVAL;
@@ -549,7 +565,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
     goto server_start_err;
   }
 
-#if 0 //CONFIG_NET_RPMSG
+#ifdef CONFIG_NET_RPMSG
   /* Start RPMSG server */
   err = uv_pipe_init(loop, &server->pipe_rpmsg, 0);
   if (err != 0) {
@@ -564,7 +580,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
   }
 
   server->pipe_rpmsg.data = server; /* save handler to server. */
-  err = uv_listen((uv_stream_t*)&server->pipe_rpmsg, SOMAXCONN,
+  err = uv_listen((uv_stream_t*)&server->pipe_rpmsg, 16,
                   server_listen_callback);
   if (err != 0) {
     err("pipe_rpmsg listen failed: %s\n", uv_strerror(err));
@@ -576,6 +592,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
 
 server_start_err:
   miwear->server = NULL;
+  /* Need to unregister all handlers.... */
   free(server);
   return err;
 }
@@ -585,35 +602,38 @@ static void uv_write_done_callback(uv_write_t* req, int status)
   miwear_wreq_t* wreq = (miwear_wreq_t*)req;
 
   if (status != 0) {
-    err("Failed sending data, client: %s, id: %d\n", wreq->client->name,
-        wreq->message.header.id);
+    err("Failed sending data, client: %s, id: %d, status: %d\n",
+        wreq->client->name, wreq->message.id, status);
+    /* For all other messages, no responses needed, make the callback now.*/
+    if (wreq->cb) {
+      wreq->cb(wreq->miwear, status, &wreq->message, wreq->cb_para);
+    }
     free(wreq);
     return;
   }
 
   info("sent to %s, type:%d, id: %d\n", wreq->client->name,
-       wreq->message.header.type, wreq->message.header.id);
+       wreq->message.type, wreq->message.id);
 
-  if (wreq->message.header.type == MIWEAR_MESSAGE_TYPE_DATA) {
+  if (wreq->message.type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
     /* Add this request to sending list that waiting for response. */
     struct client* client = wreq->client;
     list_add_tail(&client->sending_list, &wreq->node);
-  } else if (wreq->message.header.type == MIWEAR_MESSAGE_TYPE_RESPONSE) {
+  } else if (wreq->message.type == MIWEAR_MESSAGE_TYPE_RESPONSE) {
     ;
   } else {
     /* For all other messages, no responses needed, make the callback now.*/
     if (wreq->cb) {
-      wreq->cb(wreq->miwear, status, wreq->message.data,
-               wreq->message.header.len, wreq->message.header.type);
+      wreq->cb(wreq->miwear, status, &wreq->message, wreq->cb_para);
     }
   }
 }
 
-static int uv__miwear_send_to_client(struct client* client, const void* data,
-                                     uint32_t len, miwear_message_type_t type,
-                                     uv_miwear_cb cb)
+static int uv__miwear_send_to_client(struct client* client,
+                                     uv_miwear_message_t* message,
+                                     uv_miwear_sent_cb cb, void* cb_para)
 {
-  if (!client || !data || !cb)
+  if (!client || !message || !cb)
     return UV_EINVAL;
 
   miwear_wreq_t* wreq = malloc(sizeof(miwear_wreq_t));
@@ -621,17 +641,16 @@ static int uv__miwear_send_to_client(struct client* client, const void* data,
     return UV_ENOMEM;
 
   wreq->cb = cb;
-  wreq->message.header.type = type;
-  wreq->message.header.len = len;
-  wreq->message.data = data;
+  wreq->cb_para = cb_para;
+  wreq->message = *message;
   wreq->miwear = client->miwear;
   wreq->client = client;
 
-  wreq->message.header.id = client->message_id++;
+  wreq->message.id = client->message_id++;
 
   uv_buf_t b[2];
-  b[0] = uv_buf_init((char*)&wreq->message.header, sizeof(message_header_t));
-  b[1] = uv_buf_init((char*)data, len);
+  b[0] = uv_buf_init((char*)&wreq->message, sizeof(message_header_t));
+  b[1] = uv_buf_init((char*)message->data, message->len);
 
   int error = uv_write(&wreq->req, (uv_stream_t*)&client->pipe, b, 2,
                        uv_write_done_callback);
@@ -644,11 +663,11 @@ static int uv__miwear_send_to_client(struct client* client, const void* data,
   return 0;
 }
 
-int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
-                             const void* data, uint32_t len,
-                             miwear_message_type_t type, uv_miwear_cb cb)
+static int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
+                                    uv_miwear_message_t* message,
+                                    uv_miwear_sent_cb cb, void* cb_para)
 {
-  if (!miwear || !name || !data || !cb)
+  if (!miwear || !name || !message || !cb)
     return UV_EINVAL;
 
   struct server* server = miwear->server;
@@ -670,13 +689,13 @@ int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
     err("Client %s not found\n", name);
     return UV_ENXIO;
   }
-
-  return uv__miwear_send_to_client(client, data, len, type, cb);
+  info("send message to client [%s]\n", client->name);
+  return uv__miwear_send_to_client(client, message, cb, cb_para);
 }
 
 static void client_id_sent_callback(uv_miwear_t* miwear, int status,
-                                    const void* data, uint32_t len,
-                                    miwear_message_type_t type)
+                                    uv_miwear_message_t* msg,
+                                    void* cb_para)
 {
   struct client* client = miwear->client;
   if (status != 0) {
@@ -692,10 +711,16 @@ static void client_id_sent_callback(uv_miwear_t* miwear, int status,
 
   /* Notify app of this status. */
   if (client->miwear->cb) {
-    message_status_data_t data;
-    data.status = MIWEAR_CLIENT_ID_SENT;
-    client->miwear->cb(client->miwear, 0, &data, sizeof(message_status_data_t),
-                       MIWEAR_MESSAGE_TYPE_STATUS);
+    uv_miwear_status_t data;
+    data.status = MIWEAR_STATUS_CLIENT_ID_SENT;
+
+    uv_miwear_message_t msg;
+    msg.type = MIWEAR_MESSAGE_TYPE_STATUS;
+    msg.data = &data;
+    msg.len = sizeof(data);
+    msg.id = 0;
+
+    client->miwear->cb(client->miwear, 0, &msg, client->name);
   }
 }
 
@@ -709,12 +734,16 @@ static void client_on_connect_callback(uv_connect_t* req, int status)
     err("Fatal error: failed to connect server: %d\n", status);
 
     if (client->miwear->cb) {
-      message_status_data_t data;
-      data.status = MIWEAR_CONNECT_FAILED;
+      uv_miwear_status_t data;
+      data.status = MIWEAR_STATUS_CONNECT_FAILED;
       data.parameter = (void*)status;
-      client->miwear->cb(client->miwear, status, &data,
-                         sizeof(message_status_data_t),
-                         MIWEAR_MESSAGE_TYPE_STATUS);
+
+      uv_miwear_message_t msg;
+      msg.type = MIWEAR_MESSAGE_TYPE_STATUS;
+      msg.data = &data;
+      msg.len = sizeof(data);
+      msg.id = 0;
+      client->miwear->cb(client->miwear, status, &msg, client->name);
     }
     free(req);
     return;
@@ -725,15 +754,20 @@ static void client_on_connect_callback(uv_connect_t* req, int status)
   client->state = CLIENT_STATE_HANDSHAKING;
 
   /* Write first message to server, which is the CLIENT_ID message. */
-  uv_miwear_send_to_server(
-    client->miwear, client->name, strlen(client->name) + 1,
-    MIWEAR_MESSAGE_TYPE_CLIENT_ID, client_id_sent_callback);
+  uv_miwear_message_t msg;
+  msg.data = client->name;
+  msg.len = strlen(client->name) + 1;
+  msg.type = MIWEAR_MESSAGE_TYPE_CLIENT_ID;
+
+  uv_miwear_send_to_server(client->miwear, &msg,
+                           client_id_sent_callback, NULL);
 
   free(req);
 }
 
 int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
-                           const char* name, const char* path, uv_miwear_cb cb)
+                           const char* name, const char* path,
+                           uv_miwear_recv_cb cb)
 {
   if (!loop || !miwear || !name || !path || !cb)
     return UV_EINVAL;
@@ -752,6 +786,7 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
   client->miwear = miwear;
   miwear->cb = cb;
   miwear->client = client;
+  miwear->is_server = false;
 
   uv_connect_t* connect = malloc(sizeof(uv_connect_t));
   if (connect == NULL) {
@@ -762,17 +797,54 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
   connect->data = client;
 
   uv_pipe_init(loop, &client->pipe, 0);
-#if 0 //CONFIG_MIWEAR_REMOTE_SERVER
-  uv_pipe_rpmsg_connect(connect, &client->pipe, path,
-                        CONFIG_MIWEAR_REMOTE_SERVER_CPU,
-                        client_on_connect_callback);
-#else
+
   uv_pipe_connect(connect, &client->pipe, path, client_on_connect_callback);
-#endif
   return 0;
 }
 
-int uv_miwear_stop_client(uv_miwear_t* miwear)
+#ifdef CONFIG_NET_RPMSG
+int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
+                                 const char* client_name,
+                                 const char* server_path,
+                                 const char* cpu_name,
+                                 uv_miwear_recv_cb cb)
+{
+  if (!loop || !miwear || !client_name || !cpu_name || !server_path || !cb)
+    return UV_EINVAL;
+
+  struct client* client;
+  client = malloc(sizeof(struct client));
+  if (client == NULL) {
+    err("no memory.");
+    return UV_ENOMEM;
+  }
+  memset(client, 0, sizeof(struct client));
+
+  strncpy(client->name, client_name, CONFIG_CLIENT_ID_LEN);
+  list_initialize(&client->sending_list);
+  client->state = CLIENT_STATE_CONNECTING;
+  client->miwear = miwear;
+  miwear->cb = cb;
+  miwear->client = client;
+  miwear->is_server = false;
+
+  uv_connect_t* connect = malloc(sizeof(uv_connect_t));
+  if (connect == NULL) {
+    err("No memory.\n");
+    return UV_ENOMEM;
+  }
+
+  connect->data = client;
+
+  uv_pipe_init(loop, &client->pipe, 0);
+
+  uv_pipe_rpmsg_connect(connect, &client->pipe, server_path, cpu_name,
+                        client_on_connect_callback);
+  return 0;
+}
+#endif
+
+static int uv_miwear_stop_client(uv_miwear_t* miwear)
 {
   /**
    * @todo Check if there is better method.
@@ -782,18 +854,18 @@ int uv_miwear_stop_client(uv_miwear_t* miwear)
   return 0;
 }
 
-int uv_miwear_send_to_server(uv_miwear_t* miwear, const void* data,
-                             uint32_t len, miwear_message_type_t type,
-                             uv_miwear_cb cb)
+static int uv_miwear_send_to_server(uv_miwear_t* miwear,
+                                    uv_miwear_message_t* message,
+                                    uv_miwear_sent_cb cb, void* cb_para)
 {
-  if (!miwear || !data || !cb)
+  if (!miwear || !message || !cb)
     return UV_EINVAL;
 
   struct client* client = miwear->client;
 
   if (client->state == CLIENT_STATE_HANDSHAKING) {
     /* only CLIENT_ID message could be sent at this stage. */
-    if (type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
+    if (message->type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
       goto send_msg_continue;
     }
   }
@@ -804,25 +876,24 @@ int uv_miwear_send_to_server(uv_miwear_t* miwear, const void* data,
   }
 
 send_msg_continue:
-  info("Send to server MSG: %d, len: %d\n", type, len);
+  info("Send to server MSG: %d, len: %d\n", message->type, message->len);
 
   miwear_wreq_t* wreq = malloc(sizeof(miwear_wreq_t));
   if (wreq == NULL)
     return UV_ENOMEM;
 
   wreq->cb = cb;
-  wreq->message.header.type = type;
+  wreq->cb_para = cb_para;
+  wreq->message = *message;
 
-  wreq->message.header.id = client->message_id++;
-  wreq->message.header.len = len;
-  wreq->message.data = data;
+  wreq->message.id = client->message_id++;
   wreq->miwear = miwear;
   wreq->client = client;
 
   uv_buf_t b[2];
 
-  b[0] = uv_buf_init((char*)&wreq->message.header, sizeof(message_header_t));
-  b[1] = uv_buf_init((char*)data, len);
+  b[0] = uv_buf_init((char*)&wreq->message, sizeof(message_header_t));
+  b[1] = uv_buf_init((char*)message->data, message->len);
 
   int error = uv_write(&wreq->req, (uv_stream_t*)&client->pipe, b, 2,
                        uv_write_done_callback);
@@ -836,19 +907,25 @@ send_msg_continue:
 }
 
 int uv_miwear_connect(uv_loop_t* loop, uv_miwear_t* miwear,
-                      const char* pkg_name, uv_miwear_cb cb)
+                      const char* pkg_name, uv_miwear_recv_cb cb)
 {
   return uv_miwear_start_client(loop, miwear, pkg_name,
                                 CONFIG_MIWEAR_QAPP_PROXY_SERVER, cb);
 }
 
-int uv_miwear_send(uv_miwear_t* miwear, const void* data, uint32_t len,
-                   uv_miwear_cb cb)
+int uv_miwear_send(uv_miwear_t* miwear, const char* to,
+                   uv_miwear_message_t* message,
+                   uv_miwear_sent_cb cb, void* cb_para)
 {
-  return uv_miwear_send_to_server(miwear, data, len, MIWEAR_MESSAGE_TYPE_DATA,
-                                  cb);
+  if(miwear->is_server)
+      return uv_miwear_send_to_client(miwear, to, message, cb, cb_para);
+
+    return uv_miwear_send_to_server(miwear, message, cb, cb_para);
 }
 
 int uv_miwear_close(uv_miwear_t* miwear) {
+  if(miwear->is_server)
+    return 0;
+
   return uv_miwear_stop_client(miwear);
 }
