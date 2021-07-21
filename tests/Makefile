@@ -74,6 +74,3 @@ MAINSRC  += uv-audio-test.c
 endif
 
 endif #CONFIG_LIBUV_EXTENSION_TEST
-
-include $(APPDIR)/Application.mk
-
