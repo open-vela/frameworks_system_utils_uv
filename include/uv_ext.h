@@ -22,10 +22,16 @@
  ****************************************************************************/
 
 #include <uv.h>
+
+#ifdef CONFIG_LIB_MBEDTLS
 #include <mbedtls/cipher.h>
 #include <mbedtls/rsa.h>
 #include <mbedtls/pk.h>
+#endif
+
+#ifdef CONFIG_MEDIA_SERVICE
 #include <media_api.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
