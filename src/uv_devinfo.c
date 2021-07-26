@@ -72,6 +72,8 @@
 #define CONFIG_REGION_NAME "CN"
 #endif
 
+#define UV_EXT_DEVINFO_DID_INFO "202107261219"
+
 /****************************************************************************
  * Public Function
  ****************************************************************************/
@@ -121,11 +123,13 @@ int uv_get_devinfo(char *devinfo, int size, int id) {
     case UV_EXT_DEVINFO_REGION:
       snprintf((char*)devinfo, size, "%s", CONFIG_REGION_NAME);
     break;
-#if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
     case UV_EXT_DEVINFO_DID:
+#if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
       boardctl(BOARDIOC_UNIQUEID, devinfo);
-    break;
+#else
+      snprintf((char*)devinfo, size, "%s", UV_EXT_DEVINFO_DID_INFO);
 #endif
+    break;
     default:
       return UV_EINVAL;
   }
