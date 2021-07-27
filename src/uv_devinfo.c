@@ -27,11 +27,13 @@
 #include <uv_ext.h>
 
 #ifdef CONFIG_VIDEO_FB
-#include <nuttx/video/fb.h>
+#  include <nuttx/video/fb.h>
 #elif defined(CONFIG_LCD_DEV)
-#include <nuttx/lcd/lcd_dev.h>
+#  include <nuttx/lcd/lcd_dev.h>
 #endif
-
+#if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
+#  include <sys/boardctl.h>
+#endif
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
