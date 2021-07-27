@@ -1050,6 +1050,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
 #define UV_EXT_AUDIO_FILE_MAX         64
 #define UV_EXT_AUDIO_STREAMTYPE_MAX   20
 
+#define UV_EXT_AUDIO_STATE_UKNOW      0
 #define UV_EXT_AUDIO_STATE_PLAY       1
 #define UV_EXT_AUDIO_STATE_PAUSE      2
 #define UV_EXT_AUDIO_STATE_STOP       3
@@ -1070,6 +1071,7 @@ struct uv_audio_chain_s {
   char      url[UV_EXT_AUDIO_FILE_MAX];
   char      streamtype[UV_EXT_AUDIO_STREAMTYPE_MAX];
 
+  bool      autoplay;
   bool      muted;
   bool      loop;
   bool      exit;
@@ -1112,6 +1114,39 @@ int uv_audio_create(uv_audio_t *handle, notify_callback_f callback,
  ****************************************************************************/
 
 int uv_audio_set_url(uv_audio_t *handles, const char *url);
+
+/****************************************************************************
+ * Name: uv_audio_prepare
+ *
+ * Description:
+ *   Parse the url and get the data.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_prepare(uv_audio_t *handle);
+
+/****************************************************************************
+ * Name: uv_audio_set_autoplay
+ *
+ * Description:
+ *   Auto play, true: open false: close. When set to true, if there is a url
+ *   currently, it will be played directly; and when the url is set, it will
+ *   also be played directly.
+ *
+ * Input Parameters:
+ *   handles   - audio handle
+ *   autoplay  - auto play, true: open false: close.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_audio_set_autoplay(uv_audio_t *handle, bool autoplay);
 
 /****************************************************************************
  * Name: uv_audio_play
