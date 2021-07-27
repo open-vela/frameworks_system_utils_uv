@@ -92,6 +92,7 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
     if (request->response.body) {
         free(request->response.body);
     }
+    free(request);
 }
 
 static void check_multi_info(uv_request_session_t* handle)
