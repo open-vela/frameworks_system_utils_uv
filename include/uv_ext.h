@@ -1047,7 +1047,6 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
 
 #ifdef CONFIG_MEDIA_SERVICE
 
-#define UV_EXT_AUDIO_FILE_MAX         64
 #define UV_EXT_AUDIO_STREAMTYPE_MAX   20
 
 #define UV_EXT_AUDIO_STATE_UKNOW      0
@@ -1068,7 +1067,7 @@ typedef struct uv_audio_chain_s uv_audio_t;
 struct uv_audio_chain_s {
   void      *iofhandle;
 
-  char      url[UV_EXT_AUDIO_FILE_MAX];
+  char      *url;
   char      streamtype[UV_EXT_AUDIO_STREAMTYPE_MAX];
 
   bool      autoplay;

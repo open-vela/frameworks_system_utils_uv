@@ -94,8 +94,6 @@ int uv_audio_set_url(uv_audio_t *handle, const char *url) {
     return ret;
   }
 
-  snprintf(handle->url, sizeof(handle->url), "%s", url);
-
   if (play) {
     ret = uv_audio_prepare(handle);
     if (ret != 0) {
@@ -272,9 +270,14 @@ int uv_audio_muted(uv_audio_t *handle, bool muted) {
   }
 
   if (muted == true) {
+
+    //第一次设置静音或音量为0时，获取音量
+    if (!handle->volume) {
+      uv_audio_get_volume(handle, &handle->volume);
+    }
+
     ret = uv_audio_set_volume(handle, 0);
     if (ret != 0) {
-      handle->muted  = false;
       return ret;
     }
   } else {
@@ -285,7 +288,6 @@ int uv_audio_muted(uv_audio_t *handle, bool muted) {
   }
 
   handle->muted  = muted;
-
   return 0;
 }
 
