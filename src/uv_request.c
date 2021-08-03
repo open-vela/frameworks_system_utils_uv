@@ -32,12 +32,22 @@ struct uv_request_session_s {
     uv_timer_t timeout;
 };
 
+struct  data_block_s
+{
+    uint8_t *data;
+    ssize_t size;
+};
+
 struct uv_request_s {
+    int error_code;
+    FILE *fd;
+    void *data;
     const char* url;
-    FILE* fd;
     uv_request_cb cb;
     CURL* easy_handle;
     struct curl_slist* header_list;
+    struct data_block_s body;
+    struct data_block_s header;
     uv_response_t response;
 };
 
@@ -81,7 +91,14 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
         fclose(request->fd);
     }
 
-    request->cb(UV_REQUEST_DONE, &request->response);
+    if(request->error_code != CURLE_OK)
+    {
+        request->response.httpcode = request->error_code;
+        request->response.body = (char *)strdup(curl_easy_strerror(request->error_code));
+        request->cb(UV_REQUEST_ERROR, &request->response);
+    }else{
+        request->cb(UV_REQUEST_DONE, &request->response);
+    }
 
     curl_easy_cleanup(easy_handle);
 
@@ -91,6 +108,9 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
 
     if (request->response.body) {
         free(request->response.body);
+    }
+    if (request->response.headers) {
+        free(request->response.headers);
     }
     free(request);
 }
@@ -104,6 +124,7 @@ static void check_multi_info(uv_request_session_t* handle)
     while ((message = curl_multi_info_read(handle->multi_handle, &pending))) {
         if (message->msg == CURLMSG_DONE) {
             curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &request);
+            request->error_code = message->data.result;
             uv_request_done(message->easy_handle, request);
         }
     }
@@ -246,7 +267,7 @@ int uv_request_init(uv_loop_t* loop, uv_request_session_t** handle)
 
 int uv_request_create(uv_request_t** request)
 {
-    *request = malloc(sizeof(uv_request_t));
+    *request = calloc(1, sizeof(uv_request_t));
     if (*request == NULL) {
         return -ENOSPC;
     }
@@ -309,11 +330,14 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
 
     switch (type) {
     case UV_REQUEST:
-        curl_easy_setopt(request->easy_handle, CURLOPT_HEADER, 1L);
         curl_easy_setopt(request->easy_handle, CURLOPT_WRITEFUNCTION, save_request_body);
         curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request);
         break;
     case UV_DOWNLOAD:
+        if (data == NULL) {
+            return -EINVAL;
+        }
+        request->response.body = (char *)strdup(data);
         request->fd = fopen(data, "wb+");
         if (request->fd == NULL) {
             return -EMFILE;
@@ -321,6 +345,10 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
         curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request->fd);
         break;
     case UV_UPLOAD:
+        if (data == NULL) {
+            return -EINVAL;
+        }
+        request->response.body = (char *)strdup(data);
         curl_formadd(&formpost, &lastptr,
             CURLFORM_COPYNAME, "filename",
             CURLFORM_FILE, data,
@@ -332,6 +360,23 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
     }
 
     return 0;
+}
+
+
+static size_t __curl_header_cb(char *contents, size_t size, size_t nmemb, void *userdata) {
+    uv_request_t *request = (uv_request_t *)userdata;
+    size_t realsize = size * nmemb;
+
+    request->header.data = realloc(request->header.data, request->header.size + realsize + 1 );
+    if (!request->header.data) {
+        return 0;
+    }
+
+    memcpy(&(request->header.data[request->header.size]), contents, realsize);
+    request->response.headers = (char *)request->header.data;
+    request->header.size += realsize;
+    request->header.data[request->header.size] = '\0';
+    return realsize;
 }
 
 int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_request_cb cb)
@@ -346,6 +391,8 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
 
     request->cb = cb;
 
+    curl_easy_setopt(request->easy_handle, CURLOPT_HEADERFUNCTION, __curl_header_cb);
+    curl_easy_setopt(request->easy_handle, CURLOPT_HEADERDATA, request);
     curl_easy_setopt(request->easy_handle, CURLOPT_URL, request->url);
     curl_easy_setopt(request->easy_handle, CURLOPT_PRIVATE, (void*)request);
     curl_multi_add_handle(handle->multi_handle, request->easy_handle);
