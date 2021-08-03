@@ -73,4 +73,8 @@ PROGNAME += uv_audio
 MAINSRC  += uv-audio-test.c
 endif
 
+
+depend::
+	$(Q) touch $(addprefix  ext/tests/,$(MAINSRC) )
+
 endif #CONFIG_LIBUV_EXTENSION_TEST
