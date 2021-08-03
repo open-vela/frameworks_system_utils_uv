@@ -63,29 +63,20 @@ int main(int argc, char** argv)
     uv_run(loop, UV_RUN_DEFAULT);
 
     /*fetch data, POST */
+    uv_request_create(&fetch);
     uv_request_set_url(fetch, "http://httpbin.org/post");
     uv_request_append_header(fetch, "Connection: keep-alive");
     uv_request_set_data(fetch, "post test",9);
     uv_request_set_atrribute(fetch, UV_REQUEST, NULL);
     uv_request_commit(handle, fetch, request_cb);
     uv_run(loop, UV_RUN_DEFAULT);
-    uv_request_delete(fetch);
 
     /*download file*/
     uv_request_create(&request);
-    uv_request_set_url(request, "https://www.baidu.com");
+    uv_request_set_url(request, "http://www.baidu.com");
     uv_request_set_atrribute(request, UV_DOWNLOAD, "/data/baidu.html");
     uv_request_commit(handle, request, request_cb);
     uv_run(loop, UV_RUN_DEFAULT);
-
-    /*upload file*/
-    uv_request_set_url(request, "http://hobson.work:801/upload");
-    uv_request_append_header(request, "Connection: keep-alive");
-    uv_request_set_data(request, "post upload file test", 21);
-    uv_request_set_atrribute(request, UV_UPLOAD, "/data/baidu.html");
-    uv_request_commit(handle, request, request_cb);
-    uv_run(loop, UV_RUN_DEFAULT);
-    uv_request_delete(request);
 
     uv_request_close(handle);
     uv_loop_close(loop);
