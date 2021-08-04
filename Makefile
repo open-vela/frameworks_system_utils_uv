@@ -63,4 +63,8 @@ ifeq ($(CONFIG_MEDIA_SERVICE), y)
 CSRCS += uv_audio.c
 endif
 
+ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB), yy)
+CSRCS += uv_network.c
+endif
+
 endif #CONFIG_LIBUV_EXTENSION
