@@ -33,6 +33,10 @@
 #include <media_api.h>
 #endif
 
+#ifdef CONFIG_UORB
+#include <system/state.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1356,6 +1360,118 @@ int uv_audio_get_isplay(uv_audio_t *handle);
  ****************************************************************************/
 
 int uv_audio_close(uv_audio_t *handles);
+
+#endif
+
+
+/****************************************************************************
+ * network
+ ****************************************************************************/
+
+#if defined(CONFIG_LIB_CURL) && defined(CONFIG_UORB)
+
+typedef struct uv_network_s uv_network_t;
+
+struct uv_network_s {
+  uv_request_session_t *handle;
+  uv_request_t *fetch;
+  void *data;
+};
+
+/****************************************************************************
+ * Name: uv_getip_init
+ *
+ * Description:
+ *   Get public network ip initialization.
+ *
+ * Input Parameters:
+ *   loop   - event loop
+ *   handle - network handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_getip_init(uv_loop_t *loop, uv_network_t *handle);
+
+/****************************************************************************
+ * Name: uv_getip_close
+ *
+ * Description:
+ *   Close get public network ip function.
+ *
+ * Input Parameters:
+ *   loop   - event loop
+ *   handle - network handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_getip_close(uv_network_t *handle);
+
+/****************************************************************************
+ * Name: uv_getip
+ *
+ * Description:
+ *   get public network ip.
+ *
+ * Input Parameters:
+ *   handle - network handle
+ *   cb     - callback function
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_getip(uv_network_t *handle, uv_request_cb cb);
+
+/****************************************************************************
+ * Name: uv_gettype
+ *
+ * Description:
+ *   get public network state.
+ *
+ * Input Parameters:
+ *   handle - network handle
+ *   type   - network state
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_gettype(uv_network_t *handle, struct network_state *type);
+
+/****************************************************************************
+ * Name: uv_getip_advertise
+ *
+ * Description:
+ *   Obtain the public network ip cyclically, and broadcast it through uorb.
+ *
+ * Input Parameters:
+ *   loop   - event loop
+ *   handle - network handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_getip_advertise(uv_loop_t *loop, uv_network_t *handle);
+
+/****************************************************************************
+ * Name: uv_getip_unadvertise
+ *
+ * Description:
+ *   Close the loop to obtain public network ip and broadcast.
+ *
+ * Input Parameters:
+ *   handle - network handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_getip_unadvertise(uv_network_t *handle);
 
 #endif
 
