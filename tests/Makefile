@@ -73,6 +73,10 @@ PROGNAME += uv_audio
 MAINSRC  += uv-audio-test.c
 endif
 
+ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB),yy)
+PROGNAME += uv_network
+MAINSRC  += uv-network-test.c
+endif
 
 depend::
 	$(Q) touch $(addprefix  ext/tests/,$(MAINSRC) )
