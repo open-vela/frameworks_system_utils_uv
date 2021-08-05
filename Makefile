@@ -49,6 +49,7 @@ endif
 
 ifeq ($(CONFIG_UORB), y)
 CSRCS += uv_topic.c
+CSRCS += uv_topicadv.c
 endif
 
 ifeq ($(CONFIG_LIB_CURL),y)
