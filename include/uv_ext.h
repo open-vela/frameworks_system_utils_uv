@@ -1475,6 +1475,44 @@ int uv_getip_unadvertise(uv_network_t *handle);
 
 #endif
 
+/****************************************************************************
+ * topicadv
+ ****************************************************************************/
+
+#ifdef CONFIG_UORB
+
+/****************************************************************************
+ * Name: uv_topicadv_init
+ *
+ * Description:
+ *   Broadcast initialization, this function will only be called once.
+ *
+ * Input Parameters:
+ *   loop   - event loop
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_topicadv_init(uv_loop_t *loop);
+
+/****************************************************************************
+ * Name: uv_topicadv_close
+ *
+ * Description:
+ *   Turn off broadcast.
+ *
+ * Input Parameters:
+ *   loop   - event loop
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_topicadv_close(void);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
