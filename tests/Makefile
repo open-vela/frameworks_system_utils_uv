@@ -78,6 +78,11 @@ PROGNAME += uv_network
 MAINSRC  += uv-network-test.c
 endif
 
+ifeq ($(CONFIG_MIWEAR_APPS), y)
+PROGNAME += app_verify
+MAINSRC  += app-verify-test.c
+endif
+
 depend::
 	$(Q) touch $(addprefix  ext/tests/,$(MAINSRC) )
 

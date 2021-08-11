@@ -1513,6 +1513,90 @@ int uv_topicadv_close(void);
 
 #endif
 
+#ifdef CONFIG_MIWEAR_APPS
+
+typedef struct app_verify_s app_verify_t;
+
+/****************************************************************************
+ * Name: app_verify_init
+ *
+ * Description:
+ *   Resources required for initialization.
+ *
+ * Input Parameters:
+ *   app_path   - rpk file path
+ *   pkg_path   - save path of rpk unzip file
+ *
+ * Returned Value:
+ *   app verify info structure, NULL is fail
+ ****************************************************************************/
+
+app_verify_t* app_verify_init(const char* app_path, const char* pkg_path);
+
+/****************************************************************************
+ * Name: app_verify_unzip
+ *
+ * Description:
+ *   rpk file verify and unzip.
+ *
+ * Input Parameters:
+ *   app_verify_info   - app verify info structure
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int app_verify_unzip(app_verify_t* app_verify_info);
+
+/****************************************************************************
+ * Name: app_pre_unzip
+ *
+ * Description:
+ *   Pre decompress a single file in RPK
+ *
+ * Input Parameters:
+ *   app_verify_info   - app verify info structure
+ *   filename          - Pre decompress files
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int app_pre_unzip(app_verify_t* app_verify_info, const char* filename);
+
+/****************************************************************************
+ * Name: app_get_fingerprint
+ *
+ * Description:
+ *   Get RPK certificate fingerprint
+ *
+ * Input Parameters:
+ *   app_verify_info   - app verify info structure
+ *
+ * Returned Value:
+ *   SHA1 result pointer (32-bit length), NULL is fail
+ ****************************************************************************/
+
+uint8_t* app_get_fingerprint(app_verify_t* app_verify_info);
+
+/****************************************************************************
+ * Name: app_verify_close
+ *
+ * Description:
+ *   Free up used memory
+ *
+ * Input Parameters:
+ *   app_verify_info   - app verify info structure
+ *
+ * Returned Value:
+ *   None.
+ ****************************************************************************/
+
+void app_verify_close(app_verify_t* app_verify_info);
+
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

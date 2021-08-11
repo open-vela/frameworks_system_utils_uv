@@ -68,4 +68,9 @@ ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB), yy)
 CSRCS += uv_network.c
 endif
 
+ifeq ($(CONFIG_MIWEAR_APPS), y)
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib/contrib/minizip}
+CSRCS += app_verify.c
+endif
+
 endif #CONFIG_LIBUV_EXTENSION
