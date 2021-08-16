@@ -45,7 +45,7 @@ typedef struct topicadv {
 static topicadv_t topicadv = {0};
 
 static bool change = false;
-static struct network_state adv1 = {.type = 1};
+struct network_state adv1 = {.type = 1};
 static struct battery_state adv2 = {.state = 1};
 static struct wear_state    adv3 = {.wear = 1};
 static struct sleep_state   adv4 = {.sleep = 1};
