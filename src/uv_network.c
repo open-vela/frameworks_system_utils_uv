@@ -22,24 +22,40 @@
 #include <system/state.h>
 #include <uORB/uORB.h>
 #include <uORB/uORBTopics.h>
+#include <arpa/inet.h>
 
 typedef struct uv_network_topic {
   uv_timer_t timer_handle;
-  bool topicip;
+  uv_request_session_t *handle;
+  bool onceinit;
   int  ipfd;
+  int  cref;
   void *data;
 } uv_network_topic_t;
 
-static uv_network_topic_t uv_net;
+static uv_network_topic_t uv_net = {0};
+extern struct network_state adv1;
 
 /* Get the callback function of ip and push it through orb_publish. */
-static void uv_publish_cb(int state, uv_response_t* response)
+static void uv_network_publish_cb(int state, uv_response_t* response)
 {
+  int ret;
   struct network_pubip pubip = {0};
+  struct in_addr addr = {0};
   if (!state && response->httpcode == 200) {
     if (response->body != NULL) {
       pubip.timestamp = orb_absolute_time();
-      snprintf(pubip.addr.ss_data, sizeof(pubip.addr.ss_data), "%s", response->body);
+
+      ret = strlen(response->body) - 1;
+      if (response->body[ret] == '\n') {
+        response->body[ret] = '\0';
+      }
+
+      ret = inet_aton(response->body, &addr);
+      if (ret == 0) {
+        return;
+      }
+      memcpy(pubip.addr.ss_data, &addr, sizeof(addr));
 
       /* publish data */
       orb_publish(ORB_ID(network_pubip), uv_net.ipfd, &pubip);
@@ -55,41 +71,66 @@ static void timer_advertise_cb(uv_timer_t* handle) {
   uv_request_create(&net->fetch);
   uv_request_set_url(net->fetch, "http://icanhazip.com");
   uv_request_set_atrribute(net->fetch, UV_REQUEST, NULL);
-  uv_request_commit(net->handle, net->fetch, uv_publish_cb);
+  uv_request_commit(net->handle, net->fetch, uv_network_publish_cb);
 }
 
-int uv_getip_init(uv_loop_t *loop, uv_network_t *handle) {
+int uv_network_init(uv_loop_t *loop, uv_network_t *handle) {
+  int ret;
+
   if (!loop || !handle) {
     return UV_EINVAL;
   }
 
-  return uv_request_init(loop, &handle->handle);
+  if (uv_net.onceinit == true) {
+    handle->handle = uv_net.handle;
+    return 0;
+  }
+
+  ret = uv_request_init(loop, &uv_net.handle);
+  if (ret != 0) {
+    return ret;
+  }
+ handle->handle = uv_net.handle;
+  uv_net.onceinit = true;
+
+  return 0;
 }
 
-int uv_getip_close(uv_network_t *handle) {
+int uv_network_close(uv_network_t *handle) {
   int ret;
 
   if (!handle || !handle->handle) {
     return UV_EINVAL;
   }
 
-  ret = uv_getip_unadvertise(handle);
+  ret = uv_pubip_unadvertise(handle);
   if (ret != 0) {
     return ret;
   }
 
-  ret = uv_request_close(handle->handle);
+  if (uv_net.cref > 0) {
+    return 0;
+  }
+
+  ret = uv_request_close(uv_net.handle);
   if (ret != 0) {
     return ret;
   }
 
+  memset(&uv_net, 0, sizeof(uv_net));
   return 0;
 }
 
-int uv_getip(uv_network_t *handle, uv_request_cb cb) {
+int uv_network_state(uv_network_t *handle, uv_request_cb cb) {
   if (!handle || !handle->handle || !cb) {
     return UV_EINVAL;
   }
+
+  /* 1. Get current network status. */
+
+  handle->stat.type = adv1.type;
+
+  /* 2. Get public network ip. */
 
   uv_request_create(&handle->fetch);
   uv_request_set_url(handle->fetch, "http://icanhazip.com");
@@ -100,35 +141,20 @@ int uv_getip(uv_network_t *handle, uv_request_cb cb) {
   return 0;
 }
 
-/*
- * Get the status of the network in a single call.
- * Temporarily it is simulated data, modify it when the actual drive
- * is completed.
- */
-
-int uv_gettype(uv_network_t *handle, struct network_state *type) {
-  if (!handle || !type) {
-    return UV_EINVAL;
-  }
-
-  type->type = NETWORK_WIFI;
-
-  return 0;
-}
-
-int uv_getip_advertise(uv_loop_t *loop, uv_network_t *handle) {
+int uv_pubip_advertise(uv_loop_t *loop, uv_network_t *handle) {
   int ret;
 
   if (!handle || !handle->handle) {
     return UV_EINVAL;
   }
 
-  if (uv_net.topicip == true) {
+  if (++uv_net.cref > 1) {
     return 0;
   }
 
   uv_net.ipfd = orb_advertise(ORB_ID(network_pubip), NULL);
-  if (uv_net.ipfd < 0) {
+  if (uv_net.cref < 0) {
+    uv_net.cref--;
     return -errno;
   }
 
@@ -138,6 +164,7 @@ int uv_getip_advertise(uv_loop_t *loop, uv_network_t *handle) {
   ret = uv_timer_init(loop, &uv_net.timer_handle);
   if (ret != 0) {
     orb_unadvertise(uv_net.ipfd);
+    uv_net.cref--;
     return ret;
   }
 
@@ -145,36 +172,36 @@ int uv_getip_advertise(uv_loop_t *loop, uv_network_t *handle) {
   if (ret != 0) {
     uv_timer_stop(&uv_net.timer_handle);
     orb_unadvertise(uv_net.ipfd);
+    uv_net.cref--;
     return ret;
   }
-
-  uv_net.topicip = true;
 
   return 0;
 }
 
-int uv_getip_unadvertise(uv_network_t *handle) {
+int uv_pubip_unadvertise(uv_network_t *handle) {
   int ret;
 
   if (!handle || !handle->handle) {
     return UV_EINVAL;
   }
 
-  if (uv_net.topicip == false) {
+  if (--uv_net.cref > 0) {
     return 0;
   }
 
   ret = uv_timer_stop(&uv_net.timer_handle);
   if (ret != 0) {
+    uv_net.cref++;
     return ret;
   }
 
   ret = orb_unadvertise(uv_net.ipfd);
   if (ret != 0) {
+    uv_net.cref++;
     return ret;
   }
 
-  uv_net.topicip = false;
   return 0;
 }
 
