@@ -25,6 +25,7 @@
 #include <system/state.h>
 #include <uORB/uORB.h>
 #include <uORB/uORBTopics.h>
+#include <arpa/inet.h>
 
 /****************************************************************************
  * Public Functions
@@ -35,7 +36,8 @@ static void network_request_cb(int state, uv_response_t* response)
 {
   if (!state && response->httpcode == 200) {
     if (response->body != NULL) {
-      printf("%s %d body=%s\n", __FILE__, __LINE__, response->body);
+      uv_network_t *net = (uv_network_t*)response->userp;
+      printf("%s %d ip=%s type=%d\n", __FILE__, __LINE__, response->body, net->stat.type);
     }
   } else {
     printf("%s %d state=%d fail\n", __FILE__, __LINE__, state);
@@ -47,7 +49,9 @@ static void topic_cb(uv_topic_t *topic, int status, void *data, size_t datalen) 
   struct network_pubip *pubip = (struct network_pubip *)data;
 
   if (status == 0 && pubip) {
-    printf("%s %d timestamp=%lld ip=%s\n", __FILE__, __LINE__, pubip->timestamp, pubip->addr.ss_data);
+    struct in_addr addr = {0};
+    memcpy((char*)&addr, pubip->addr.ss_data, sizeof(addr));
+    printf("%s %d timestamp=%lld ip=%s\n", __FILE__, __LINE__, pubip->timestamp, inet_ntoa(addr));
   } else {
     printf("%s %d state=%d fail\n", __FILE__, __LINE__, status);
   }
@@ -60,20 +64,21 @@ int main(int argc, char** argv)
   uv_topic_t topic_t;
 
   do {
-    ret = uv_getip_init(uv_default_loop(), &net);
+    ret = uv_network_init(uv_default_loop(), &net);
     if (ret != 0) {
       printf("%s %d\n", __FILE__, __LINE__);
       break;
     }
 
-    ret = uv_getip(&net, network_request_cb);
+    net.data = &net;
+    ret = uv_network_state(&net, network_request_cb);
     if (ret != 0) {
       uv_request_close(net.handle);
       printf("%s %d\n", __FILE__, __LINE__);
       break;
     }
 
-    ret = uv_getip_advertise(uv_default_loop(), &net);
+    ret = uv_pubip_advertise(uv_default_loop(), &net);
     if (ret != 0) {
       uv_request_close(net.handle);
       printf("%s %d\n", __FILE__, __LINE__);

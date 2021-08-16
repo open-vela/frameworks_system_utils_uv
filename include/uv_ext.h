@@ -1375,11 +1375,13 @@ typedef struct uv_network_s uv_network_t;
 struct uv_network_s {
   uv_request_session_t *handle;
   uv_request_t *fetch;
+  struct network_state stat;
+  bool advflag;
   void *data;
 };
 
 /****************************************************************************
- * Name: uv_getip_init
+ * Name: uv_network_init
  *
  * Description:
  *   Get public network ip initialization.
@@ -1392,10 +1394,10 @@ struct uv_network_s {
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_getip_init(uv_loop_t *loop, uv_network_t *handle);
+int uv_network_init(uv_loop_t *loop, uv_network_t *handle);
 
 /****************************************************************************
- * Name: uv_getip_close
+ * Name: uv_network_close
  *
  * Description:
  *   Close get public network ip function.
@@ -1408,10 +1410,10 @@ int uv_getip_init(uv_loop_t *loop, uv_network_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_getip_close(uv_network_t *handle);
+int uv_network_close(uv_network_t *handle);
 
 /****************************************************************************
- * Name: uv_getip
+ * Name: uv_network_state
  *
  * Description:
  *   get public network ip.
@@ -1424,26 +1426,10 @@ int uv_getip_close(uv_network_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_getip(uv_network_t *handle, uv_request_cb cb);
+int uv_network_state(uv_network_t *handle, uv_request_cb cb);
 
 /****************************************************************************
- * Name: uv_gettype
- *
- * Description:
- *   get public network state.
- *
- * Input Parameters:
- *   handle - network handle
- *   type   - network state
- *
- * Returned Value:
- *   Zero (OK) on success;
- ****************************************************************************/
-
-int uv_gettype(uv_network_t *handle, struct network_state *type);
-
-/****************************************************************************
- * Name: uv_getip_advertise
+ * Name: uv_pubip_advertise
  *
  * Description:
  *   Obtain the public network ip cyclically, and broadcast it through uorb.
@@ -1456,10 +1442,10 @@ int uv_gettype(uv_network_t *handle, struct network_state *type);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_getip_advertise(uv_loop_t *loop, uv_network_t *handle);
+int uv_pubip_advertise(uv_loop_t *loop, uv_network_t *handle);
 
 /****************************************************************************
- * Name: uv_getip_unadvertise
+ * Name: uv_pubip_unadvertise
  *
  * Description:
  *   Close the loop to obtain public network ip and broadcast.
@@ -1471,7 +1457,7 @@ int uv_getip_advertise(uv_loop_t *loop, uv_network_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_getip_unadvertise(uv_network_t *handle);
+int uv_pubip_unadvertise(uv_network_t *handle);
 
 #endif
 
@@ -1503,7 +1489,6 @@ int uv_topicadv_init(uv_loop_t *loop);
  *   Turn off broadcast.
  *
  * Input Parameters:
- *   loop   - event loop
  *
  * Returned Value:
  *   Zero (OK) on success;
