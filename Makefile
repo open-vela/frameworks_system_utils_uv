@@ -70,6 +70,7 @@ endif
 
 ifeq ($(CONFIG_MIWEAR_APPS), y)
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib/contrib/minizip}
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib}
 CSRCS += app_verify.c
 endif
 
