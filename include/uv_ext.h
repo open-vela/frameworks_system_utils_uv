@@ -689,7 +689,7 @@ struct uv_response_s {
     int httpcode;
     char* headers;
     char* body;
-    uint16_t size;
+    size_t size;
     void* userp;
 };
 
