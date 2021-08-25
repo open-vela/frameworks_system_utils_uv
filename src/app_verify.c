@@ -392,6 +392,7 @@ static int app_unzip(unzFile zFile, const char* pkg_path)
     unz_global_info64 zGlobalInfo;
 
     assert_res(unzGetGlobalInfo64(zFile, &zGlobalInfo) == UNZ_OK);
+    unzGoToFirstFile(zFile);
 
     for (int i = 0; i < zGlobalInfo.number_entry; ++i) {
         unz_file_info64 zFileInfo;
@@ -440,7 +441,7 @@ error:
 
 int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
 {
-    int res = 0, fd = -1;
+    int res = -1, fd = -1;
     char path[PATH_MAX];
     char *fileData = NULL, *fileName = path;
 
@@ -448,7 +449,9 @@ int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
     unz_global_info64 zGlobalInfo;
 
     assert_res(unzip_filename);
+    assert_res(app_verify_info);
     assert_res(unzGetGlobalInfo64(app_verify_info->zFile, &zGlobalInfo) == UNZ_OK);
+    unzGoToFirstFile(app_verify_info->zFile);
 
     strcpy(path, app_verify_info->pkg_path);
     fileName += strlen(app_verify_info->pkg_path);
@@ -464,6 +467,7 @@ int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
             unzGoToNextFile(app_verify_info->zFile);
             continue;
         }else{
+            assert_res( i != zGlobalInfo.number_entry);
             break;
         }
     }
@@ -479,7 +483,9 @@ int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
     assert_res((res = write(fd, fileData, res)) > 0);
     res = 0;
 error:
-    unzCloseCurrentFile(app_verify_info->zFile);
+    if(app_verify_info != NULL) {
+        unzCloseCurrentFile(app_verify_info->zFile);
+    }
     free(fileData);
     close(fd);
     return res;
@@ -493,6 +499,7 @@ int app_verify_unzip(app_verify_t* app_verify_info)
 {
     int res = -1;
 
+    assert_res(app_verify_info);
     // Verify app legitimacy
     assert_res(app_verification(app_verify_info) == 0);
 
@@ -505,6 +512,8 @@ error:
 uint8_t* app_get_fingerprint(app_verify_t *app_verify_info)
 {
     char cer_path[PATH_MAX];
+    assert_res(app_verify_info);
+
     strcpy(cer_path, app_verify_info->app_path);
     strcat(cer_path, ".certificate.der");
 
@@ -531,6 +540,7 @@ app_verify_t *app_verify_init(const char *app_path, const char *pkg_path) {
 
   assert_res(app_verify_info = (app_verify_t *)calloc(1, sizeof(app_verify_t)));
 
+  assert_res( access(app_path, F_OK) == 0);
   assert_res((app_verify_info->zFile = unzOpen64(app_path)) != NULL);
   assert_res(unzGetGlobalInfo64(app_verify_info->zFile,
                                 &app_verify_info->zGlobalInfo) == UNZ_OK);
