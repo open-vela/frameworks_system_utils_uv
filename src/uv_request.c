@@ -395,6 +395,7 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
     curl_easy_setopt(request->easy_handle, CURLOPT_HEADERDATA, request);
     curl_easy_setopt(request->easy_handle, CURLOPT_URL, request->url);
     curl_easy_setopt(request->easy_handle, CURLOPT_PRIVATE, (void*)request);
+    curl_easy_setopt(request->easy_handle, CURLOPT_ACCEPT_ENCODING, "gzip");
     curl_multi_add_handle(handle->multi_handle, request->easy_handle);
 
     return 0;
