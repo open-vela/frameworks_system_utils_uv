@@ -54,6 +54,7 @@ struct uv_request_s {
 typedef struct curl_context_s {
     uv_poll_t poll_handle;
     curl_socket_t sockfd;
+    uv_request_session_t* handle;
 } curl_context_t;
 
 static curl_context_t* create_curl_context(uv_request_session_t* handle, curl_socket_t sockfd)
@@ -67,6 +68,7 @@ static curl_context_t* create_curl_context(uv_request_session_t* handle, curl_so
     uv_poll_init_socket(handle->loop, &context->poll_handle, sockfd);
     context->poll_handle.loop = handle->loop;
     context->poll_handle.data = context;
+    context->handle = handle;
 
     return context;
 }
@@ -135,7 +137,7 @@ static void curl_perform(uv_poll_t* req, int status, int events)
     int running_handles;
     int flags = 0;
     curl_context_t* context;
-    uv_request_session_t* handle = (uv_request_session_t*)req->loop->data;
+    uv_request_session_t* handle;
 
     if (events & UV_READABLE)
         flags |= CURL_CSELECT_IN;
@@ -143,6 +145,7 @@ static void curl_perform(uv_poll_t* req, int status, int events)
         flags |= CURL_CSELECT_OUT;
 
     context = (curl_context_t*)req->data;
+    handle = context->handle;
 
     curl_multi_socket_action(handle->multi_handle, context->sockfd, flags,
         &running_handles);
@@ -155,8 +158,7 @@ static void on_timeout(uv_timer_t* req)
     int running_handles;
     uv_request_session_t* handle;
 
-    handle = uv_handle_get_data((uv_handle_t*)req->loop);
-
+    handle = req->data;
     curl_multi_socket_action(handle->multi_handle, CURL_SOCKET_TIMEOUT, 0,
         &running_handles);
     check_multi_info(handle);
@@ -250,7 +252,6 @@ int uv_request_init(uv_loop_t* loop, uv_request_session_t** handle)
 
     *handle = malloc(sizeof(uv_request_session_t));
 
-    uv_handle_set_data((uv_handle_t*)loop, *handle);
     uv_timer_init(loop, &(*handle)->timeout);
     (*handle)->timeout.data = *handle;
 
@@ -459,9 +460,12 @@ static void __uv_time_close(uv_handle_t* handle)
 
 int uv_request_close(uv_request_session_t* handle)
 {
+    if(!handle){
+        return -EINVAL;
+    }
+
     uv_close((uv_handle_t*)&handle->timeout, __uv_time_close);
     curl_multi_cleanup(handle->multi_handle);
-    curl_global_cleanup();
 
     return 0;
 }
