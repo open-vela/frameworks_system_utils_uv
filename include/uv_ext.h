@@ -710,6 +710,24 @@ typedef struct uv_response_s uv_response_t;
 
 typedef void (*uv_request_cb)(int state, uv_response_t* response);
 
+struct data_block_s {
+    uint8_t *data;
+    ssize_t size;
+};
+
+struct uv_request_s {
+    int error_code;
+    FILE *fd;
+    void *data;
+    const char* url;
+    uv_request_cb cb;
+    void* easy_handle;
+    void* header_list;
+    struct data_block_s body;
+    struct data_block_s header;
+    uv_response_t response;
+};
+
 /****************************************************************************
  * Name: uv_request_init
  *
@@ -840,6 +858,70 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data);
  ****************************************************************************/
 
 int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_request_cb cb);
+
+typedef struct cache_manager uv_ncm_t;
+
+typedef  void (*uv_ncm_cb_t)(int , const char *, void *);
+
+typedef enum{
+  UV_NCM_RES_ERROR,
+  UV_NCM_RES_LOCAL_PATH,
+  UV_NCM_RES_DOWNLOAD_START,
+  UV_NCM_RES_CACHE_HIT
+}uv_ncm_res_t;
+
+/****************************************************************************
+ * Name: uv_ncm_init
+ *
+ * Description:
+ *    Network cache management initialization
+ *
+ * Input Parameters:
+ *   loop     - the loop that data transfer uses.
+ *   cache_path   - file cache path.
+ *
+ * Returned Value:
+ *   ncm structure pointer.  NULL is fail
+ ****************************************************************************/
+
+uv_ncm_t* uv_ncm_init(uv_loop_t* loop, const char* cache_path);
+
+/****************************************************************************
+ * Name: uv_ncm_close
+ *
+ * Description:
+ *    Network cache management deinit
+ *
+ * Input Parameters:
+ *   ncm     - ncm structure pointer.
+ *
+ * Returned Value:
+ *   None
+ ****************************************************************************/
+
+int uv_ncm_close(uv_ncm_t* ncm);
+
+/****************************************************************************
+ * Name: uv_ncm_get_resource
+ *
+ * Description:
+ *    Get resources from the network or cache
+ *
+ * Input Parameters:
+ *   ncm      - ncm structure pointer.
+ *   path     - file path or url, The URL must start with HTTP
+ *   fallback - user data point , If it is a path or exists in the cache,
+ *              the real path is returned directly .otherwise, fallback is returned
+ *   cb       - Callback function executed when the file download is complete，
+ *              If it is NULL, use blocking mode to download
+ *   userp    - user data point
+ * Returned Value:
+ *   real path or fallback
+ ****************************************************************************/
+
+uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const char** res_path, const char* path, uv_ncm_cb_t cb, void* userp);
+
+const char* uv_ncm_get_cache(uv_ncm_t* ncm, const char* url);
 
 #endif
 
