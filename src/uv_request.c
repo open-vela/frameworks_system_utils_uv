@@ -32,24 +32,6 @@ struct uv_request_session_s {
     uv_timer_t timeout;
 };
 
-struct  data_block_s
-{
-    uint8_t *data;
-    ssize_t size;
-};
-
-struct uv_request_s {
-    int error_code;
-    FILE *fd;
-    void *data;
-    const char* url;
-    uv_request_cb cb;
-    CURL* easy_handle;
-    struct curl_slist* header_list;
-    struct data_block_s body;
-    struct data_block_s header;
-    uv_response_t response;
-};
 
 typedef struct curl_context_s {
     uv_poll_t poll_handle;
@@ -117,13 +99,13 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
     free(request);
 }
 
-static void check_multi_info(uv_request_session_t* handle)
+static void check_multi_info(CURLM* multi_handle)
 {
     int pending;
     CURLMsg* message;
     uv_request_t* request = NULL;
 
-    while ((message = curl_multi_info_read(handle->multi_handle, &pending))) {
+    while ((message = curl_multi_info_read(multi_handle, &pending))) {
         if (message->msg == CURLMSG_DONE) {
             curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &request);
             request->error_code = message->data.result;
@@ -150,7 +132,7 @@ static void curl_perform(uv_poll_t* req, int status, int events)
     curl_multi_socket_action(handle->multi_handle, context->sockfd, flags,
         &running_handles);
 
-    check_multi_info(handle);
+    check_multi_info(handle->multi_handle);
 }
 
 static void on_timeout(uv_timer_t* req)
@@ -161,7 +143,7 @@ static void on_timeout(uv_timer_t* req)
     handle = req->data;
     curl_multi_socket_action(handle->multi_handle, CURL_SOCKET_TIMEOUT, 0,
         &running_handles);
-    check_multi_info(handle);
+    check_multi_info(handle->multi_handle);
 }
 
 static int start_timeout(CURLM* multi, long timeout_ms, void* userp)
@@ -257,11 +239,6 @@ int uv_request_init(uv_loop_t* loop, uv_request_session_t** handle)
 
     (*handle)->loop = loop;
     (*handle)->multi_handle = curl_multi_init();
-
-    curl_multi_setopt((*handle)->multi_handle, CURLMOPT_SOCKETDATA, *handle);
-    curl_multi_setopt((*handle)->multi_handle, CURLMOPT_SOCKETFUNCTION, handle_socket);
-    curl_multi_setopt((*handle)->multi_handle, CURLMOPT_TIMERDATA, *handle);
-    curl_multi_setopt((*handle)->multi_handle, CURLMOPT_TIMERFUNCTION, start_timeout);
 
     return 0;
 }
@@ -391,6 +368,15 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
     }
 
     request->cb = cb;
+    if(cb){
+        curl_multi_setopt(handle->multi_handle, CURLMOPT_SOCKETDATA, handle);
+        curl_multi_setopt(handle->multi_handle, CURLMOPT_SOCKETFUNCTION, handle_socket);
+        curl_multi_setopt(handle->multi_handle, CURLMOPT_TIMERDATA, handle);
+        curl_multi_setopt(handle->multi_handle, CURLMOPT_TIMERFUNCTION, start_timeout);
+    }else{
+        curl_multi_setopt(handle->multi_handle, CURLMOPT_SOCKETFUNCTION, NULL);
+        curl_multi_setopt(handle->multi_handle, CURLMOPT_TIMERFUNCTION, NULL);
+    }
 
     curl_easy_setopt(request->easy_handle, CURLOPT_HEADERFUNCTION, __curl_header_cb);
     curl_easy_setopt(request->easy_handle, CURLOPT_HEADERDATA, request);
@@ -398,6 +384,10 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
     curl_easy_setopt(request->easy_handle, CURLOPT_PRIVATE, (void*)request);
     curl_easy_setopt(request->easy_handle, CURLOPT_ACCEPT_ENCODING, "gzip");
     curl_multi_add_handle(handle->multi_handle, request->easy_handle);
+
+    if(!cb){
+        check_multi_info(&handle->multi_handle);
+    }
 
     return 0;
 }
