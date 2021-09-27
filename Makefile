@@ -54,6 +54,7 @@ endif
 
 ifeq ($(CONFIG_LIB_CURL),y)
 CSRCS += uv_request.c
+CSRCS += uv_networkcache.c
 endif
 
 ifeq ($(CONFIG_MIWEAR_COMMON), y)

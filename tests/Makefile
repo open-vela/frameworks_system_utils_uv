@@ -83,6 +83,11 @@ PROGNAME += app_verify
 MAINSRC  += app-verify-test.c
 endif
 
+ifeq ($(CONFIG_LIB_CURL), y)
+PROGNAME += uv_ncm
+MAINSRC  += uv-ncm-test.c
+endif
+
 depend::
 	$(Q) touch $(addprefix  ext/tests/,$(MAINSRC) )
 
