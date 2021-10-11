@@ -88,6 +88,11 @@ PROGNAME += uv_ncm
 MAINSRC  += uv-ncm-test.c
 endif
 
+ifeq ($(CONFIG_UNQLITE), y)
+PROGNAME += uv_db
+MAINSRC  += uv-db-test.c
+endif
+
 depend::
 	$(Q) touch $(addprefix  ext/tests/,$(MAINSRC) )
 
