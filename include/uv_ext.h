@@ -1667,6 +1667,137 @@ void app_verify_close(app_verify_t* app_verify_info);
 
 #endif
 
+#ifdef CONFIG_UNQLITE
+
+typedef struct uv_db_s uv_db_t;
+typedef void (*uv_db_callback)(int status, const char *key, uv_buf_t value, void *cookie);
+
+/****************************************************************************
+ * Name: uv_db_init
+ *
+ * Description:
+ *   Initialize database.
+ *
+ * Input Parameters:
+ *   loop     - the loop that data transfer uses.
+ *   handle   - the handler to database. Each database uses one handle.
+ *   name     - Specified database path.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_db_init(uv_loop_t *loop, uv_db_t **handle, const char *path);
+
+/****************************************************************************
+ * Name: uv_db_close
+ *
+ * Description:
+ *   close database. All records will be persisted locally.
+ *
+ * Input Parameters:
+ *   handle   - the handler to database.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_db_close(uv_db_t *handle);
+
+/****************************************************************************
+ * Name: uv_db_get
+ *
+ * Description:
+ *   Get a record. in synchronous mode, the callback function should be set to null.
+ *
+ * Input Parameters:
+ *   handle   - the handler to database.
+ *   key      - key
+ *   value    - value buff, valid in sync mode. set to null in asynchronous mode
+ *   cb       - completion callback function
+ *   arg      - callback function parameters
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_db_get(uv_db_t *handle, const char *key, uv_buf_t *value, uv_db_callback cb, void *arg);
+
+/****************************************************************************
+ * Name: uv_db_set
+ *
+ * Description:
+ *   set a record. in synchronous mode, the callback function should be set to null.
+ *
+ * Input Parameters:
+ *   handle   - the handler to database.
+ *   key      - key
+ *   value    - value buff.
+ *   cb       - completion callback function
+ *   arg      - callback function parameters
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_db_set(uv_db_t *handle, const char *key, uv_buf_t *value, uv_db_callback cb, void *arg);
+
+/****************************************************************************
+ * Name: uv_db_delete
+ *
+ * Description:
+ *   delete a record. in synchronous mode, the callback function should be set to null.
+ *
+ * Input Parameters:
+ *   handle   - the handler to database.
+ *   key      - key
+ *   cb       - completion callback function
+ *   arg      - callback function parameters
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_db_delete(uv_db_t *handle, const char *key, uv_db_callback cb, void *arg);
+
+/****************************************************************************
+ * Name: uv_db_key
+ *
+ * Description:
+ *   Find a key according to the index. When index is - 1,
+ *   the number of keys in the database is returned.
+ *
+ * Input Parameters:
+ *   handle   - the handler to database.
+ *   index    - index
+ *   cb       - completion callback function
+ *   arg      - callback function parameters
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_db_key(uv_db_t* handle, int index, char **key, uv_db_callback cb, void* arg);
+
+/****************************************************************************
+ * Name: uv_db_list
+ *
+ * Description:
+ *   Traverse each element in the database.
+ *
+ * Input Parameters:
+ *   handle   - the handler to database.
+ *   cb       - callback function
+ *   arg      - callback function parameters
+ *   is_sync  - is sync mode ,1 is true
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_db_list(uv_db_t* handle, uv_db_callback cb, void* arg, int is_sync);
+
+#endif
 
 #ifdef __cplusplus
 }
