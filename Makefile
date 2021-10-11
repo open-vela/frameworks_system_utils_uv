@@ -43,6 +43,11 @@ ifeq ($(CONFIG_KVDB), y)
 CSRCS += uv_property.c
 endif
 
+ifeq ($(CONFIG_UNQLITE), y)
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/unqlite}
+CSRCS += uv_db.c
+endif
+
 ifeq ($(CONFIG_LIB_MBEDTLS), y)
 CSRCS += uv_rsa.c
 endif
