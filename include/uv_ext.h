@@ -46,70 +46,91 @@ extern "C" {
  ****************************************************************************/
 
 #define UV_EXT_DEVINFO_SCREENWIDTH      1
-#define UV_EXT_DEVINFO_SCREENHEIGHT     2
-#define UV_EXT_DEVINFO_BRAND            3
-#define UV_EXT_DEVINFO_MANUFACTURER     4
-#define UV_EXT_DEVINFO_MODEL            5
-#define UV_EXT_DEVINFO_PRODUCT          6
-#define UV_EXT_DEVINFO_OSTYPE           7
-#define UV_EXT_DEVINFO_OSVERSIONNAME    8
-#define UV_EXT_DEVINFO_OSVERSIONCODE    9
-#define UV_EXT_DEVINFO_LANGUAGE         10
-#define UV_EXT_DEVINFO_REGION           11
-#define UV_EXT_DEVINFO_DID              12
-#define UV_EXT_DEVINFO_MAX              13
+#define UV_EXT_DEVINFO_SCREENHEIGHT     (UV_EXT_DEVINFO_SCREENWIDTH + 1)
+#define UV_EXT_DEVINFO_SCREENSHAPE      (UV_EXT_DEVINFO_SCREENHEIGHT + 1)
+#define UV_EXT_DEVINFO_OSVERSIONCODE    (UV_EXT_DEVINFO_SCREENSHAPE + 1)
+#define UV_EXT_DEVINFO_BRAND            (UV_EXT_DEVINFO_OSVERSIONCODE + 1)
+#define UV_EXT_DEVINFO_MANUFACTURER     (UV_EXT_DEVINFO_BRAND + 1)
+#define UV_EXT_DEVINFO_MODEL            (UV_EXT_DEVINFO_MANUFACTURER + 1)
+#define UV_EXT_DEVINFO_PRODUCT          (UV_EXT_DEVINFO_MODEL + 1)
+#define UV_EXT_DEVINFO_OSTYPE           (UV_EXT_DEVINFO_PRODUCT + 1)
+#define UV_EXT_DEVINFO_OSVERSIONNAME    (UV_EXT_DEVINFO_OSTYPE + 1)
+#define UV_EXT_DEVINFO_LANGUAGE         (UV_EXT_DEVINFO_OSVERSIONNAME + 1)
+#define UV_EXT_DEVINFO_REGION           (UV_EXT_DEVINFO_LANGUAGE + 1)
+#define UV_EXT_DEVINFO_DID              (UV_EXT_DEVINFO_REGION + 1)
+#define UV_EXT_DEVINFO_MAX              (UV_EXT_DEVINFO_DID + 1)
+
+
+#define UV_EXT_SCREENSHAPE_ROUND        1
+#define UV_EXT_SCREENSHAPE_SQUARE       2
+
+#define UV_EXT_DEVINFO_MAXLEN           30
+
+typedef struct uv_devinfo_s uv_devinfo_t;
+
+struct uv_devinfo_s {
+  char brand[UV_EXT_DEVINFO_MAXLEN];
+  char manufacturer[UV_EXT_DEVINFO_MAXLEN];
+  char model[UV_EXT_DEVINFO_MAXLEN];
+  char product[UV_EXT_DEVINFO_MAXLEN];
+  char ostype[UV_EXT_DEVINFO_MAXLEN];
+  char osversionname[UV_EXT_DEVINFO_MAXLEN];
+  char language[UV_EXT_DEVINFO_MAXLEN];
+  char region[UV_EXT_DEVINFO_MAXLEN];
+  char did[UV_EXT_DEVINFO_MAXLEN];
+  int screenshape;
+  int osversioncode;
+  int screenwidth;
+  int screenheight;
+};
 
 /****************************************************************************
- * Name: uv_get_devinfo
+ * Name: uv_devinfobuff
  *
  * Description:
- *   get device information.
+ *   Get the device information passed by string variable.
  *
  * Input Parameters:
- *   devinfo  - handle.
- *   id       - device information id.
- *              1: brand 2: manufacturer 3: model 4: product 5: os_type
- *              6: os_version_name 7: os_version_code 8: language
- *              9: region
+ *   devinfo  - data handle.
+ *   size     - buff size
+ *   id       - device information ID.
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_get_devinfo(char *devinfo, int size, int id);
+int uv_devinfobuff(char *buff, int size, int item);
 
 /****************************************************************************
- * Name: uv_get_devinfo
+ * Name: uv_getdevinfonumber
  *
  * Description:
- *   get screen resolution.
+ *   Get the device information passed by integer variable.
  *
  * Input Parameters:
- *   devinfo  - handle.
- *   id       - device information id.
- *              10: screenwidth 11: screenheight
+ *   num  - data handle.
+ *   item - device information ID.
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_get_resolution(int *wh, int id);
+int uv_getdevinfonumber(int *num, int item);
 
 /****************************************************************************
- * Name: uv_get_devinfo
+ * Name: uv_getdeviceinfo
  *
  * Description:
- *   get screen resolution.
+ *   Get all device information.
  *
  * Input Parameters:
- *   vsersioncode   - versioncode.
- *   id             - device information id.
+ *   info   - data handle
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_get_versioncode(int *vsersioncode, int id);
+int uv_getdeviceinfo(uv_devinfo_t *info);
 
 /****************************************************************************
  * locale

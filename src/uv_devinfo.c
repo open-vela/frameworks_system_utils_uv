@@ -26,14 +26,16 @@
 #include <fcntl.h>
 #include <uv_ext.h>
 
-#ifdef CONFIG_VIDEO_FB
+#if defined(CONFIG_VIDEO_FB)
 #  include <nuttx/video/fb.h>
-#elif defined(CONFIG_LCD_DEV)
+#endif
+#if defined(CONFIG_LCD_DEV)
 #  include <nuttx/lcd/lcd_dev.h>
 #endif
 #if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
 #  include <sys/boardctl.h>
 #endif
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
@@ -80,58 +82,79 @@
  * Public Function
  ****************************************************************************/
 
-int uv_get_devinfo(char *devinfo, int size, int id) {
+#if defined(CONFIG_VIDEO_FB) || defined(CONFIG_LCD_DEV)
+#if defined(CONFIG_LCD_DEV)
+#  define DEVINFO_LCD_NAME          "/dev/lcd0"
+#  define DEVINFO_LCD_IOCDIDEOINFO  LCDDEVIO_GETVIDEOINFO
+#elif defined(CONFIG_VIDEO_FB)
+#  define DEVINFO_LCD_NAME          "/dev/fb0"
+#  define DEVINFO_LCD_IOCDIDEOINFO  FBIOGET_VIDEOINFO
+#endif
+
+static int uv_getscreeninfo(struct fb_videoinfo_s *videinfo) {
+  int fd, ret;
+
+  fd = open(DEVINFO_LCD_NAME, O_RDWR);
+  if (fd < 0) {
+    return -errno;
+  }
+
+  ret = ioctl(fd, DEVINFO_LCD_IOCDIDEOINFO, videinfo);
+  if (ret != 0) {
+    return ret;
+  }
+
+  close(fd);
+  return 0;
+}
+#endif
+
+int uv_devinfobuff(char *buff, int size, int item) {
   struct utsname uv_uanme;
   int ret;
 
-  if (!devinfo || !size) {
+  if (!buff || !size) {
     return UV_EINVAL;
   }
 
-  switch (id) {
+  switch (item) {
     case UV_EXT_DEVINFO_BRAND:
-      snprintf((char*)devinfo, size, "%s", CONFIG_PRODUCT_BRAND);
-    break;
+      snprintf((char*)buff, size, "%s", CONFIG_PRODUCT_BRAND);
+      break;
     case UV_EXT_DEVINFO_MANUFACTURER:
-      snprintf((char*)devinfo, size, "%s", CONFIG_PRODUCT_MANUFACTURER);
-    break;
+      snprintf((char*)buff, size, "%s", CONFIG_PRODUCT_MANUFACTURER);
+      break;
     case UV_EXT_DEVINFO_MODEL:
-      snprintf((char*)devinfo, size, "%s", CONFIG_PRODUCT_MODEL);
-    break;
+      snprintf((char*)buff, size, "%s", CONFIG_PRODUCT_MODEL);
+      break;
     case UV_EXT_DEVINFO_PRODUCT:
-      snprintf((char*)devinfo, size, "%s", CONFIG_PRODUCT_NAME);
-    break;
+      snprintf((char*)buff, size, "%s", CONFIG_PRODUCT_NAME);
+      break;
     case UV_EXT_DEVINFO_OSTYPE:
       if ((ret = uname(&uv_uanme)) != 0) {
         return ret;
       }
-      snprintf(devinfo, size, "%s", uv_uanme.sysname);
-    break;
+      snprintf(buff, size, "%s", uv_uanme.sysname);
+      break;
     case UV_EXT_DEVINFO_OSVERSIONNAME:
       if ((ret = uname(&uv_uanme)) != 0) {
         return ret;
       }
-      snprintf(devinfo, size, "%s", uv_uanme.release);
-    break;
-    case UV_EXT_DEVINFO_OSVERSIONCODE:
-      if ((ret = uname(&uv_uanme)) != 0) {
-        return ret;
-      }
-      snprintf(devinfo, size, "%s", uv_uanme.version);
-    break;
+      snprintf(buff, size, "%s", uv_uanme.release);
+      break;
     case UV_EXT_DEVINFO_LANGUAGE:
-      snprintf((char*)devinfo, size, "%s", CONFIG_LANGUAGE_NAME);
-    break;
+      snprintf((char*)buff, size, "%s", CONFIG_LANGUAGE_NAME);
+      break;
     case UV_EXT_DEVINFO_REGION:
-      snprintf((char*)devinfo, size, "%s", CONFIG_REGION_NAME);
-    break;
+      snprintf((char*)buff, size, "%s", CONFIG_REGION_NAME);
+      break;
     case UV_EXT_DEVINFO_DID:
-#if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
-      boardctl(BOARDIOC_UNIQUEID, devinfo);
-#else
-      snprintf((char*)devinfo, size, "%s", UV_EXT_DEVINFO_DID_INFO);
-#endif
-    break;
+      #if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
+        boardctl(BOARDIOC_UNIQUEID, buff);
+      #else
+        snprintf((char*)buff, size, "%s", UV_EXT_DEVINFO_DID_INFO);
+      #endif
+      break;
     default:
       return UV_EINVAL;
   }
@@ -139,61 +162,135 @@ int uv_get_devinfo(char *devinfo, int size, int id) {
   return 0;
 }
 
-int uv_get_versioncode(int *vsersioncode, int id) {
-  if (!vsersioncode) {
+int uv_getdevinfonumber(int *num, int item) {
+  int ret = 0;
+#if defined(CONFIG_VIDEO_FB) || defined(CONFIG_LCD_DEV)
+  struct fb_videoinfo_s videinfo;
+#endif
+
+  if (!num) {
     return UV_EINVAL;
   }
 
-  if (id == UV_EXT_DEVINFO_OSVERSIONCODE) {
-    *vsersioncode = CONFIG_VERSION;
-    return 0;
-  } else {
-    return UV_EINVAL;
+  switch (item) {
+    case UV_EXT_DEVINFO_OSVERSIONCODE: {
+      *num = CONFIG_VERSION;
+      break;
+    }
+
+#if defined(CONFIG_VIDEO_FB) || defined(CONFIG_LCD_DEV)
+    case UV_EXT_DEVINFO_SCREENWIDTH: {
+      ret = uv_getscreeninfo(&videinfo);
+      if (ret < 0) {
+        break;
+      }
+
+      *num = videinfo.xres;
+      break;
+    }
+
+    case UV_EXT_DEVINFO_SCREENHEIGHT: {
+      ret = uv_getscreeninfo(&videinfo);
+      if (ret < 0) {
+        break;
+      }
+
+      *num = videinfo.yres;
+      break;
+    }
+
+#if defined(CONFIG_FB_MODULEINFO)
+    case UV_EXT_DEVINFO_SCREENSHAPE:  {
+      ret = uv_getscreeninfo(&videinfo);
+      if (ret < 0) {
+        break;
+      }
+
+      if (strstr(videinfo.moduleinfo, "round")) {
+        *num = UV_EXT_SCREENSHAPE_ROUND;
+      } else if (strstr(videinfo.moduleinfo, "square")) {
+        *num = UV_EXT_SCREENSHAPE_SQUARE;
+      } else {
+        ret = UV_ENXIO;
+      }
+      break;
+    }
+
+#endif
+#endif
+    default:
+      return  UV_EINVAL;
   }
+
+  return ret;
 }
 
-int uv_get_resolution(int *wh, int id) {
+int uv_getdeviceinfo(uv_devinfo_t *info)
+{
+  struct utsname uv_uanme;
+  int ret = 0;
+
+  if (!info) {
+    return UV_EINVAL;
+  }
+
+  snprintf(info->brand, sizeof(info->brand),
+           "%s", CONFIG_PRODUCT_BRAND);
+
+  snprintf(info->manufacturer, sizeof(info->manufacturer),
+           "%s", CONFIG_PRODUCT_MANUFACTURER);
+
+  snprintf(info->model, sizeof(info->model),
+           "%s", CONFIG_PRODUCT_MODEL);
+
+  snprintf(info->product, sizeof(info->product),
+           "%s", CONFIG_PRODUCT_NAME);
+
+  if ((ret = uname(&uv_uanme)) != 0) {
+    return ret;
+  }
+  info->osversioncode = CONFIG_VERSION;
+  snprintf(info->ostype, sizeof(info->ostype),
+           "%s", uv_uanme.sysname);
+  snprintf(info->osversionname, sizeof(info->osversionname),
+           "%s", uv_uanme.release);
+
+  snprintf(info->language, sizeof(info->language),
+           "%s", CONFIG_LANGUAGE_NAME);
+  snprintf(info->region, sizeof(info->region),
+           "%s", CONFIG_REGION_NAME);
+  snprintf(info->manufacturer, sizeof(info->manufacturer),
+           "%s", CONFIG_PRODUCT_MANUFACTURER);
+
+#if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
+  ret = boardctl(BOARDIOC_UNIQUEID, info->did);
+  if (ret != 0) {
+    return ret;
+  }
+#else
+  snprintf(info->did, sizeof(info->did), "%s", UV_EXT_DEVINFO_DID_INFO);
+#endif
+
 #if defined(CONFIG_VIDEO_FB) || defined(CONFIG_LCD_DEV)
-  int fd, ret;
   struct fb_videoinfo_s videinfo = {};
 
-  if (!wh) {
-    return UV_EINVAL;
-  }
-
-#ifdef CONFIG_VIDEO_FB
-  fd = open("/dev/fb0", O_RDWR);
-  if (fd < 0) {
-    return -errno;
-  }
-
-  ret = ioctl(fd, FBIOGET_VIDEOINFO, &videinfo);
-  if (ret != 0) {
+  ret = uv_getscreeninfo(&videinfo);
+  if (ret < 0) {
     return ret;
   }
-#elif defined(CONFIG_LCD_DEV)
-  fd = open("/dev/lcd0", O_RDWR);
-  if (fd < 0) {
-    return -errno;
-  }
 
-  ret = ioctl(fd, LCDDEVIO_GETVIDEOINFO, &videinfo);
-  if (ret != 0) {
-    return ret;
-  }
-#endif
-  close(fd);
-
-  if (UV_EXT_DEVINFO_SCREENWIDTH == id) {
-    *wh = videinfo.xres;
-  } else if (UV_EXT_DEVINFO_SCREENHEIGHT == id) {
-    *wh = videinfo.yres;
+  info->screenwidth  = videinfo.xres;
+  info->screenheight = videinfo.yres;
+#if defined(CONFIG_FB_MODULEINFO)
+  if (strstr(videinfo.moduleinfo, "round")) {
+    *num = UV_EXT_SCREENSHAPE_ROUND;
+  } else if (strstr(videinfo.moduleinfo, "square")) {
+    *num = UV_EXT_SCREENSHAPE_SQUARE;
   } else {
-    return UV_EINVAL;
+    return UV_ENXIO;
   }
-
-  return 0;
-#else
-  return UV_ENXIO;
 #endif
+#endif
+
+  return ret;
 }
