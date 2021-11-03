@@ -52,7 +52,7 @@ uv_ncm_t* uv_ncm_init(uv_loop_t* loop, const char* cache_path)
     assert(cache_path);
     assert(loop);
 
-    if(access(cache_path, F_OK) != 0){
+    if (access(cache_path, F_OK) != 0) {
         return NULL;
     }
     ncm = calloc(1, sizeof(struct cache_manager));
@@ -76,8 +76,8 @@ static int is_path(const char* path)
 const char* uv_ncm_get_cache(uv_ncm_t* ncm, const char* path)
 {
     file_cache_t cache = { 0 }, *ret;
-    cache.url = path;
-    if(ncm == NULL){
+    cache.url = (char*)path;
+    if (ncm == NULL) {
         return NULL;
     }
 
@@ -130,7 +130,7 @@ char* download_file_cb(int state, uv_response_t* response)
 static char* download_file(uv_ncm_t* ncm, const char* url, char* fallback,
     uv_ncm_cb_t cb, void* userp)
 {
-    char temp_path[PATH_MAX], *ret;
+    char *temp_path;
     download_t* download = calloc(1, sizeof(download_t));
     download->cb = cb;
     download->userp = userp;
@@ -154,37 +154,36 @@ static char* download_file(uv_ncm_t* ncm, const char* url, char* fallback,
     uv_request_set_url(download->request, url);
     uv_request_set_userp(download->request, download);
 
+    temp_path = (char *)malloc(PATH_MAX);
+    if (temp_path == NULL) {
+        return NULL;
+    }
+
     strcpy(temp_path, ncm->cache_path);
     strcat(temp_path, "/ncm_XXXXXX");
     int fd = mkstemp(temp_path);
     close(fd);
-    if(fd < 0){
+    if (fd < 0) {
+        free(temp_path);
         return NULL;
     }
     download->cache->path = strdup(temp_path);
+    free(temp_path);
     int res = uv_request_set_atrribute(download->request, UV_DOWNLOAD,
         (void*)download->cache->path);
-    if(res != 0){
+    if (res != 0) {
         return NULL;
     }
 
-    if (cb == NULL) {
-        uv_request_commit(ncm->handle, download->request, NULL);
-        fallback = (char*)download->cache->path;
-        ret = download_file_cb(download->request->error_code,
-            &download->request->response);
-        fallback = (ret == NULL) ? NULL : fallback;
-    } else {
-        uv_request_commit(ncm->handle, download->request,
-            (uv_request_cb)download_file_cb);
-    }
+    uv_request_commit(ncm->handle, download->request, (uv_request_cb)download_file_cb);
 
     return fallback;
 }
 
-uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const char** res_path, const char* path, uv_ncm_cb_t cb, void* userp)
+uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const char** res_path, const char* path,
+    uv_ncm_cb_t cb, void* userp)
 {
-    if(ncm == NULL){
+    if (ncm == NULL) {
         return UV_NCM_RES_ERROR;
     }
 
@@ -200,7 +199,7 @@ uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const char** res_path, const cha
     }
 
     *res_path = download_file(ncm, path, NULL, cb, userp);
-    if(*res_path == NULL){
+    if (*res_path == NULL) {
         return UV_NCM_RES_ERROR;
     }
 
@@ -209,7 +208,7 @@ uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const char** res_path, const cha
 
 int uv_ncm_close(uv_ncm_t* ncm)
 {
-    if(ncm == NULL){
+    if (ncm == NULL) {
         return -1;
     }
 
