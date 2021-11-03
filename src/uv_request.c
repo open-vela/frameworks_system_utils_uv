@@ -24,14 +24,37 @@
 #include <curl/curl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <uv_ext.h>
 
+#include <nuttx/list.h>
+
+#ifndef CONFIG_UV_REQUEST_MAX_LINKS
+#define CONFIG_UV_REQUEST_MAX_LINKS 5
+#endif
+
 struct uv_request_session_s {
+    struct list_node list;
+    int connections_cnt;
     uv_loop_t* loop;
     CURLM* multi_handle;
     uv_timer_t timeout;
 };
 
+struct uv_request_s {
+    int error_code;
+    FILE* fd;
+    void* data;
+    const char* url;
+    uv_request_cb cb;
+    void* easy_handle;
+    void* header_list;
+    struct list_node node;
+    struct data_block_s body;
+    struct data_block_s header;
+    uv_request_session_t* handle;
+    uv_response_t response;
+};
 
 typedef struct curl_context_s {
     uv_poll_t poll_handle;
@@ -55,6 +78,67 @@ static curl_context_t* create_curl_context(uv_request_session_t* handle, curl_so
     return context;
 }
 
+static int recursion_mkdir(const char* path)
+{
+    const char s[] = "/";
+    char *data;
+    char* token;
+    int res;
+
+    data = (char *)malloc(PATH_MAX);
+    if (data == NULL) {
+        return -ENOMEM;
+    }
+
+    res = access(path, F_OK);
+    if (res == 0) {
+        free(data);
+        return 0;
+    }
+
+    strcpy(data, path);
+    token = strtok(data, s);
+
+    while (token != NULL) {
+        token = strtok(NULL, s);
+        if (token != NULL) {
+            *(token - 1) = '/';
+        }
+
+        res = access(data, F_OK);
+        if (res != 0) {
+            res = mkdir(data, 0777);
+        }
+    }
+
+    free(data);
+    return res;
+}
+
+static FILE* mkfile(const char* path)
+{
+    char* ret;
+    char *fileName;
+
+    fileName = (char *)malloc(PATH_MAX);
+    if (fileName == NULL) {
+        return NULL;
+    }
+
+    strcpy(fileName, path);
+    ret = strrchr(fileName, '/');
+    if (ret == 0) {
+        free(fileName);
+        return fopen(path, "wb+");
+    }
+    *ret++ = 0;
+
+    recursion_mkdir(fileName);
+
+    free(fileName);
+    return fopen(path, "wb+");
+}
+
 static void curl_close_cb(uv_handle_t* handle)
 {
     curl_context_t* context = (curl_context_t*)handle->data;
@@ -75,12 +159,11 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
         fclose(request->fd);
     }
 
-    if(request->error_code != CURLE_OK)
-    {
+    if (request->error_code != CURLE_OK) {
         request->response.httpcode = request->error_code;
-        request->response.body = (char *)strdup(curl_easy_strerror(request->error_code));
+        request->response.body = (char*)strdup(curl_easy_strerror(request->error_code));
         request->cb(UV_REQUEST_ERROR, &request->response);
-    }else{
+    } else {
         request->cb(UV_REQUEST_DONE, &request->response);
     }
 
@@ -109,6 +192,18 @@ static void check_multi_info(CURLM* multi_handle)
         if (message->msg == CURLMSG_DONE) {
             curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &request);
             request->error_code = message->data.result;
+
+            struct uv_request_session_s* handle = request->handle;
+            handle->connections_cnt--;
+
+            if (!list_is_empty(&handle->list)) {
+                uv_request_t* new_request;
+                struct list_node* node = list_remove_head(&handle->list);
+                new_request = container_of(node, uv_request_t, node);
+                curl_multi_add_handle(multi_handle, new_request->easy_handle);
+                handle->connections_cnt++;
+            }
+
             uv_request_done(message->easy_handle, request);
         }
     }
@@ -237,6 +332,8 @@ int uv_request_init(uv_loop_t* loop, uv_request_session_t** handle)
     uv_timer_init(loop, &(*handle)->timeout);
     (*handle)->timeout.data = *handle;
 
+    (*handle)->connections_cnt = 0;
+    list_initialize(&(*handle)->list);
     (*handle)->loop = loop;
     (*handle)->multi_handle = curl_multi_init();
 
@@ -297,7 +394,7 @@ int uv_request_set_url(uv_request_t* request, const char* url)
     return 0;
 }
 
-int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
+int uv_request_set_atrribute(uv_request_t* request, int type, void* path)
 {
     struct curl_httppost* formpost = NULL;
     struct curl_httppost* lastptr = NULL;
@@ -312,24 +409,24 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
         curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request);
         break;
     case UV_DOWNLOAD:
-        if (data == NULL) {
+        if (path == NULL) {
             return -EINVAL;
         }
-        request->response.body = (char *)strdup(data);
-        request->fd = fopen(data, "wb+");
+        request->response.body = (char*)strdup(path);
+        request->fd = mkfile(path);
         if (request->fd == NULL) {
             return -EMFILE;
         }
         curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request->fd);
         break;
     case UV_UPLOAD:
-        if (data == NULL) {
+        if (path == NULL) {
             return -EINVAL;
         }
-        request->response.body = (char *)strdup(data);
+        request->response.body = (char*)strdup(path);
         curl_formadd(&formpost, &lastptr,
             CURLFORM_COPYNAME, "filename",
-            CURLFORM_FILE, data,
+            CURLFORM_FILE, path,
             CURLFORM_END);
         curl_easy_setopt(request->easy_handle, CURLOPT_HTTPPOST, formpost);
         break;
@@ -340,18 +437,18 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
     return 0;
 }
 
-
-static size_t __curl_header_cb(char *contents, size_t size, size_t nmemb, void *userdata) {
-    uv_request_t *request = (uv_request_t *)userdata;
+static size_t __curl_header_cb(char* contents, size_t size, size_t nmemb, void* userdata)
+{
+    uv_request_t* request = (uv_request_t*)userdata;
     size_t realsize = size * nmemb;
 
-    request->header.data = realloc(request->header.data, request->header.size + realsize + 1 );
+    request->header.data = realloc(request->header.data, request->header.size + realsize + 1);
     if (!request->header.data) {
         return 0;
     }
 
     memcpy(&(request->header.data[request->header.size]), contents, realsize);
-    request->response.headers = (char *)request->header.data;
+    request->response.headers = (char*)request->header.data;
     request->header.size += realsize;
     request->header.data[request->header.size] = '\0';
     return realsize;
@@ -368,12 +465,12 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
     }
 
     request->cb = cb;
-    if(cb){
+    if (cb) {
         curl_multi_setopt(handle->multi_handle, CURLMOPT_SOCKETDATA, handle);
         curl_multi_setopt(handle->multi_handle, CURLMOPT_SOCKETFUNCTION, handle_socket);
         curl_multi_setopt(handle->multi_handle, CURLMOPT_TIMERDATA, handle);
         curl_multi_setopt(handle->multi_handle, CURLMOPT_TIMERFUNCTION, start_timeout);
-    }else{
+    } else {
         curl_multi_setopt(handle->multi_handle, CURLMOPT_SOCKETFUNCTION, NULL);
         curl_multi_setopt(handle->multi_handle, CURLMOPT_TIMERFUNCTION, NULL);
     }
@@ -383,9 +480,18 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
     curl_easy_setopt(request->easy_handle, CURLOPT_URL, request->url);
     curl_easy_setopt(request->easy_handle, CURLOPT_PRIVATE, (void*)request);
     curl_easy_setopt(request->easy_handle, CURLOPT_ACCEPT_ENCODING, "gzip");
-    curl_multi_add_handle(handle->multi_handle, request->easy_handle);
 
-    if(!cb){
+    request->handle = handle;
+
+    if (handle->connections_cnt < CONFIG_UV_REQUEST_MAX_LINKS) {
+        curl_multi_add_handle(handle->multi_handle, request->easy_handle);
+        handle->connections_cnt++;
+    } else {
+        list_initialize(&request->node);
+        list_add_tail(&handle->list, &request->node);
+    }
+
+    if (!cb) {
         check_multi_info(&handle->multi_handle);
     }
 
@@ -450,7 +556,7 @@ static void __uv_time_close(uv_handle_t* handle)
 
 int uv_request_close(uv_request_session_t* handle)
 {
-    if(!handle){
+    if (!handle) {
         return -EINVAL;
     }
 

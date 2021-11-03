@@ -736,19 +736,6 @@ struct data_block_s {
     ssize_t size;
 };
 
-struct uv_request_s {
-    int error_code;
-    FILE *fd;
-    void *data;
-    const char* url;
-    uv_request_cb cb;
-    void* easy_handle;
-    void* header_list;
-    struct data_block_s body;
-    struct data_block_s header;
-    uv_response_t response;
-};
-
 /****************************************************************************
  * Name: uv_request_init
  *
