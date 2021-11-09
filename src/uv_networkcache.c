@@ -52,9 +52,6 @@ uv_ncm_t* uv_ncm_init(uv_loop_t* loop, const char* cache_path)
     assert(cache_path);
     assert(loop);
 
-    if (access(cache_path, F_OK) != 0) {
-        return NULL;
-    }
     ncm = calloc(1, sizeof(struct cache_manager));
     assert(ncm);
     ncm->cache_path = strdup(cache_path);
@@ -114,7 +111,7 @@ char* download_file_cb(int state, uv_response_t* response)
     }
 
     download->cb(UV_REQUEST_DONE, response->body, (void*)download->userp);
-    for (size_t i = 0; i < download_nums; i++) {
+    for (int i = 0; i < download_nums; i++) {
         if (download_list == NULL) {
             break;
         }
@@ -125,6 +122,40 @@ char* download_file_cb(int state, uv_response_t* response)
     free(download_list);
     free(download);
     return NULL;
+}
+
+static int checkpath(const char* path)
+{
+    const char s[] = "/";
+    char* data;
+    char *token;
+    int res;
+
+    res = access(path, F_OK);
+    if (res == 0) {
+        return 0;
+    }
+
+    data = strdup(path);
+    if (data == NULL) {
+        return -ENOMEM;
+    }
+
+    token = strtok(data, s);
+    while (token != NULL) {
+        token = strtok(NULL, s);
+        if (token != NULL) {
+            *(token - 1) = '/';
+        }
+
+        res = access(data, F_OK);
+        if (res != 0) {
+            res = mkdir(data, 0777);
+        }
+    }
+
+    free(data);
+    return res;
 }
 
 static char* download_file(uv_ncm_t* ncm, const char* url, char* fallback,
@@ -160,6 +191,7 @@ static char* download_file(uv_ncm_t* ncm, const char* url, char* fallback,
     }
 
     strcpy(temp_path, ncm->cache_path);
+    checkpath(temp_path);
     strcat(temp_path, "/ncm_XXXXXX");
     int fd = mkstemp(temp_path);
     close(fd);
@@ -219,7 +251,7 @@ int uv_ncm_close(uv_ncm_t* ncm)
         unlink(cache->path);
         free(cache->path);
         free(cache->url);
-        for (size_t i = 0; i < cache->download_nums; i++) {
+        for (int i = 0; i < cache->download_nums; i++) {
             download_t* ret = cache->download_list[i];
             free(ret->cache->url);
             free(ret->cache);
