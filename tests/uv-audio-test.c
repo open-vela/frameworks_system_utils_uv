@@ -24,30 +24,30 @@
 static uv_audio_t audio;
 static int step = 0;
 
-static void audio_notify_callback(void* cookie, int msg,
-                                      int ext1, int ext2,
-                                      const unsigned char *data, int size)
+
+static void audio_notify_callback(void* cookie, int event,
+                                  int ret, const char *extra)
 {
     uv_audio_t *paudio = (uv_audio_t*)cookie;
 
-    if (msg == UV_EXT_AUDIO_EVENT_ERROR) {
+    if (event == UV_EXT_AUDIO_EVENT_ERROR) {
 
-    } else if (msg == UV_EXT_AUDIO_EVENT_STARTED) {
+    } else if (event == UV_EXT_AUDIO_EVENT_STARTED) {
       paudio->playstate = UV_EXT_AUDIO_STATE_PLAY;
-    } else if (msg == UV_EXT_AUDIO_EVENT_STOPPED) {
+    } else if (event == UV_EXT_AUDIO_EVENT_STOPPED) {
       paudio->playstate = UV_EXT_AUDIO_STATE_STOP;
-    } else if (msg == UV_EXT_AUDIO_EVENT_COMPLETE) {
+    } else if (event == UV_EXT_AUDIO_EVENT_COMPLETE) {
       paudio->playstate = UV_EXT_AUDIO_STATE_COMPLETE;
-    } else if (msg == UV_EXT_AUDIO_EVENT_EVENT_PREPARED) {
-    } else if (msg == UV_EXT_AUDIO_EVENT_PAUSED) {
+    } else if (event == UV_EXT_AUDIO_EVENT_EVENT_PREPARED) {
+    } else if (event == UV_EXT_AUDIO_EVENT_PAUSED) {
       paudio->playstate = UV_EXT_AUDIO_STATE_PAUSE;
     }
 
-    printf("%s %s %d eventid=%d\n", __FILE__, __func__, __LINE__, msg);
+    printf("%s %s %d eventid=%d\n", __FILE__, __func__, __LINE__, event);
 }
 
 static void audio_timer_run_cb(uv_timer_t* handle) {
-  double volume = 0;
+  float volume = 0;
   int ret, sec = 0;
 
   switch (step)
@@ -70,7 +70,7 @@ static void audio_timer_run_cb(uv_timer_t* handle) {
     case 4:
       ret = uv_audio_set_volume(&audio, 0.1);
       printf("step[%02d, set_volume] playstate:%d, %f %f\n", step,
-              audio.playstate, audio.volume, volume);
+              audio.playstate, audio.volume, audio.volume);
       break;
     case 5:
       ret = uv_audio_muted(&audio, true);
@@ -102,7 +102,7 @@ static void audio_timer_run_cb(uv_timer_t* handle) {
       printf("step[%02d, get_isplay] playstate:%d\n", step, audio.playstate);
       break;
     case 11:
-      ret = uv_audio_set_url(&audio, "/data/2.mp3");
+      ret = uv_audio_set_url(&audio, "/music/2.mp3");
       printf("step[%02d, get_isplay] url:%s\n", step, audio.url);
       break;
     case 12:
@@ -133,7 +133,11 @@ int main(int argc, char *argv[])
     goto testfail;
   }
 
-  if (uv_audio_set_url(&audio, "/data/1.mp3") != 0) {
+  if (uv_audio_set_url(&audio, "/music/1.mp3") != 0) {
+    goto testfail;
+  }
+
+  if (uv_audio_prepare(&audio, "/music/1.mp3") != 0) {
     goto testfail;
   }
 

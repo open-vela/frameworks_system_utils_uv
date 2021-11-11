@@ -68,7 +68,7 @@ PROGNAME += miwear_client
 MAINSRC  += uv-miwear-client-test.c
 endif
 
-ifeq ($(CONFIG_MEDIA_SERVICE), y)
+ifeq ($(CONFIG_MEDIA), y)
 PROGNAME += uv_audio
 MAINSRC  += uv-audio-test.c
 endif
