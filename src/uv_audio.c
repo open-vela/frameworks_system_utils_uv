@@ -21,132 +21,68 @@
 #include <uv_ext.h>
 #include <stddef.h>
 #include <uv/errno.h>
-#include <media_api.h>
 
-
-int uv_audio_create(uv_audio_t *handle, notify_callback_f callback,
+int uv_audio_create(uv_audio_t *handle, media_event_callback callback,
                     void* parame) {
   int ret;
-  char *pargs = "amovie@src0,volume[s0],amovie@src1,volume[s1],amovie@src2,"
-                "volume[s2],[s0][s1][s2]amix=inputs=3:timeout=40:first_input"
-                "=-1[d0],[d0]adevsink@pcm0p=format=nuttx:devname="
-                "/dev/audio/pcm0p";
 
-  /* init=1, 表示已经初始化过了，无需再次初始化. */
+  /* init=1, The handle has been initialized. */
   if (handle->init == 1) {
     return 0;
   }
 
-  ret = media_service_init();
-  if (ret < 0) {
-    return ret;
-  }
-
-  ret = media_service_loadgraph(pargs);
-  if (ret < 0) {
-    media_service_uninit();
-    return ret;
-  }
-
-  handle->iofhandle = media_playback_create(NULL);
+  handle->iofhandle = media_player_open(NULL);
   if (!handle->iofhandle) {
-    media_service_uninit();
     return UV_EINVAL;
   }
 
-  ret = media_playback_set_notify_callback(handle->iofhandle,
-                                           parame,
-                                           callback);
-  if (ret != 0) {
-    uv_audio_close(handle);
-    media_service_uninit();
-    return ret;
+  ret = media_player_set_event_callback(handle->iofhandle, parame, callback);
+  if (ret < 0) {
+    return uv_audio_close(handle);
   }
 
   handle->init = 1;
-  handle->playback = true;
 
-  return 0;
+  return ret;
 }
 
 int uv_audio_set_url(uv_audio_t *handle, const char *url) {
-  int ret, play = 0;
+  int ret;
 
   if (!handle  || !handle->iofhandle || !url) {
     return UV_EINVAL;
   }
 
-  if (true == handle->autoplay
+  if (!(handle->autoplay
       || UV_EXT_AUDIO_STATE_PLAY  == handle->playstate
-      || UV_EXT_AUDIO_STATE_PAUSE == handle->playstate) {
-    uv_audio_stop(handle);
-    usleep(100);
-    play = 1;
+      || UV_EXT_AUDIO_STATE_PAUSE == handle->playstate)) {
+    return 0;
   }
 
-  if (handle->playback) {
-    ret = media_playback_set_data_source(handle->iofhandle, url, NULL);
-  } else {
-    ret = media_capture_set_data_dest(handle->iofhandle, url, NULL);
-  }
+  uv_audio_stop(handle);
 
+  ret = media_player_prepare(handle->iofhandle, url, NULL);
   if (ret < 0) {
     return ret;
   }
 
-  if (play) {
-    ret = uv_audio_prepare(handle);
-    if (ret != 0) {
-      return ret;
-    }
-
-    ret = uv_audio_play(handle);
-    if (ret != 0) {
-      return 0;
-    }
-  }
-
-  return 0;
+  return uv_audio_play(handle);
 }
 
-int uv_audio_prepare(uv_audio_t *handle) {
-  int ret;
-
+int uv_audio_prepare(uv_audio_t *handle, const char *url) {
   if (!handle  || !handle->iofhandle) {
     return UV_EINVAL;
   }
 
-  if (handle->playback) {
-    ret = media_playback_prepare(handle->iofhandle);
-  } else {
-    ret = media_capture_prepare(handle->iofhandle);
-  }
-
-  if (ret < 0) {
-    return ret;
-  }
-
-  return 0;
+  return media_player_prepare(handle->iofhandle, url, NULL);
 }
 
 int uv_audio_play(uv_audio_t *handle) {
-  int ret;
-
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
   }
 
-  if (handle->playback) {
-    ret = media_playback_start(handle->iofhandle);
-  } else {
-    ret = media_capture_start(handle->iofhandle);
-  }
-
-  if (ret != 0) {
-    return ret;
-  }
-
-  return 0;
+  return media_player_start(handle->iofhandle);
 }
 
 int uv_audio_set_autoplay(uv_audio_t *handle, bool autoplay) {
@@ -162,8 +98,6 @@ int uv_audio_set_autoplay(uv_audio_t *handle, bool autoplay) {
         && UV_EXT_AUDIO_STATE_PAUSE != handle->playstate) {
       uv_audio_stop(handle);
       uv_audio_set_url(handle, handle->url);
-      uv_audio_prepare(handle);
-      uv_audio_play(handle);
     }
   }
 
@@ -171,86 +105,65 @@ int uv_audio_set_autoplay(uv_audio_t *handle, bool autoplay) {
 }
 
 int uv_audio_pause(uv_audio_t *handle) {
-  int ret = 0;
-
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
   }
 
-  if (handle->playback) {
-    ret = media_playback_pause(handle->iofhandle);
-  }
-
-  return ret;
+  return media_player_pause(handle->iofhandle);
 }
 
 int uv_audio_stop(uv_audio_t *handle) {
-  int ret = 0;
-
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
   }
 
-  if (!handle->playback) {
-    ret = media_capture_stop(handle->iofhandle);
-  }
-
-  if (handle->playback) {
-    ret = media_playback_stop(handle->iofhandle);
-  }
-
-  if (ret < 0) {
-    return ret;
-  }
-
-  return ret;
+  return media_player_stop(handle->iofhandle);
 }
 
 int uv_audio_loop(uv_audio_t *handle, bool loop) {
   int ret;
+
   if (!handle || !handle->iofhandle)
         return UV_EINVAL;
 
-  if (!handle->playback)
-      return UV_EINVAL;
-
-  ret = media_playback_set_looping(handle->iofhandle, (int)loop);
+  ret = media_player_set_looping(handle->iofhandle, (int)loop);
   if (ret < 0) {
     return ret;
   }
+
   handle->loop = loop;
 
-  return 0;
+  return ret;
 }
 
-int uv_audio_set_volume(uv_audio_t *handle, double volume) {
+int uv_audio_set_volume(uv_audio_t *handle, float volume) {
   int ret;
 
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
   }
 
-  ret = media_playback_set_volume(handle->iofhandle, volume);
+  ret = media_player_set_volume(handle->iofhandle, volume);
   if (ret < 0) {
     return ret;
   }
 
-  if (volume > (double)0) {
+  if (volume > (float)0) {
     handle->volume = volume;
     handle->muted  = false;
   }
 
-  return 0;
+  return ret;
 }
 
-int uv_audio_get_volume(uv_audio_t *handle, double *volume) {
+int uv_audio_get_volume(uv_audio_t *handle, float *volume) {
   int ret;
 
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
   }
 
-  ret = media_playback_get_volume(handle->iofhandle, volume);
+  ret = media_player_get_volume(handle->iofhandle, volume);
   if (ret < 0) {
     return ret;
   }
@@ -259,7 +172,7 @@ int uv_audio_get_volume(uv_audio_t *handle, double *volume) {
     handle->volume = *volume;
   }
 
-  return 0;
+  return ret;
 }
 
 int uv_audio_muted(uv_audio_t *handle, bool muted) {
@@ -271,24 +184,18 @@ int uv_audio_muted(uv_audio_t *handle, bool muted) {
 
   if (muted == true) {
 
-    //第一次设置静音或音量为0时，获取音量
+    //Get the volume when mute is set for the first time or the volume is 0
     if (!handle->volume) {
       uv_audio_get_volume(handle, &handle->volume);
     }
 
     ret = uv_audio_set_volume(handle, 0);
-    if (ret != 0) {
-      return ret;
-    }
   } else {
     ret = uv_audio_set_volume(handle, handle->volume);
-    if (ret != 0) {
-      return ret;
-    }
   }
 
   handle->muted  = muted;
-  return 0;
+  return ret;
 }
 
 int uv_audio_streamtype(uv_audio_t *handle, const char *type) {
@@ -301,22 +208,11 @@ int uv_audio_streamtype(uv_audio_t *handle, const char *type) {
 }
 
 int uv_audio_set_currenttime(uv_audio_t *handle, int sec) {
-  int ret;
-
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
   }
 
-  if (!handle->playback) {
-    return 0;
-  }
-
-  ret = media_playback_seek(handle->iofhandle, sec * 1000);
-  if (ret < 0) {
-    return ret;
-  }
-
-  return 0;
+  return media_player_seek(handle->iofhandle, sec * 1000);
 }
 
 int uv_audio_get_currenttime(uv_audio_t *handle, int *sec) {
@@ -327,17 +223,13 @@ int uv_audio_get_currenttime(uv_audio_t *handle, int *sec) {
     return UV_EINVAL;
   }
 
-  if (!handle->playback) {
-    return 0;
-  }
-
-  ret = media_playback_get_current_position(handle->iofhandle, &msec);
+  ret = media_player_get_position(handle->iofhandle, &msec);
   if (ret < 0) {
     return ret;
   }
   *sec = msec / 1000;
 
-  return 0;
+  return ret;
 }
 
 int uv_audio_get_duration(uv_audio_t *handle, int *sec) {
@@ -348,17 +240,13 @@ int uv_audio_get_duration(uv_audio_t *handle, int *sec) {
     return UV_EINVAL;
   }
 
-  if (!handle->playback) {
-    return 0;
-  }
-
-  ret = media_playback_get_duration(handle->iofhandle, &msec);
+  ret = media_player_get_duration(handle->iofhandle, &msec);
   if (ret < 0) {
     return ret;
   }
   *sec = msec / 1000;
 
-  return 0;
+  return ret;
 }
 
 int uv_audio_get_isplay(uv_audio_t *handle) {
@@ -368,11 +256,7 @@ int uv_audio_get_isplay(uv_audio_t *handle) {
     return UV_EINVAL;
   }
 
-  if (!handle->playback) {
-    return UV_EINVAL;
-  }
-
-  ret = media_playback_is_playing(handle->iofhandle);
+  ret = media_player_is_playing(handle->iofhandle);
   if (ret < 0) {
       return ret;
   }
@@ -381,40 +265,23 @@ int uv_audio_get_isplay(uv_audio_t *handle) {
     handle->playstate = UV_EXT_AUDIO_STATE_PLAY;
   }
 
-  return 0;
+  return ret;
 }
 
 int uv_audio_close(uv_audio_t *handle) {
   int ret;
+  int pending_stop = 0;
 
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
   }
 
-  if (!handle->playback) {
-    ret = media_capture_stop(handle->iofhandle);
-    if (ret < 0) {
-      return ret;
-    }
-  }
-
-  usleep(1000); // function?
-
-  if (handle->playback) {
-    ret = media_playback_destory(handle->iofhandle);
-  } else {
-    ret = media_capture_destory(handle->iofhandle);
-  }
-
-  if (handle->init) {
-    media_service_uninit();
+  ret =media_player_close(handle->iofhandle, pending_stop);
+  if (ret < 0) {
+    return ret;
   }
 
   handle->init = 0;
 
-  if (ret != 0) {
-    return ret;
-  }
-
-  return 0;
+  return ret;
 }

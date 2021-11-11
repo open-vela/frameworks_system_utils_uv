@@ -66,7 +66,7 @@ ifeq ($(CONFIG_MIWEAR_COMMON), y)
 CSRCS += uv_miwear.c
 endif
 
-ifeq ($(CONFIG_MEDIA_SERVICE), y)
+ifeq ($(CONFIG_MEDIA), y)
 CSRCS += uv_audio.c
 endif
 
