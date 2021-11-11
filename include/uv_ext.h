@@ -29,7 +29,7 @@
 #include <mbedtls/pk.h>
 #endif
 
-#ifdef CONFIG_MEDIA_SERVICE
+#ifdef CONFIG_MEDIA
 #include <media_api.h>
 #endif
 
@@ -1122,7 +1122,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
  * audio
  ****************************************************************************/
 
-#ifdef CONFIG_MEDIA_SERVICE
+#ifdef CONFIG_MEDIA
 
 #define UV_EXT_AUDIO_STREAMTYPE_MAX   20
 
@@ -1132,10 +1132,10 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
 #define UV_EXT_AUDIO_STATE_STOP       3
 #define UV_EXT_AUDIO_STATE_COMPLETE   4
 
-#define UV_EXT_AUDIO_EVENT_ERROR              MEDIA_EVENT_ERROR
+#define UV_EXT_AUDIO_EVENT_ERROR              MEDIA_EVENT_NOP
 #define UV_EXT_AUDIO_EVENT_STARTED            MEDIA_EVENT_STARTED
 #define UV_EXT_AUDIO_EVENT_STOPPED            MEDIA_EVENT_STOPPED
-#define UV_EXT_AUDIO_EVENT_COMPLETE           MEDIA_EVENT_PLAYBACK_COMPLETE
+#define UV_EXT_AUDIO_EVENT_COMPLETE           MEDIA_EVENT_COMPLETED
 #define UV_EXT_AUDIO_EVENT_EVENT_PREPARED     MEDIA_EVENT_PREPARED
 #define UV_EXT_AUDIO_EVENT_PAUSED             MEDIA_EVENT_PAUSED
 
@@ -1144,17 +1144,14 @@ typedef struct uv_audio_chain_s uv_audio_t;
 struct uv_audio_chain_s {
   void      *iofhandle;
 
+  bool      loop;
   char      *url;
   char      streamtype[UV_EXT_AUDIO_STREAMTYPE_MAX];
-
   bool      autoplay;
   bool      muted;
-  bool      loop;
-  bool      exit;
-  bool      playback;
   int       playstate;
   int       init;
-  double    volume;
+  float     volume;
 };
 
 /****************************************************************************
@@ -1172,7 +1169,7 @@ struct uv_audio_chain_s {
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_create(uv_audio_t *handle, notify_callback_f callback,
+int uv_audio_create(uv_audio_t *handle, media_event_callback callback,
                     void* parame);
 
 /****************************************************************************
@@ -1199,12 +1196,13 @@ int uv_audio_set_url(uv_audio_t *handles, const char *url);
  *
  * Input Parameters:
  *   handles   - audio handle
+ *   url       - play url
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_prepare(uv_audio_t *handle);
+int uv_audio_prepare(uv_audio_t *handle, const char *url);
 
 /****************************************************************************
  * Name: uv_audio_set_autoplay
@@ -1299,7 +1297,7 @@ int uv_audio_loop(uv_audio_t *handles, bool loop);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_set_volume(uv_audio_t *handles, double volume);
+int uv_audio_set_volume(uv_audio_t *handles, float volume);
 
 /****************************************************************************
  * Name: uv_audio_get_volume
@@ -1317,7 +1315,7 @@ int uv_audio_set_volume(uv_audio_t *handles, double volume);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_get_volume(uv_audio_t *handles, double *volume);
+int uv_audio_get_volume(uv_audio_t *handles, float *volume);
 
 /****************************************************************************
  * Name: uv_audio_muted
