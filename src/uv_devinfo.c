@@ -83,12 +83,12 @@
  ****************************************************************************/
 
 #if defined(CONFIG_VIDEO_FB) || defined(CONFIG_LCD_DEV)
-#if defined(CONFIG_LCD_DEV)
-#  define DEVINFO_LCD_NAME          "/dev/lcd0"
-#  define DEVINFO_LCD_IOCDIDEOINFO  LCDDEVIO_GETVIDEOINFO
-#elif defined(CONFIG_VIDEO_FB)
+#if defined(CONFIG_VIDEO_FB) && !defined(CONFIG_LCD_DEV)
 #  define DEVINFO_LCD_NAME          "/dev/fb0"
 #  define DEVINFO_LCD_IOCDIDEOINFO  FBIOGET_VIDEOINFO
+#elif defined(CONFIG_LCD_DEV)
+#  define DEVINFO_LCD_NAME          "/dev/lcd0"
+#  define DEVINFO_LCD_IOCDIDEOINFO  LCDDEVIO_GETVIDEOINFO
 #endif
 
 static int uv_getscreeninfo(struct fb_videoinfo_s *videinfo) {
@@ -200,22 +200,10 @@ int uv_getdevinfonumber(int *num, int item) {
     }
 
 #if defined(CONFIG_FB_MODULEINFO)
-    case UV_EXT_DEVINFO_SCREENSHAPE:  {
-      ret = uv_getscreeninfo(&videinfo);
-      if (ret < 0) {
-        break;
-      }
+  int shape;
 
-      if (strstr(videinfo.moduleinfo, "round")) {
-        *num = UV_EXT_SCREENSHAPE_ROUND;
-      } else if (strstr(videinfo.moduleinfo, "square")) {
-        *num = UV_EXT_SCREENSHAPE_SQUARE;
-      } else {
-        ret = UV_ENXIO;
-      }
-      break;
-    }
-
+  sscanf(videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
+  info->screenshape = shape;
 #endif
 #endif
     default:
@@ -282,13 +270,10 @@ int uv_getdeviceinfo(uv_devinfo_t *info)
   info->screenwidth  = videinfo.xres;
   info->screenheight = videinfo.yres;
 #if defined(CONFIG_FB_MODULEINFO)
-  if (strstr(videinfo.moduleinfo, "round")) {
-    *num = UV_EXT_SCREENSHAPE_ROUND;
-  } else if (strstr(videinfo.moduleinfo, "square")) {
-    *num = UV_EXT_SCREENSHAPE_SQUARE;
-  } else {
-    return UV_ENXIO;
-  }
+  int shape;
+
+  sscanf(videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
+  info->screenshape = shape;
 #endif
 #endif
 
