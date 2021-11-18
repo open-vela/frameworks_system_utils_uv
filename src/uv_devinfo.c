@@ -200,10 +200,13 @@ int uv_getdevinfonumber(int *num, int item) {
     }
 
 #if defined(CONFIG_FB_MODULEINFO)
-  int shape;
+    case UV_EXT_DEVINFO_SCREENSHAPE: {
+      int shape;
 
-  sscanf(videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
-  info->screenshape = shape;
+      sscanf(videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
+      *num = shape;
+      break;
+    }
 #endif
 #endif
     default:
