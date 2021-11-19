@@ -31,7 +31,7 @@ int uv_audio_create(uv_audio_t *handle, media_event_callback callback,
     return 0;
   }
 
-  handle->iofhandle = media_player_open(NULL);
+  handle->iofhandle = media_player_open("Music");
   if (!handle->iofhandle) {
     return UV_EINVAL;
   }
