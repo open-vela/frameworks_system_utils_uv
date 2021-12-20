@@ -515,64 +515,61 @@ int uv_property_commit(uv_loop_t *loop, uv_property_cb cb, void *arg);
  * brightness
  ****************************************************************************/
 
-#if defined(CONFIG_LCD_DEV) && defined(CONFIG_UORB)
-
-typedef struct uv_brightness_s uv_brightness_t;
-
-struct uv_brightness_s {
-  /* Whether the application is on the current screen. 0: no 1: yes*/
-
-  int active;
-
-  /* Each application saves brightness information separately */
-
-  int devid;
-  int lightvalue;
-  int lightmode;
-  bool keepon;
-};
-
 /****************************************************************************
- * Name: uv_system_brightness_setval
+ * Type: uv_brightness_cb_t
  *
  * Description:
- *   Set the system brightness value and the screen brightness.
+ *   brightness setting completion callback
  *
  * Input Parameters:
- *   val     - brightness value. 0 - CONFIG_LCD_MAXPOWER.
+ *   status      - brightness setting completion callback
+ *   val         - brightness setting return result
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_system_brightness_setval(int val);
+typedef void (*uv_brightness_cb_t)(int status, int val);
+
+typedef void * uv_brightness_handle_t;
+
+typedef struct uv_sysbrightness_s {
+    int (*init)(uv_loop_t* loop, uv_brightness_handle_t* handle);
+    int (*close)(uv_brightness_handle_t handle);
+    int (*setval)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb);
+    int (*getval)(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
+    int (*setmode)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb);
+    int (*getmode)(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
+    int (*keepscreenon)(uv_brightness_handle_t handle, bool val, uv_brightness_cb_t cb);
+    int (*recovery)(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
+} uv_sysbrightness_ops_t;
 
 /****************************************************************************
- * Name: uv_system_brightness_getval
+ * Name: uv_sysbrightness_register
  *
  * Description:
- *   Gets the system brightness value.
- *
- * Input Parameters:
- *   val     - system brightness value.
+ *   Register system brightness interface.
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_system_brightness_getval(int *val);
+int uv_sysbrightness_register(uv_sysbrightness_ops_t* brightness);
 
 /****************************************************************************
- * Name: uv_system_brightness_recovery
+ * Name: uv_brightness_recovery
  *
  * Description:
  *   Recovery the system brightness value.
  *
+ * Input Parameters:
+ *   cb      - brightness setting completion callback
+ *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_system_brightness_recovery(void);
+int uv_brightness_recovery(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
 
 /****************************************************************************
  * Name: uv_brightness_setval
@@ -583,12 +580,12 @@ int uv_system_brightness_recovery(void);
  * Input Parameters:
  *   handle  - brightness handle. There can only be one per application.
  *   val     - brightness value. 0 - CONFIG_LCD_MAXPOWER.
- *
+ *   cb      - brightness setting completion callback
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_setval(uv_brightness_t *handle, int val);
+int uv_brightness_setval(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb);
 
 /****************************************************************************
  * Name: uv_brightness_getval
@@ -597,13 +594,13 @@ int uv_brightness_setval(uv_brightness_t *handle, int val);
  *   Gets the screen brightness. Does not change the system brightness value
  * Input Parameters:
  *   handle  - brightness handle. There can only be one per application.
- *   val     - brightness value.
+ *   cb      - brightness setting completion callback
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_getval(uv_brightness_t *handle, int *val);
+int uv_brightness_getval(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
 
 /****************************************************************************
  * Name: uv_brightness_setmode
@@ -614,12 +611,13 @@ int uv_brightness_getval(uv_brightness_t *handle, int *val);
  * Input Parameters:
  *   handle  - brightness handle. There can only be one per application.
  *   mode    - brightness mode. 0: Manual 1: Automatic
+ *   cb      - brightness setting completion callback
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_setmode(uv_brightness_t *handle, int mode);
+int uv_brightness_setmode(uv_brightness_handle_t handle, int mode, uv_brightness_cb_t cb);
 
 /****************************************************************************
  * Name: uv_brightness_getmode
@@ -629,13 +627,13 @@ int uv_brightness_setmode(uv_brightness_t *handle, int mode);
  *
  * Input Parameters:
  *   handle  - brightness handle. There can only be one per application.
- *   mode    - brightness mode. 0: Manual 1: Automatic
+ *   cb      - brightness setting completion callback
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_getmode(uv_brightness_t *handle, int *mode);
+int uv_brightness_getmode(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
 
 /****************************************************************************
  * Name: uv_brightness_setkeepon
@@ -647,12 +645,13 @@ int uv_brightness_getmode(uv_brightness_t *handle, int *mode);
  * Input Parameters:
  *   handle  - brightness handle. There can only be one per application.
  *   keep    - Keep the screen always bright. 0: false 1: true
+ *   cb      - brightness setting completion callback
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_setkeepon(uv_brightness_t *handle, bool keep);
+int uv_brightness_setkeepon(uv_brightness_handle_t handle, bool keep, uv_brightness_cb_t cb);
 
 /****************************************************************************
  * Name: uv_brightness_init
@@ -664,12 +663,13 @@ int uv_brightness_setkeepon(uv_brightness_t *handle, bool keep);
  * Input Parameters:
  *   loop    - event loop.
  *   handle  - brightness handle. There can only be one per application.
+ *   cb      - brightness setting completion callback
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_init(uv_loop_t *loop, uv_brightness_t *handle);
+int uv_brightness_init(uv_loop_t* loop, uv_brightness_handle_t* handle);
 
 /****************************************************************************
  * Name: uv_brightness_close
@@ -685,24 +685,7 @@ int uv_brightness_init(uv_loop_t *loop, uv_brightness_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_close(uv_brightness_t *handle);
-
-/****************************************************************************
- * Name: uv_brightness_free
- *
- * Description:
- *   Brightness free.
- *   Note: Each application is called when it finally closes.
- *
- * Input Parameters:
- *   handle  - brightness handle. There can only be one per application.
- *
- * Returned Value:
- *   Zero (OK) on success;
- ****************************************************************************/
-
-int uv_brightness_free(void);
-#endif
+int uv_brightness_close(uv_brightness_handle_t handle);
 
 #if defined(__NuttX__) && defined(CONFIG_LIB_CURL) || defined(MOCK_LIBUV_FEATURE)
 
