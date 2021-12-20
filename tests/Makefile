@@ -31,11 +31,6 @@ PROGNAME += uv_aes
 MAINSRC  += uv-aes-test.c
 endif
 
-ifeq ($(CONFIG_LCD_DEV)$(CONFIG_UORB), yy)
-PROGNAME += uv_brightness
-MAINSRC  += uv-brightness-test.c
-endif
-
 ifeq ($(CONFIG_KVDB), y)
 PROGNAME += uv_locale
 MAINSRC  += uv-locale-test.c

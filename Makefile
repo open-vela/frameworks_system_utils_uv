@@ -31,9 +31,7 @@ ifeq ($(CONFIG_LIB_MBEDTLS), y)
 CSRCS += uv_aes.c
 endif
 
-ifeq ($(CONFIG_LCD_DEV)$(CONFIG_UORB), yy)
 CSRCS += uv_brightness.c
-endif
 
 ifeq ($(CONFIG_KVDB), y)
 CSRCS += uv_locale.c
