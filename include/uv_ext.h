@@ -850,9 +850,9 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data);
 
 int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_request_cb cb);
 
-typedef struct cache_manager uv_ncm_t;
-
-typedef  void (*uv_ncm_cb_t)(int , const char *, void *);
+typedef struct uv_ncm_s uv_ncm_t;
+typedef void*  uv_ncm_handle_t;
+typedef void (*uv_ncm_cb_t)(int , const char *, void *);
 
 typedef enum{
   UV_NCM_RES_ERROR,
@@ -860,6 +860,14 @@ typedef enum{
   UV_NCM_RES_DOWNLOAD_START,
   UV_NCM_RES_CACHE_HIT
 }uv_ncm_res_t;
+
+typedef struct uv_ncm_cfg_s
+{
+  const char** res_path;
+  const char* path;
+  uv_ncm_cb_t cb;
+  void* userp;
+}uv_ncm_cfg_t;
 
 /****************************************************************************
  * Name: uv_ncm_init
@@ -900,19 +908,63 @@ int uv_ncm_close(uv_ncm_t* ncm);
  *
  * Input Parameters:
  *   ncm      - ncm structure pointer.
- *   path     - file path or url, The URL must start with HTTP
- *   fallback - user data point , If it is a path or exists in the cache,
- *              the real path is returned directly .otherwise, fallback is returned
- *   cb       - Callback function executed when the file download is complete，
- *              If it is NULL, use blocking mode to download
- *   userp    - user data point
+ *   cfg      - network cache configure, include the following attributes
+ *     path     - file path or url, The URL must start with HTTP
+ *     fallback - user data point , If it is a path or exists in the cache,
+ *                the real path is returned directly .otherwise, fallback is returned
+ *     cb       - Callback function executed when the file download is complete，
+ *                If it is NULL, use blocking mode to download
+ *     userp    - user data point
+ *   handle   -  resource handle
  * Returned Value:
  *   real path or fallback
  ****************************************************************************/
 
-uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const char** res_path, const char* path, uv_ncm_cb_t cb, void* userp);
+uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const uv_ncm_cfg_t* cfg, uv_ncm_handle_t *handle);
 
-const char* uv_ncm_get_cache(uv_ncm_t* ncm, const char* url);
+/****************************************************************************
+ * Name: uv_ncm_get_cache
+ *
+ * Description:
+ *    Query whether cache exists
+ *
+ * Input Parameters:
+ *   ncm      - ncm structure pointer.
+ *   path     - file path  url, The URL must start with HTTP
+ * Returned Value:
+ *   real path or fallback
+ ****************************************************************************/
+
+const char* uv_ncm_get_cache(uv_ncm_t* ncm, const char* path);
+
+/****************************************************************************
+ * Name: uv_ncm_cfg_init
+ *
+ * Description:
+ *   Initialize network cache configure structure
+ *
+ * Input Parameters:
+ *   cfg      - network or cache configure, include the following attributes
+ * Returned Value:
+ *   None
+ ****************************************************************************/
+
+void uv_ncm_cfg_init(uv_ncm_cfg_t* cfg);
+
+/****************************************************************************
+ * Name: uv_ncm_cancel
+ *
+ * Description:
+ *    Cancel cache download callback
+ *
+ * Input Parameters:
+ *   handle     -  resource handle
+ *
+ * Returned Value:
+ *   None
+ ****************************************************************************/
+
+void uv_ncm_cancel(uv_ncm_handle_t handle);
 
 #endif
 
