@@ -152,7 +152,7 @@ static void destroy_curl_context(curl_context_t* context)
 
 static void uv_request_done(CURL* easy_handle, uv_request_t* request)
 {
-    curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &request);
+    curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, (char **)&request);
     curl_easy_getinfo(easy_handle, CURLINFO_RESPONSE_CODE, &request->response.httpcode);
 
     if (request->fd) {
@@ -190,7 +190,7 @@ static void check_multi_info(CURLM* multi_handle)
 
     while ((message = curl_multi_info_read(multi_handle, &pending))) {
         if (message->msg == CURLMSG_DONE) {
-            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &request);
+            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, (char **)&request);
             request->error_code = message->data.result;
 
             struct uv_request_session_s* handle = request->handle;
