@@ -207,7 +207,7 @@ int uv_audio_streamtype(uv_audio_t *handle, const char *type) {
   return 0;
 }
 
-int uv_audio_set_currenttime(uv_audio_t *handle, int sec) {
+int uv_audio_set_currenttime(uv_audio_t *handle, unsigned int sec) {
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
   }
@@ -215,9 +215,9 @@ int uv_audio_set_currenttime(uv_audio_t *handle, int sec) {
   return media_player_seek(handle->iofhandle, sec * 1000);
 }
 
-int uv_audio_get_currenttime(uv_audio_t *handle, int *sec) {
+int uv_audio_get_currenttime(uv_audio_t *handle, unsigned int *sec) {
   int ret;
-  int msec;
+  unsigned int msec;
 
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;
@@ -232,9 +232,9 @@ int uv_audio_get_currenttime(uv_audio_t *handle, int *sec) {
   return ret;
 }
 
-int uv_audio_get_duration(uv_audio_t *handle, int *sec) {
+int uv_audio_get_duration(uv_audio_t *handle, unsigned int *sec) {
   int ret;
-  int msec;
+  unsigned int  msec;
 
   if (!handle || !handle->iofhandle) {
     return UV_EINVAL;

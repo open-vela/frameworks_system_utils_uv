@@ -25,6 +25,7 @@
 #include <nuttx/list.h>
 #include <nuttx/nuttx.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <uv.h>
 
@@ -193,14 +194,14 @@ static void message_reader_alloc_cb(uv_handle_t* handle, size_t suggested_size,
 
     /* For debug purpose, limit the max message length. */
     if (len > CONFIG_MIWEAR_MESSAGE_MAX_LEN) {
-      err("Fatal error, message length check failed: %d, suggested: %d\n", len,
+      err("Fatal error, message length check failed: %"PRIu32", suggested: %zu\n", len,
           suggested_size);
       DEBUGASSERT(0);
     }
 
     void* body = malloc(len);
     if (body == NULL) {
-      err("Fatal error: no memory, request len: %d.\n", len);
+      err("Fatal error: no memory, request len: %"PRIu32".\n", len);
       return;
     }
 
@@ -210,7 +211,7 @@ static void message_reader_alloc_cb(uv_handle_t* handle, size_t suggested_size,
 
     buf->base = (char*)reader->message.data;
     buf->len = len;
-    info("msg body alloc: %d.\n", len);
+    info("msg body alloc: %"PRIu32".\n", len);
     return;
   }
 
@@ -409,7 +410,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     }
 
     const message_response_t* response = msg->data;
-    info("Got response, client %s, to message id: 0x%08x\n", client->name,
+    info("Got response, client %s, to message id: 0x%08"PRIx32"\n", client->name,
          response->id);
 
     /* Loop through the write-requests waiting for response. */
@@ -425,7 +426,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     }
 
     if (!found) {
-      err("Unrecognized response id: 0x%08x\n", response->id);
+      err("Unrecognized response id: 0x%08"PRIx32"\n", response->id);
       return;
     }
 
@@ -449,7 +450,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
    * this data message needs reply, otherwise, simply receive it.
   */
 
-  info("got message to/from client:%s, msg:%d, len:%d\n", client->name,
+  info("got message to/from client:%s, msg:%d, len:%"PRIu32"\n", client->name,
        msg->type, msg->len);
 
   if (client->state != CLIENT_STATE_CONNECTED) {
@@ -602,7 +603,7 @@ static void uv_write_done_callback(uv_write_t* req, int status)
   miwear_wreq_t* wreq = (miwear_wreq_t*)req;
 
   if (status != 0) {
-    err("Failed sending data, client: %s, id: %d, status: %d\n",
+    err("Failed sending data, client: %s, id: %"PRIu32", status: %d\n",
         wreq->client->name, wreq->message.id, status);
     /* For all other messages, no responses needed, make the callback now.*/
     if (wreq->cb) {
@@ -612,7 +613,7 @@ static void uv_write_done_callback(uv_write_t* req, int status)
     return;
   }
 
-  info("sent to %s, type:%d, id: %d\n", wreq->client->name,
+  info("sent to %s, type:%d, id: %"PRIu32"\n", wreq->client->name,
        wreq->message.type, wreq->message.id);
 
   if (wreq->message.type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
@@ -876,7 +877,7 @@ static int uv_miwear_send_to_server(uv_miwear_t* miwear,
   }
 
 send_msg_continue:
-  info("Send to server MSG: %d, len: %d\n", message->type, message->len);
+  info("Send to server MSG: %d, len: %"PRIu32"\n", message->type, message->len);
 
   miwear_wreq_t* wreq = malloc(sizeof(miwear_wreq_t));
   if (wreq == NULL)

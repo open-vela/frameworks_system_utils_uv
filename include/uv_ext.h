@@ -690,7 +690,7 @@ int uv_brightness_close(uv_brightness_handle_t handle);
 #if defined(__NuttX__) && defined(CONFIG_LIB_CURL) || defined(MOCK_LIBUV_FEATURE)
 
 struct uv_response_s {
-    int httpcode;
+    long httpcode;
     char* headers;
     char* body;
     size_t size;
@@ -1399,7 +1399,7 @@ int uv_audio_streamtype(uv_audio_t *handles, const char *type);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_set_currenttime(uv_audio_t *handles, int sec);
+int uv_audio_set_currenttime(uv_audio_t *handles, unsigned int sec);
 
 /****************************************************************************
  * Name: uv_audio_get_currenttime
@@ -1417,7 +1417,7 @@ int uv_audio_set_currenttime(uv_audio_t *handles, int sec);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_get_currenttime(uv_audio_t *handles, int *sec);
+int uv_audio_get_currenttime(uv_audio_t *handles, unsigned int *sec);
 
 /****************************************************************************
  * Name: uv_audio_get_duration
@@ -1435,7 +1435,7 @@ int uv_audio_get_currenttime(uv_audio_t *handles, int *sec);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_get_duration(uv_audio_t *handles, int *sec);
+int uv_audio_get_duration(uv_audio_t *handles, unsigned int *sec);
 
 /****************************************************************************
  * Name: uv_audio_get_isplay

@@ -48,7 +48,7 @@ static void audio_notify_callback(void* cookie, int event,
 
 static void audio_timer_run_cb(uv_timer_t* handle) {
   float volume = 0;
-  int ret, sec = 0;
+  unsigned int ret, sec = 0;
 
   switch (step)
   {
