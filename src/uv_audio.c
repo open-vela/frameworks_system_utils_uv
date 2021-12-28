@@ -20,7 +20,106 @@
 
 #include <uv_ext.h>
 #include <stddef.h>
+#include <fcntl.h>
 #include <uv/errno.h>
+#include <nuttx/mqueue.h>
+
+/*********************** Asynchronous interface *****************************/
+
+struct uv_audio_info_s {
+  uv_audio_ops_t  *ops;
+  uv_audio_ctrl_t *ctrl;
+};
+
+static struct uv_audio_info_s audio_info;
+
+void uv_audio_play_register(uv_audio_ops_t *play) {
+  audio_info.ops = play;
+}
+
+void uv_audio_ctrl_register(uv_audio_ctrl_t *ctrl) {
+  audio_info.ctrl = ctrl;
+}
+
+uv_audio_ops_t  *uv_audio_play_init(void) {
+  return audio_info.ops;
+}
+
+uv_audio_ctrl_t *uv_audio_ctrl_init(void) {
+  return audio_info.ctrl;
+}
+
+int uv_audio_async_messgae_send(const char *mq_name,
+                                uv_audio_mqmessage_t *data) {
+  int ret;
+  int fd;
+
+  if (NULL == mq_name || NULL == data) {
+    return UV_EINVAL;
+  }
+
+  fd = mq_open(mq_name, O_WRONLY | O_NONBLOCK);
+  if (fd < 0) {
+      return -errno;
+  }
+
+  ret = mq_send(fd, (const char*)data, sizeof(uv_audio_mqmessage_t), 0);
+  mq_close(fd);
+  return ret;
+}
+
+int uv_audio_async_messgae_recv(const char *mq_name,
+                                uv_audio_mqmessage_t *data) {
+  int ret;
+  int fd;
+
+  if (NULL == mq_name || NULL == data) {
+    return UV_EINVAL;
+  }
+
+  fd = mq_open(mq_name, O_RDONLY | O_NONBLOCK);
+  if (fd < 0) {
+      return -errno;
+  }
+
+  ret = mq_receive(fd, (char*)data, sizeof(uv_audio_mqmessage_t), NULL);
+  mq_close(fd);
+  return ret;
+}
+
+int uv_audio_async_messgae_init(uv_loop_t *loop,
+                                uv_poll_t *pollhandle,
+                                const char *mq_name,
+                                uv_poll_cb cb) {
+  if (NULL == loop || NULL == mq_name || NULL == cb) {
+    return UV_EINVAL;
+  }
+
+  mode_t mode = 0;
+  struct mq_attr attr = { 0 };
+
+  attr.mq_msgsize = sizeof(uv_audio_mqmessage_t);
+  attr.mq_maxmsg  = 50;
+  int fd = mq_open(mq_name, O_RDWR | O_CREAT | O_NONBLOCK, mode,
+                  &attr);
+  if (fd < 0) {
+    return -errno;
+  }
+
+  int ret = uv_poll_init(loop, pollhandle, fd);
+  if (ret) {
+    mq_close(fd);
+    return ret;
+  }
+
+  ret = uv_poll_start(pollhandle, UV_READABLE, cb);
+  if (ret) {
+    mq_close(fd);
+    return ret;
+  }
+}
+
+/*********************** Synchronous interface *****************************/
 
 int uv_audio_create(uv_audio_t *handle, media_event_callback callback,
                     void* parame) {
