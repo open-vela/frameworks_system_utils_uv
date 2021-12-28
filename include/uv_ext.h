@@ -1165,6 +1165,97 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
 
 #ifdef CONFIG_MEDIA
 
+/*********************** Asynchronous interface *****************************/
+
+#define UV_AUDIO_EVENT_ERROR                  0x80
+#define UV_AUDIO_EVENT_OPEN                   0x81
+#define UV_AUDIO_EVENT_PREPARE                0x82
+#define UV_AUDIO_EVENT_START                  0x83
+#define UV_AUDIO_EVENT_PAUSE                  0x84
+#define UV_AUDIO_EVENT_STOP                   0x85
+#define UV_AUDIO_EVENT_GET_VOLUME             0x86
+#define UV_AUDIO_EVENT_GET_POSITION           0x87
+#define UV_AUDIO_EVENT_GET_DURATION           0x88
+#define UV_AUDIO_EVENT_PLAY_STATE             0x89
+#define UV_AUDIO_EVENT_COMPLETE               0x8A
+#define UV_AUDIO_EVENT_SEEK                   0x8B
+#define UV_AUDIO_EVENT_ALLSTATE               0x8C
+#define UV_AUDIO_EVENT_CLOSE                  0xFF
+
+typedef struct uv_audio_mqmessage_s {
+  void *data;
+  int status;
+} uv_audio_mqmessage_t;
+
+typedef struct playstate_s {
+  /* The currently playing audio media uri, returns an empty string when stopped. */
+  char *src;
+  /* Playing status, respectively 'play', 'pause', 'stop'*/
+  int state;
+  /* The volume of the current audio, the default current system media volume. */
+  int volume;
+  /* The current progress of the current audio, in seconds. */
+  unsigned int currenttime;
+  /* The total duration of the currently playing audio. */
+  unsigned int duration;
+  /* Whether the current audio is playing automatically. */
+  bool autoplay;
+  /* Whether the current audio is playing in a loop. */
+  bool loop;
+  /* Whether the current audio is playing silently. */
+  bool muted;
+  /* allstate private data. */
+  void *data;
+} uv_audio_allstate_t;
+
+typedef void (*uv_audio_callback_t)(void *data, int event, int status, void *result);
+typedef void (*uv_audio_music_meta_callback_t)(char *title, char *artist, char *albumt);
+
+typedef struct uv_audio_ops_s {
+  void (*uv_audio_play_open)(uv_audio_callback_t cb, void *data);
+  int  (*uv_audio_play_play)(void *handle, const char *url, const char *options);
+  int  (*uv_audio_play_prepare)(void *handle, const char *url, const char *options);
+  int  (*uv_audio_play_start)(void *handle);
+  int  (*uv_audio_play_pause)(void *handle);
+  int  (*uv_audio_play_stop)(void *handle);
+  int  (*uv_audio_play_set_loop)(void *handle, int loop);
+  int  (*uv_audio_play_set_volume)(void *handle, int volume);
+  int  (*uv_audio_play_get_volume)(void *handle);
+  int  (*uv_audio_play_muted)(void *handle, bool muted);
+  int  (*uv_audio_play_set_seek)(void *handle, unsigned int msec);
+  int  (*uv_audio_play_get_position)(void *handle);
+  int  (*uv_audio_play_get_duration)(void *handle);
+  int  (*uv_audio_play_state)(void *handle);
+  int  (*uv_audio_play_allstate)(void *handle, void *data);
+  int  (*uv_audio_play_close)(void *handle);
+} uv_audio_ops_t;
+
+typedef struct uv_audio_ctrl_s {
+  int (*uv_audio_ctrl_prevsong)(void);
+  int (*uv_audio_ctrl_nextsong)(void);
+  int (*uv_audio_ctrl_play)(void);
+  int (*uv_audio_ctrl_pause)(void);
+  int (*uv_audio_ctrl_stop)(void);
+  int (*uv_audio_ctrl_volumeup)(void);
+  int (*uv_audio_ctrl_volumedown)(void);
+  int (*uv_audio_ctrl_get_music_meta)(uv_audio_music_meta_callback_t cb);
+} uv_audio_ctrl_t;
+
+void uv_audio_play_register(uv_audio_ops_t *ctrl);
+void uv_audio_ctrl_register(uv_audio_ctrl_t *ctrl);
+uv_audio_ops_t  *uv_audio_play_init(void);
+uv_audio_ctrl_t *uv_audio_ctrl_init(void);
+int uv_audio_async_messgae_send(const char *mq_name,
+                                uv_audio_mqmessage_t *data);
+int uv_audio_async_messgae_recv(const char *mq_name,
+                                uv_audio_mqmessage_t *data);
+int uv_audio_async_messgae_init(uv_loop_t *loop,
+                                uv_poll_t *pollhandle,
+                                const char *mq_name,
+                                uv_poll_cb cb);
+
+/*********************** Synchronous interface *****************************/
+
 #define UV_EXT_AUDIO_STREAMTYPE_MAX   20
 
 #define UV_EXT_AUDIO_STATE_UKNOW      0
@@ -1474,7 +1565,6 @@ int uv_audio_get_isplay(uv_audio_t *handle);
 int uv_audio_close(uv_audio_t *handles);
 
 #endif
-
 
 /****************************************************************************
  * network

@@ -20,10 +20,475 @@
  ****************************************************************************/
 
 #include <uv_ext.h>
+#include <fcntl.h>
+#include <nuttx/mqueue.h>
+#include <system/readline.h>
+
+#ifdef CONFIG_MIWEAR_APPS_FRAMEWORKS
+
+#define UV_AUDIO_TEST_CTRL
+
+#define UV_AUDIO_TEST_STEP0         0
+#define UV_AUDIO_TEST_STEP1         (UV_AUDIO_TEST_STEP0 + 1)
+#define UV_AUDIO_TEST_STEP2         (UV_AUDIO_TEST_STEP1 + 1)
+#define UV_AUDIO_TEST_STEP3         (UV_AUDIO_TEST_STEP2 + 1)
+#define UV_AUDIO_TEST_STEP4         (UV_AUDIO_TEST_STEP3 + 1)
+#define UV_AUDIO_TEST_STEP5         (UV_AUDIO_TEST_STEP4 + 1)
+#define UV_AUDIO_TEST_STEP6         (UV_AUDIO_TEST_STEP5 + 1)
+#define UV_AUDIO_TEST_STEP7         (UV_AUDIO_TEST_STEP6 + 1)
+#define UV_AUDIO_TEST_STEP8         (UV_AUDIO_TEST_STEP7 + 1)
+#define UV_AUDIO_TEST_STEP9         (UV_AUDIO_TEST_STEP8 + 1)
+#define UV_AUDIO_TEST_STEP10        (UV_AUDIO_TEST_STEP9 + 1)
+#define UV_AUDIO_TEST_STEP11        (UV_AUDIO_TEST_STEP10 + 1)
+#define UV_AUDIO_TEST_STEP12        (UV_AUDIO_TEST_STEP11 + 1)
+#define UV_AUDIO_TEST_STEP13        (UV_AUDIO_TEST_STEP12 + 1)
+#define UV_AUDIO_TEST_STEP14        (UV_AUDIO_TEST_STEP13 + 1)
+#define UV_AUDIO_TEST_STEP15        (UV_AUDIO_TEST_STEP14 + 1)
+
+#define UV_AUDIO_TEST_CTRL_PREV     1
+#define UV_AUDIO_TEST_CTRL_NEXT     2
+#define UV_AUDIO_TEST_CTRL_PLAY     3
+#define UV_AUDIO_TEST_CTRL_PAUSE    4
+#define UV_AUDIO_TEST_CTRL_STOP     5
+#define UV_AUDIO_TEST_CTRL_VLMUP    6
+#define UV_AUDIO_TEST_CTRL_VLMDOWM  7
+#define UV_AUDIO_TEST_CTRL_MUSIC    8
+
+#define UV_AUDIO_TEST_QUEUE "uv_audio_test_queue"
+
+#ifdef UV_AUDIO_TEST_CTRL
+
+static uv_audio_ctrl_t *ctrl_ops = NULL;
+struct crtlcmd_s {
+  char str[25];
+  int cmd;
+} crtlcmd [] = {
+  {"prev",    UV_AUDIO_TEST_CTRL_PREV},
+  {"next",    UV_AUDIO_TEST_CTRL_NEXT},
+  {"play",    UV_AUDIO_TEST_CTRL_PLAY},
+  {"pause",   UV_AUDIO_TEST_CTRL_PAUSE},
+  {"stop",    UV_AUDIO_TEST_CTRL_STOP},
+  {"vlmup",   UV_AUDIO_TEST_CTRL_VLMUP},
+  {"vlmdown", UV_AUDIO_TEST_CTRL_VLMDOWM},
+  {"music",   UV_AUDIO_TEST_CTRL_MUSIC},
+};
+
+#else
+
+static uv_poll_t uv_audio_test_poll;
+static uv_audio_ops_t *ops = NULL;
+static void *handle = NULL;
+static uv_loop_t audiploop;
+
+#endif
+
+#ifdef UV_AUDIO_TEST_CTRL
+
+void uv_audio_test_music_meta_cb(char *title,
+                                 char *artist,
+                                 char *album) {
+  if (title) {
+    printf("title:%s\n", title);
+  }
+
+  if (artist) {
+    printf("artist:%s\n", artist);
+  }
+
+  if (album) {
+    printf("album:%s\n", album);
+  }
+}
+
+static void audio_test_execute_cmd(char *cmd) {
+  int op = 0;
+  int i;
+
+  if (ctrl_ops == NULL) {
+    return;
+  }
+
+  for (i = 0; i < sizeof(crtlcmd) / sizeof(crtlcmd[0]); i++) {
+    if (strstr(cmd, crtlcmd[i].str)) {
+      op = crtlcmd[i].cmd;
+    }
+  }
+
+  if (op == 0) {
+    return;
+  }
+
+  switch (op) {
+  case UV_AUDIO_TEST_CTRL_PREV:
+    ctrl_ops->uv_audio_ctrl_prevsong();
+  break;
+
+  case UV_AUDIO_TEST_CTRL_NEXT:
+    ctrl_ops->uv_audio_ctrl_nextsong();
+  break;
+
+  case UV_AUDIO_TEST_CTRL_PLAY:
+    ctrl_ops->uv_audio_ctrl_play();
+  break;
+
+  case UV_AUDIO_TEST_CTRL_PAUSE:
+    ctrl_ops->uv_audio_ctrl_pause();
+  break;
+
+  case UV_AUDIO_TEST_CTRL_STOP:
+    ctrl_ops->uv_audio_ctrl_stop();
+  break;
+
+  case UV_AUDIO_TEST_CTRL_VLMUP:
+    ctrl_ops->uv_audio_ctrl_volumeup();
+  break;
+
+  case UV_AUDIO_TEST_CTRL_VLMDOWM:
+    ctrl_ops->uv_audio_ctrl_volumedown();
+  break;
+
+  case UV_AUDIO_TEST_CTRL_MUSIC:
+    ctrl_ops->uv_audio_ctrl_get_music_meta(uv_audio_test_music_meta_cb);
+  break;
+  }
+
+  printf("ctrl op ======= %d\n", op);
+
+}
+
+static int audio_test_ctrl_tool(int argc, char *argv[]) {
+  int len;
+  char *buffer = malloc(CONFIG_NSH_LINELEN);
+
+  if (!buffer) {
+    return -ENOMEM;
+  }
+
+  ctrl_ops = uv_audio_ctrl_init();
+  if (ctrl_ops == NULL) {
+    free(buffer);
+    return -1;
+  }
+
+  while (1) {
+    printf("audio_test> ");
+    fflush(stdout);
+
+    len = readline(buffer, CONFIG_NSH_LINELEN, stdin, stdout);
+    buffer[len] = '\0';
+    if (len < 0)
+      continue;
+
+    if (buffer[0] == '!') {
+#ifdef CONFIG_SYSTEM_SYSTEM
+      system(buffer + 1);
+#endif
+      continue;
+    }
+
+    if (buffer[len - 1] == '\n')
+      buffer[len - 1] = '\0';
+
+    audio_test_execute_cmd(buffer);
+  }
+
+  free(buffer);
+}
+
+#else
+
+static void __audio_state_work_cb(uv_work_t* work) {
+
+  if (work && work->data) {
+    printf("(%s %d) thread id is: %d, (data=%p)\n", __func__, __LINE__, uv_thread_self(), work->data);
+  } else {
+    printf("(%s %d) thread id is: %d\n", __func__, __LINE__, uv_thread_self());
+  }
+}
+
+static void __audio_state_after_work_cb(uv_work_t* req, int status) {
+  if (req) {
+    free(req);
+  }
+
+  printf("(%s %d) thread id is: %d\n", __func__, __LINE__, uv_thread_self());
+}
+
+static void uv_audio_callback_cb(void *data, int event, int status, void *result) {
+  uv_audio_mqmessage_t message = { 0 };
+
+  if (status != 0) {
+    printf("audio event fail. event=%x status=%d\n", event, status);
+    return;
+  }
+
+  printf("audio event cb. event=%x status=%d\n", event, status);
+
+  switch (event) {
+    case UV_AUDIO_EVENT_ERROR:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_ERROR\n");
+    break;
+
+    case UV_AUDIO_EVENT_OPEN:
+      if (!handle) {
+        handle = result;
+        return;
+      }
+    break;
+
+    case UV_AUDIO_EVENT_PREPARE:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_PREPARE\n");
+    break;
+
+    case UV_AUDIO_EVENT_START:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_START\n");
+    break;
+
+    case UV_AUDIO_EVENT_PAUSE:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_PAUSE\n");
+    break;
+
+    case UV_AUDIO_EVENT_STOP:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_STOP\n");
+    break;
+
+    case UV_AUDIO_EVENT_GET_VOLUME:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_GET_VOLUME(%f)\n", *(float*)result);
+    break;
+
+    case UV_AUDIO_EVENT_GET_POSITION:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_GET_POSITION(%u)\n", *(unsigned int*)result);
+    break;
+
+    case UV_AUDIO_EVENT_GET_DURATION:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_GET_DURATION(%u)\n", *(unsigned int*)result);
+    break;
+
+    case UV_AUDIO_EVENT_PLAY_STATE:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_PLAY_STATE(%d)\n", *(int*)result);
+    break;
+
+    case UV_AUDIO_EVENT_COMPLETE:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_COMPLETE\n");
+    break;
+
+    case UV_AUDIO_EVENT_SEEK:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_SEEK\n");
+    break;
+
+    case UV_AUDIO_EVENT_ALLSTATE: {
+      uv_audio_allstate_t *info = (uv_audio_allstate_t *)result;
+
+      printf("src:%s\n", info->src);
+      printf("autoplay:%d\n", info->autoplay);
+      printf("loop:%d\n", info->loop);
+      printf("muted:%d\n", info->muted);
+      printf("volume:%f\n", info->volume);
+      printf("state:%d\n", info->state);
+      printf("currenttime:%d\n", info->currenttime);
+      printf("duration:%d\n", info->duration);
+      printf("data:(p=%p)\n", info->data);
+
+      message.data = info->data;
+      break;
+    }
+  }
+
+  message.status = event;
+  uv_audio_async_messgae_send(UV_AUDIO_TEST_QUEUE, &message);
+}
+
+static void audio_timer_run_cb(uv_timer_t* tim_handle) {
+  char *p = (char*)malloc(50);
+  static int step = 0;
+
+  if (p == NULL) {
+    return;
+  }
+
+  printf("state malloc info:(p=%p)\n", p);
+
+  switch (UV_AUDIO_TEST_STEP15)
+  {
+    case UV_AUDIO_TEST_STEP0:
+      ops->uv_audio_play_pause(handle);
+      ops->uv_audio_play_state(handle);
+      break;
+
+    case UV_AUDIO_TEST_STEP1:
+      ops->uv_audio_play_start(handle);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP2:
+      ops->uv_audio_play_set_loop(handle, 1);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP3:
+      ops->uv_audio_play_get_volume(handle);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP4:
+      ops->uv_audio_play_set_volume(handle, 0.8);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP5:
+      ops->uv_audio_play_muted(handle, 1);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP6:
+      ops->uv_audio_play_muted(handle, 0);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP7:
+      ops->uv_audio_play_get_position(handle);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP8:
+      ops->uv_audio_play_set_seek(handle, 5000);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP9:
+      ops->uv_audio_play_get_duration(handle);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP10:
+      ops->uv_audio_play_stop(handle);
+      break;
+
+    case UV_AUDIO_TEST_STEP11:
+      ops->uv_audio_play_prepare(handle, "/data/app/com.xiaomi.vela.samples/Common/mp3/m2.mp3", NULL);
+      break;
+
+    case UV_AUDIO_TEST_STEP12:
+      ops->uv_audio_play_start(handle);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP13:
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP14:
+      ops->uv_audio_play_play(handle, "/data/app/com.xiaomi.vela.samples/Common/mp3/m1.m4a", NULL);
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    case UV_AUDIO_TEST_STEP15:
+      ops->uv_audio_play_allstate(handle, p);
+      break;
+
+    default:
+      ops->uv_audio_play_close(handle);
+      uv_close((uv_handle_t*)tim_handle, NULL);
+      uv_poll_stop((uv_poll_t* )&uv_audio_test_poll);
+      uv_stop(&audiploop);
+      break;
+  }
+
+  step++;
+  printf("step=%d\n", step);
+}
+
+static void uv_audio_test_poll_cb(uv_poll_t* handle, int status, int events) {
+
+  int ret;
+  uv_audio_mqmessage_t message = { 0 };
+  uv_work_t *work;
+
+  ret = uv_audio_async_messgae_recv(UV_AUDIO_TEST_QUEUE, &message);
+  if (ret < 0) {
+    return;
+  }
+
+  work = (uv_work_t *)malloc(sizeof(uv_work_t));
+  work->data = message.data;
+  uv_queue_work(handle->loop, work, __audio_state_work_cb, __audio_state_after_work_cb);
+}
+
+#endif
+
+int main(int argc, char *argv[])
+{
+#ifdef UV_AUDIO_TEST_CTRL
+  return audio_test_ctrl_tool(argc, argv);
+#else
+  int data = 100;
+  int timeout = 5;
+  int ret;
+  uv_timer_t audio_timer_handle;
+
+  uv_loop_init(&audiploop);
+
+  ret = uv_audio_async_messgae_init(&audiploop, &uv_audio_test_poll,
+                              UV_AUDIO_TEST_QUEUE, uv_audio_test_poll_cb);
+  if (ret < 0) {
+    printf("audio async fail.\n");
+    return -1;
+  }
+
+  ops = uv_audio_play_init();
+  if (!ops) {
+    printf("Get audio ops fail.\n");
+    goto testfail;
+  }
+
+  ops->uv_audio_play_open(uv_audio_callback_cb, &data);
+
+  while (timeout--) {
+    usleep(200000);
+    if (handle != NULL) {
+      break;
+    }
+  }
+
+  if (handle == NULL) {
+    printf("audio handle is NULL.\n");
+    goto testfail;
+  }
+
+  ops->uv_audio_play_prepare(handle,
+              "/data/app/com.xiaomi.vela.samples/Common/mp3/m1.m4a", NULL);
+  ops->uv_audio_play_start(handle);
+
+  printf("audio handle timeout = %d\n", timeout);
+
+  if (uv_timer_init(&audiploop, &audio_timer_handle) != 0) {
+    ops->uv_audio_play_close(handle);
+    goto testfail;
+  }
+
+  if (uv_timer_start(&audio_timer_handle, audio_timer_run_cb, 5000, 1000) != 0) {
+    ops->uv_audio_play_close(handle);
+    uv_close((uv_handle_t*)&audio_timer_handle, NULL);
+    goto testfail;
+  }
+
+  printf("start loop !\n");
+  uv_run(&audiploop, UV_RUN_DEFAULT);
+  printf("TEST PASSED !\n");
+  exit(0);
+
+testfail:
+  uv_poll_stop(&uv_audio_test_poll);
+  printf("TEST FAILED !\n");
+  exit(1);
+#endif
+}
+
+
+#else
 
 static uv_audio_t audio;
 static int step = 0;
-
 
 static void audio_notify_callback(void* cookie, int event,
                                   int ret, const char *extra)
@@ -164,3 +629,4 @@ testfail:
   printf("TEST FAILED !\n");
   exit(1);
 }
+#endif
