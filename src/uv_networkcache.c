@@ -171,6 +171,7 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
         cache->download_list = realloc(cache->download_list,
             cache->download_nums * sizeof(download_t*));
         cache->download_list[cache->download_nums - 1] = download;
+        *handle = download->cache;
         return 0;
     } else {
         download->cache->download_nums++;
@@ -240,6 +241,10 @@ uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const uv_ncm_cfg_t* cfg, uv_ncm_
 
 void uv_ncm_cancel(uv_ncm_handle_t handle)
 {
+    if (handle == NULL) {
+        return;
+    }
+
     download_t* download;
     file_cache_t* cache = (file_cache_t*)handle;
     download_t** download_list = cache->download_list;
