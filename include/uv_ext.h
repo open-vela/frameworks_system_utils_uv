@@ -1310,13 +1310,13 @@ int uv_audio_stop(uv_audio_t *handles);
  *
  * Input Parameters:
  *   handles   - audio handle
- *   loop      - true: loop    false: not loop
+ *   loop      - Loop count (-1: forever, 0: not loop)
  *
  * Returned Value:
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_loop(uv_audio_t *handles, bool loop);
+int uv_audio_loop(uv_audio_t *handles, int loop);
 
 /****************************************************************************
  * Name: uv_audio_set_volume
