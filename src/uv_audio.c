@@ -120,18 +120,22 @@ int uv_audio_stop(uv_audio_t *handle) {
   return media_player_stop(handle->iofhandle);
 }
 
-int uv_audio_loop(uv_audio_t *handle, bool loop) {
+int uv_audio_loop(uv_audio_t *handle, int loop) {
   int ret;
 
   if (!handle || !handle->iofhandle)
         return UV_EINVAL;
 
-  ret = media_player_set_looping(handle->iofhandle, (int)loop);
+  ret = media_player_set_looping(handle->iofhandle, loop);
   if (ret < 0) {
     return ret;
   }
 
-  handle->loop = loop;
+  if (loop == 0) {
+    handle->loop = false;
+  } else {
+    handle->loop = true;
+  }
 
   return ret;
 }
