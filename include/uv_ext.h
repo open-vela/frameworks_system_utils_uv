@@ -136,7 +136,7 @@ int uv_getdeviceinfo(uv_devinfo_t *info);
  * locale
  ****************************************************************************/
 
-#define UV_EXT_LOCALE_LANG_KEY "persist.language_region"
+#define UV_EXT_LOCALE_LANG_KEY "persist.locale"
 #define UV_EXT_LOCALE_MAX_SIZE 10
 
 typedef struct uv_locale_s uv_locale_t;
