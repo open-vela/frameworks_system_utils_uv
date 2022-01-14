@@ -529,19 +529,19 @@ int uv_property_commit(uv_loop_t *loop, uv_property_cb cb, void *arg);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-typedef void (*uv_brightness_cb_t)(int status, int val);
+typedef void (*uv_brightness_cb_t)(int status, int val, void *data);
 
 typedef void * uv_brightness_handle_t;
 
 typedef struct uv_sysbrightness_s {
     int (*init)(uv_loop_t* loop, uv_brightness_handle_t* handle);
     int (*close)(uv_brightness_handle_t handle);
-    int (*setval)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb);
-    int (*getval)(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
-    int (*setmode)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb);
-    int (*getmode)(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
-    int (*keepscreenon)(uv_brightness_handle_t handle, bool val, uv_brightness_cb_t cb);
-    int (*recovery)(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
+    int (*setval)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb, void *data);
+    int (*getval)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
+    int (*setmode)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb, void *data);
+    int (*getmode)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
+    int (*keepscreenon)(uv_brightness_handle_t handle, bool val, uv_brightness_cb_t cb, void *data);
+    int (*recovery)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
 } uv_sysbrightness_ops_t;
 
 /****************************************************************************
@@ -569,7 +569,8 @@ int uv_sysbrightness_register(uv_sysbrightness_ops_t* brightness);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_recovery(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
+int uv_brightness_recovery(uv_brightness_handle_t handle,
+                           uv_brightness_cb_t cb, void *data);
 
 /****************************************************************************
  * Name: uv_brightness_setval
@@ -585,7 +586,8 @@ int uv_brightness_recovery(uv_brightness_handle_t handle, uv_brightness_cb_t cb)
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_setval(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb);
+int uv_brightness_setval(uv_brightness_handle_t handle, int val,
+                         uv_brightness_cb_t cb, void *data);
 
 /****************************************************************************
  * Name: uv_brightness_getval
@@ -600,7 +602,8 @@ int uv_brightness_setval(uv_brightness_handle_t handle, int val, uv_brightness_c
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_getval(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
+int uv_brightness_getval(uv_brightness_handle_t handle,
+                         uv_brightness_cb_t cb, void *data);
 
 /****************************************************************************
  * Name: uv_brightness_setmode
@@ -617,7 +620,8 @@ int uv_brightness_getval(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_setmode(uv_brightness_handle_t handle, int mode, uv_brightness_cb_t cb);
+int uv_brightness_setmode(uv_brightness_handle_t handle, int mode,
+                          uv_brightness_cb_t cb, void *data);
 
 /****************************************************************************
  * Name: uv_brightness_getmode
@@ -633,7 +637,8 @@ int uv_brightness_setmode(uv_brightness_handle_t handle, int mode, uv_brightness
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_getmode(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
+int uv_brightness_getmode(uv_brightness_handle_t handle,
+                          uv_brightness_cb_t cb, void *data);
 
 /****************************************************************************
  * Name: uv_brightness_setkeepon
@@ -651,7 +656,8 @@ int uv_brightness_getmode(uv_brightness_handle_t handle, uv_brightness_cb_t cb);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_brightness_setkeepon(uv_brightness_handle_t handle, bool keep, uv_brightness_cb_t cb);
+int uv_brightness_setkeepon(uv_brightness_handle_t handle, bool keep,
+                            uv_brightness_cb_t cb, void *data);
 
 /****************************************************************************
  * Name: uv_brightness_init
@@ -687,7 +693,7 @@ int uv_brightness_init(uv_loop_t* loop, uv_brightness_handle_t* handle);
 
 int uv_brightness_close(uv_brightness_handle_t handle);
 
-#if defined(__NuttX__) && defined(CONFIG_LIB_CURL) || defined(MOCK_LIBUV_FEATURE)
+#if defined(CONFIG_LIB_CURL) || defined(MOCK_LIBUV_FEATURE)
 
 struct uv_response_s {
     long httpcode;
