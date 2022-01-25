@@ -620,14 +620,14 @@ static void uv_write_done_callback(uv_write_t* req, int status)
     /* Add this request to sending list that waiting for response. */
     struct client* client = wreq->client;
     list_add_tail(&client->sending_list, &wreq->node);
-  } else if (wreq->message.type == MIWEAR_MESSAGE_TYPE_RESPONSE) {
-    ;
-  } else {
-    /* For all other messages, no responses needed, make the callback now.*/
-    if (wreq->cb) {
-      wreq->cb(wreq->miwear, status, &wreq->message, wreq->cb_para);
-    }
+    return;
   }
+
+  if (wreq->cb) {
+    wreq->cb(wreq->miwear, status, &wreq->message, wreq->cb_para);
+  }
+
+  free(wreq);
 }
 
 static int uv__miwear_send_to_client(struct client* client,
