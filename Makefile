@@ -69,7 +69,7 @@ CSRCS += uv_audio.c
 endif
 
 ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB), yy)
-CSRCS += uv_network.c
+CSRCS += uv_networkstatus.c
 endif
 
 ifeq ($(CONFIG_MIWEAR_APPS), y)
