@@ -1482,13 +1482,18 @@ int uv_audio_close(uv_audio_t *handles);
 
 #if defined(CONFIG_LIB_CURL) && defined(CONFIG_UORB)
 
+#define UV_NETSTATUS_WIFI           1
+#define UV_NETSTATUS_BLUETOOTH      2
+#define UV_NETSTATUS_NONE           3
+
+typedef void (*uv_netstatus_ipcb_t)(char *data, int result, void *extra);
+
 typedef struct uv_network_s uv_network_t;
 
 struct uv_network_s {
   uv_request_session_t *handle;
   uv_request_t *fetch;
-  struct network_state stat;
-  bool advflag;
+  uv_netstatus_ipcb_t cb;
   void *data;
 };
 
@@ -1525,7 +1530,22 @@ int uv_network_init(uv_loop_t *loop, uv_network_t *handle);
 int uv_network_close(uv_network_t *handle);
 
 /****************************************************************************
- * Name: uv_network_state
+ * Name: uv_netstatus_gettype
+ *
+ * Description:
+ *   get network type.
+ *
+ * Input Parameters:
+ *   type - network type
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_netstatus_gettype(uint8_t *type);
+
+/****************************************************************************
+ * Name: uv_netstatus_getip
  *
  * Description:
  *   get public network ip.
@@ -1538,38 +1558,7 @@ int uv_network_close(uv_network_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_network_state(uv_network_t *handle, uv_request_cb cb);
-
-/****************************************************************************
- * Name: uv_pubip_advertise
- *
- * Description:
- *   Obtain the public network ip cyclically, and broadcast it through uorb.
- *
- * Input Parameters:
- *   loop   - event loop
- *   handle - network handle
- *
- * Returned Value:
- *   Zero (OK) on success;
- ****************************************************************************/
-
-int uv_pubip_advertise(uv_loop_t *loop, uv_network_t *handle);
-
-/****************************************************************************
- * Name: uv_pubip_unadvertise
- *
- * Description:
- *   Close the loop to obtain public network ip and broadcast.
- *
- * Input Parameters:
- *   handle - network handle
- *
- * Returned Value:
- *   Zero (OK) on success;
- ****************************************************************************/
-
-int uv_pubip_unadvertise(uv_network_t *handle);
+int uv_netstatus_getip(uv_network_t *handle, uv_netstatus_ipcb_t cb);
 
 #endif
 
