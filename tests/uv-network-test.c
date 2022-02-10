@@ -32,71 +32,44 @@
  ****************************************************************************/
 
 /* uv_getip的回调函数，单独获取. */
-static void network_request_cb(int state, uv_response_t* response)
-{
-  if (!state && response->httpcode == 200) {
-    if (response->body != NULL) {
-      uv_network_t *net = (uv_network_t*)response->userp;
-      printf("%s %d ip=%s type=%d\n", __FILE__, __LINE__, response->body, net->stat.type);
-    }
-  } else {
-    printf("%s %d state=%d fail\n", __FILE__, __LINE__, state);
-  }
-}
 
-/* topic的回调函数. */
-static void topic_cb(uv_topic_t *topic, int status, void *data, size_t datalen) {
-  struct network_pubip *pubip = (struct network_pubip *)data;
-
-  if (status == 0 && pubip) {
-    struct in_addr addr = {0};
-    memcpy((char*)&addr, pubip->addr.ss_data, sizeof(addr));
-    printf("%s %d timestamp=%lld ip=%s\n", __FILE__, __LINE__, pubip->timestamp, inet_ntoa(addr));
+void uv_netstatus_ipcb(char *data, int result, void *extra) {
+  if (result == 0) {
+    printf("ip: %s\n", data);
   } else {
-    printf("%s %d state=%d fail\n", __FILE__, __LINE__, status);
+    printf("ip callback fail\n");
   }
 }
 
 int main(int argc, char** argv)
 {
   int ret;
-  uv_network_t net;
-  uv_topic_t topic_t;
+  uint8_t type;
+  uv_network_t net = { 0 };
+  uv_loop_t loop;
 
-  do {
-    ret = uv_network_init(uv_default_loop(), &net);
-    if (ret != 0) {
-      printf("%s %d\n", __FILE__, __LINE__);
-      break;
-    }
+  uv_loop_init(&loop);
 
-    net.data = &net;
-    ret = uv_network_state(&net, network_request_cb);
-    if (ret != 0) {
-      uv_request_close(net.handle);
-      printf("%s %d\n", __FILE__, __LINE__);
-      break;
-    }
+  ret = uv_network_init(&loop, &net);
+  if (ret != 0) {
+    printf("%s %d fail\n", __FILE__, __LINE__);
+    return ret;
+  }
 
-    ret = uv_pubip_advertise(uv_default_loop(), &net);
-    if (ret != 0) {
-      uv_request_close(net.handle);
-      printf("%s %d\n", __FILE__, __LINE__);
-      break;
-    }
+  ret = uv_netstatus_gettype(&type);
+  if (ret > 0) {
+    printf("network type: %d\n", type);
+  } else {
+    printf("get network type fail\n");
+  }
 
-    ret = uv_topic_subscribe(uv_default_loop(), &topic_t, "network_pubip", topic_cb);
-    if (ret != 0) {
-      uv_request_close(net.handle);
-      printf("%s %d\n", __FILE__, __LINE__);
-      break;
-    }
+  uv_netstatus_getip(&net, uv_netstatus_ipcb);
+  uv_netstatus_getip(&net, uv_netstatus_ipcb);
+  uv_netstatus_getip(&net, uv_netstatus_ipcb);
 
-    uv_run(uv_default_loop(), UV_RUN_DEFAULT);
-    uv_request_close(net.handle);
-    return 0;
-  } while(0);
+  uv_run(&loop, UV_RUN_DEFAULT);
+  uv_network_close(&net);
+  uv_loop_close(&loop);
 
-  printf("TEST FAILED !\n");
   return 0;
 }
