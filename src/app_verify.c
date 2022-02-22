@@ -207,7 +207,7 @@ static uint8_t* parse_kv_block(uint8_t* data, uint64_t* key, uint8_t** value)
 
     return offset;
 }
-static app_block_t parse_app_block(const char *app_path, size_t comment_len) {
+static app_block_t parse_app_block(const char *app_path, ssize_t comment_len) {
   int fd = -1;
 
   app_block_t app_block;
