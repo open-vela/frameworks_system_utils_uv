@@ -1180,6 +1180,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
 #define UV_AUDIO_EVENT_COMPLETE               0x8A
 #define UV_AUDIO_EVENT_SEEK                   0x8B
 #define UV_AUDIO_EVENT_ALLSTATE               0x8C
+#define UV_AUDIO_EVENT_VOLUMECHANGE           0x8D
 #define UV_AUDIO_EVENT_CLOSE                  0xFF
 
 typedef struct uv_audio_mqmessage_s {
@@ -1201,7 +1202,7 @@ typedef struct playstate_s {
   /* Whether the current audio is playing automatically. */
   bool autoplay;
   /* Whether the current audio is playing in a loop. */
-  bool loop;
+  int loop;
   /* Whether the current audio is playing silently. */
   bool muted;
   /* allstate private data. */

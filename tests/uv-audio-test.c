@@ -26,7 +26,7 @@
 
 #ifdef CONFIG_MIWEAR_APPS_FRAMEWORKS
 
-#define UV_AUDIO_TEST_CTRL
+// #define UV_AUDIO_TEST_CTRL
 
 #define UV_AUDIO_TEST_STEP0         0
 #define UV_AUDIO_TEST_STEP1         (UV_AUDIO_TEST_STEP0 + 1)
@@ -276,6 +276,10 @@ static void uv_audio_callback_cb(void *data, int event, int status, void *result
       printf("uv_audio_callback_cb:UV_AUDIO_EVENT_SEEK\n");
     break;
 
+    case UV_AUDIO_EVENT_VOLUMECHANGE:
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_VOLUMECHANGE\n");
+    break;
+
     case UV_AUDIO_EVENT_ALLSTATE: {
       uv_audio_allstate_t *info = (uv_audio_allstate_t *)result;
 
@@ -308,9 +312,10 @@ static void audio_timer_run_cb(uv_timer_t* tim_handle) {
 
   printf("state malloc info:(p=%p)\n", p);
 
-  switch (UV_AUDIO_TEST_STEP15)
+  switch (step)
   {
     case UV_AUDIO_TEST_STEP0:
+      ops->uv_audio_play_set_volume(handle, 0.5);
       ops->uv_audio_play_pause(handle);
       ops->uv_audio_play_state(handle);
       break;
@@ -336,12 +341,10 @@ static void audio_timer_run_cb(uv_timer_t* tim_handle) {
       break;
 
     case UV_AUDIO_TEST_STEP5:
-      ops->uv_audio_play_muted(handle, 1);
       ops->uv_audio_play_allstate(handle, p);
       break;
 
     case UV_AUDIO_TEST_STEP6:
-      ops->uv_audio_play_muted(handle, 0);
       ops->uv_audio_play_allstate(handle, p);
       break;
 
@@ -365,7 +368,7 @@ static void audio_timer_run_cb(uv_timer_t* tim_handle) {
       break;
 
     case UV_AUDIO_TEST_STEP11:
-      ops->uv_audio_play_prepare(handle, "/data/app/com.xiaomi.vela.samples/Common/mp3/m2.mp3", NULL);
+      ops->uv_audio_play_prepare(handle, "http://m701.music.126.net/20220321202554/756cd38f0991898a219d0b2244dd1b02/jdymusic/obj/w5zDlMODwrDDiGjCn8Ky/1511339371/3baa/2841/ee34/024f4dbd2f96a2b3d7f6fdae3e85243a.mp3", NULL);
       break;
 
     case UV_AUDIO_TEST_STEP12:
@@ -378,7 +381,7 @@ static void audio_timer_run_cb(uv_timer_t* tim_handle) {
       break;
 
     case UV_AUDIO_TEST_STEP14:
-      ops->uv_audio_play_play(handle, "/data/app/com.xiaomi.vela.samples/Common/mp3/m1.m4a", NULL);
+      ops->uv_audio_play_play(handle, "http://m10.music.126.net/20220321202822/1361a0f2d100fec585918fda79ff1670/ymusic/0758/550f/545f/028d3b9421be8425d60dc57735cf6ebc.mp3", NULL);
       ops->uv_audio_play_allstate(handle, p);
       break;
 
@@ -422,7 +425,7 @@ int main(int argc, char *argv[])
   return audio_test_ctrl_tool(argc, argv);
 #else
   int data = 100;
-  int timeout = 5;
+  int timeout = 10;
   int ret;
   uv_timer_t audio_timer_handle;
 
@@ -456,7 +459,7 @@ int main(int argc, char *argv[])
   }
 
   ops->uv_audio_play_prepare(handle,
-              "/data/app/com.xiaomi.vela.samples/Common/mp3/m1.m4a", NULL);
+              "http://m701.music.126.net/20220321202554/756cd38f0991898a219d0b2244dd1b02/jdymusic/obj/w5zDlMODwrDDiGjCn8Ky/1511339371/3baa/2841/ee34/024f4dbd2f96a2b3d7f6fdae3e85243a.mp3", NULL);
   ops->uv_audio_play_start(handle);
 
   printf("audio handle timeout = %d\n", timeout);
