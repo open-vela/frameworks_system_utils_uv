@@ -313,6 +313,11 @@ static void uv__miwear_client_close(struct client* client)
     free(wreq);
   }
 
+  if (client->miwear->is_server) {
+    /* For server also need to remove client from list */
+    list_delete(&client->node);
+  }
+
   /* Make callback to let application know connection lost. */
   if (client->miwear->cb) {
     uv_miwear_status_t data;
@@ -325,11 +330,6 @@ static void uv__miwear_client_close(struct client* client)
     msg.len = sizeof(data);
     msg.id = 0;
     client->miwear->cb(client->miwear, 0, &msg, client->name);
-  }
-
-  if (client->miwear->is_server) {
-    /* For server also need to remove client from list */
-    list_delete(&client->node);
   }
 
   free(client);
