@@ -117,6 +117,8 @@ int uv_audio_async_messgae_init(uv_loop_t *loop,
     mq_close(fd);
     return ret;
   }
+
+  return ret;
 }
 
 /*********************** Synchronous interface *****************************/
