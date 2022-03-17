@@ -213,7 +213,7 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
 
 uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const uv_ncm_cfg_t* cfg, uv_ncm_handle_t* handle)
 {
-    file_cache_t* cache;
+    file_cache_t* cache = NULL;
     int res;
     if (ncm == NULL) {
         return UV_NCM_RES_ERROR;
