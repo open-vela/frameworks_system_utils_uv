@@ -68,8 +68,10 @@ int uv_network_close(uv_network_t *handle) {
 }
 
 int uv_netstatus_gettype(uint8_t *type) {
+#ifndef CONFIG_ARCH_SIM
   int ret;
   uint8_t flags;
+#endif
 
   if (!type) {
     return UV_EINVAL;
