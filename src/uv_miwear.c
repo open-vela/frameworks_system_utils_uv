@@ -378,7 +378,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     /* The first message from client. Only server could receive this message. */
     struct server* server = client->miwear->server;
     info("Got connection from client: %s\n", (char*)msg->data);
-    strncpy(client->name, msg->data, CONFIG_CLIENT_ID_LEN);
+    strlcpy(client->name, msg->data, CONFIG_CLIENT_ID_LEN);
     client->state = CLIENT_STATE_CONNECTED;
 
     /* Add client to list. */
@@ -781,7 +781,7 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
   }
   memset(client, 0, sizeof(struct client));
 
-  strncpy(client->name, name, CONFIG_CLIENT_ID_LEN);
+  strlcpy(client->name, name, CONFIG_CLIENT_ID_LEN);
   list_initialize(&client->sending_list);
   client->state = CLIENT_STATE_CONNECTING;
   client->miwear = miwear;
@@ -821,7 +821,7 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
   }
   memset(client, 0, sizeof(struct client));
 
-  strncpy(client->name, client_name, CONFIG_CLIENT_ID_LEN);
+  strlcpy(client->name, client_name, CONFIG_CLIENT_ID_LEN);
   list_initialize(&client->sending_list);
   client->state = CLIENT_STATE_CONNECTING;
   client->miwear = miwear;
