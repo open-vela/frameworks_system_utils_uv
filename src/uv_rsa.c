@@ -143,11 +143,7 @@ int uv_rsa_encrypt_base64(uv_rsa_t *ctx,
     return UV_EINVAL;
 
   int ret;
-  unsigned char *buff = alloca(ctx->rsa_context->len * 2);
-
-  if (!buff) {
-    return UV_EFAULT;
-  }
+  unsigned char buff[ctx->rsa_context->len * 2];
 
   memset(buff, 0, sizeof(buff));
   ret = uv_rsa_encrypt(ctx, strlen((const char *)input), input, buff);
@@ -174,11 +170,7 @@ int uv_rsa_decrypt_base64(uv_rsa_t *ctx,
 
   int ret;
   size_t len;
-  unsigned char *buff = alloca(ctx->rsa_context->len * 2);
-
-  if (!buff) {
-    return UV_EFAULT;
-  }
+  unsigned char buff[ctx->rsa_context->len * 2];
 
   memset(buff, 0, sizeof(buff));
   ret = mbedtls_base64_decode(buff, ctx->rsa_context->len * 2, &len, input, inlen);
