@@ -1213,7 +1213,7 @@ typedef void (*uv_audio_callback_t)(void *data, int event, int status, void *res
 typedef void (*uv_audio_music_meta_callback_t)(char *title, char *artist, char *albumt);
 
 typedef struct uv_audio_ops_s {
-  void (*uv_audio_play_open)(uv_audio_callback_t cb, void *data);
+  void (*uv_audio_play_open)(uv_audio_callback_t cb, void *data, const char *pkgname);
   int  (*uv_audio_play_play)(void *handle, const char *url, const char *options);
   int  (*uv_audio_play_prepare)(void *handle, const char *url, const char *options);
   int  (*uv_audio_play_start)(void *handle);
