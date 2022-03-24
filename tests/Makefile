@@ -61,6 +61,8 @@ endif
 ifeq ($(CONFIG_MEDIA), y)
 PROGNAME += uv_audio
 MAINSRC  += uv-audio-test.c
+PROGNAME += uv_record
+MAINSRC  += uv-record-test.c
 endif
 
 ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB),yy)

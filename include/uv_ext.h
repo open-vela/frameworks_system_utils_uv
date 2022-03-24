@@ -1520,6 +1520,39 @@ int uv_audio_get_isplay(uv_audio_t *handle);
 
 int uv_audio_close(uv_audio_t *handles);
 
+/****************************************************************************
+ * recorder
+ ****************************************************************************/
+
+#define UV_RECORDER_EVENT_OPEN           0xA0
+#define UV_RECORDER_EVENT_PREPARE        0xA1
+#define UV_RECORDER_EVENT_START          0xA2
+#define UV_RECORDER_EVENT_STOP           0xA3
+#define UV_RECORDER_EVENT_READ           0xA4
+#define UV_RECORDER_EVENT_PAUSE          0xA5
+#define UV_RECORDER_EVENT_CLOSE          0xFF
+
+typedef struct uv_record_buff_s {
+  char *buff;
+  int bufflen;
+} uv_record_buff_t;
+
+typedef void (*uv_record_callback_t)(void *data, int event, int status, void *result);
+
+typedef struct uv_record_ops_s {
+  void (*uv_record_open)(uv_record_callback_t cb, void *data, const char *pkgname);
+  int  (*uv_record_prepare)(void *handle, const char *url, const char *options);
+  int  (*uv_record_close)(void *handle);
+  int  (*uv_record_start)(void *handle);
+  int  (*uv_record_pause)(void *handle);
+  int  (*uv_record_stop)(void *handle);
+  int  (*uv_record_read_data)(void *handle, char *buff, int bufflen);
+} uv_record_ops_t;
+
+
+void uv_record_register(uv_record_ops_t *ops);
+uv_record_ops_t  *uv_record_init(void);
+
 #endif
 
 /****************************************************************************
