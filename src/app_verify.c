@@ -28,6 +28,8 @@ typedef struct app_verify_s {
   unzFile zFile;
   unz_global_info64 zGlobalInfo;
   uint8_t *fingerprint;
+  uint8_t *certificate;
+  ssize_t certificate_len;
 } app_verify_t;
 
 // length - data block
@@ -139,43 +141,12 @@ int write_file(const char*path, const void* data, size_t size)
 }
 
 /**
- * @brief Create PEM format file
- */
-static int generate_pem(const char* name, const uint8_t* data, size_t length, const char* type)
-{
-    FILE* fp = fopen(name, "wb");
-    size_t available, buffer_size = (length / 3 + 1) * 4 + 1;
-    uint8_t* base64_data = (uint8_t*)malloc(buffer_size);
-    size_t res = 0;
-
-    assert(fp);
-    fprintf(fp, "-----BEGIN %s-----\n", type);
-    assert_res((res = mbedtls_base64_encode(base64_data, buffer_size, &available, data, length)) == 0);
-    for (size_t i = 0; i < available / 64; i++) {
-        res += fwrite(base64_data + res, 1, 64, fp);
-        fwrite("\n", 1, 1, fp);
-    }
-
-    if (available % 64 != 0) {
-        res += fwrite(base64_data + res, 1, available % 64, fp);
-        fwrite("\n", 1, 1, fp);
-    }
-    fprintf(fp, "-----END %s-----\n", type);
-
-error:
-    fclose(fp);
-    free(base64_data);
-    return res;
-}
-
-/**
  * @brief analysis len-data block
  */
 static uint8_t* parse_block(uint8_t* data, data_block_t* block)
 {
     uint32_t len;
     assert(data && block);
-
     uint8_t* offset = data;
 
     memcpy(&len, data, sizeof(len));
@@ -249,7 +220,6 @@ static app_block_t parse_app_block(const char *app_path, ssize_t comment_len) {
 
   // Read the zip content
   app_block.data_block.length = signature_block_offset;
-
   app_block.data_block.data = app_block.signature_block.data;
 
 error:
@@ -348,7 +318,6 @@ static int app_verification(app_verify_t *app_verify_info)
     uint64_t id;
     app_block_t app_block = { 0 };
     signature_block_t signature_info;
-    char cer_path[PATH_MAX];
     // get APK Signing Block
     app_block = parse_app_block(app_verify_info->app_path, app_verify_info->zGlobalInfo.size_comment);
 
@@ -358,13 +327,9 @@ static int app_verification(app_verify_t *app_verify_info)
     parse_block(offset, &app_block.signature_block);
     get_signature_info(app_block.signature_block.data, &signature_info);
 
-    // Save certificate file
-    strcpy(cer_path, app_verify_info->app_path);
-    strcat(cer_path, ".certificate.pem");
-    generate_pem(cer_path, signature_info.certificate.data, signature_info.certificate.length, "CERTIFICATE");
-    strcpy(cer_path, app_verify_info->app_path);
-    strcat(cer_path, ".certificate.der");
-    write_file(cer_path, signature_info.certificate.data, signature_info.certificate.length);
+    app_verify_info->certificate = malloc(signature_info.certificate.length);
+    app_verify_info->certificate_len = signature_info.certificate.length;
+    memcpy(app_verify_info->certificate, signature_info.certificate.data, signature_info.certificate.length);
 
     // Verify block signature
     assert_res((res = verify_block_signature(&signature_info.public_key, &signature_info.signed_data,
@@ -511,20 +476,21 @@ error:
 
 uint8_t* app_get_fingerprint(app_verify_t *app_verify_info)
 {
-    char cer_path[PATH_MAX];
+    int res;
     assert_res(app_verify_info);
-
-    strcpy(cer_path, app_verify_info->app_path);
-    strcat(cer_path, ".certificate.der");
 
     const mbedtls_md_info_t* mdinfo = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
     assert_res((app_verify_info->fingerprint = malloc(mbedtls_md_get_size(mdinfo))) != NULL);
 
-    assert_res(0 == mbedtls_md_file(mdinfo, cer_path, app_verify_info->fingerprint ));
+    res = mbedtls_md(mdinfo, app_verify_info->certificate, app_verify_info->certificate_len,
+               app_verify_info->fingerprint);
+    assert_res(res == 0);
+    free(app_verify_info->certificate);
 
     return app_verify_info->fingerprint;
 error:
     app_verify_info->fingerprint = NULL;
+    free(app_verify_info->certificate);
     free(app_verify_info->fingerprint);
     return NULL;
 }
