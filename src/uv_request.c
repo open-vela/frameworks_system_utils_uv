@@ -30,7 +30,7 @@
 #include <nuttx/list.h>
 
 #ifndef CONFIG_UV_REQUEST_MAX_LINKS
-#define CONFIG_UV_REQUEST_MAX_LINKS 5
+#define CONFIG_UV_REQUEST_MAX_LINKS 2
 #endif
 
 struct uv_request_session_s {
