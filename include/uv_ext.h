@@ -1229,6 +1229,7 @@ typedef struct uv_audio_ops_s {
   int  (*uv_audio_play_state)(void *handle);
   int  (*uv_audio_play_allstate)(void *handle, void *data);
   int  (*uv_audio_play_close)(void *handle);
+  int  (*uv_audio_play_notify)(char *title, char *artist, char *albumt);
 } uv_audio_ops_t;
 
 typedef struct uv_audio_ctrl_s {
@@ -1239,7 +1240,7 @@ typedef struct uv_audio_ctrl_s {
   int (*uv_audio_ctrl_stop)(void);
   int (*uv_audio_ctrl_volumeup)(void);
   int (*uv_audio_ctrl_volumedown)(void);
-  int (*uv_audio_ctrl_get_music_meta)(uv_audio_music_meta_callback_t cb);
+  int (*uv_audio_ctrl_get_music_meta)(void);
 } uv_audio_ctrl_t;
 
 void uv_audio_play_register(uv_audio_ops_t *ctrl);
