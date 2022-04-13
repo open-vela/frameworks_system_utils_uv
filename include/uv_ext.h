@@ -1812,6 +1812,22 @@ int uv_db_init(uv_loop_t *loop, uv_db_t **handle, const char *path);
 int uv_db_close(uv_db_t *handle);
 
 /****************************************************************************
+ * Name: uv_db_commit
+ *
+ * Description:
+ *   Commit all changes to the database.
+ *
+ * Input Parameters:
+ *   handle   - the handler to database.
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_db_commit(uv_db_t *handle);
+
+
+/****************************************************************************
  * Name: uv_db_get
  *
  * Description:
