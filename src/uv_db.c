@@ -288,6 +288,17 @@ error:
     return res;
 }
 
+int uv_db_commit(uv_db_t* handle)
+{
+    int res = UV_EINVAL;
+    assert_res(handle->db, UV_EINVAL);
+    res = unqlite_commit(handle->db);
+    assert_res(res == UNQLITE_OK, res);
+
+error:
+    return res;
+}
+
 int uv_db_set(uv_db_t* handle, const char* key, uv_buf_t* value, uv_db_callback cb, void* arg)
 {
     int res = UV_EINVAL;
