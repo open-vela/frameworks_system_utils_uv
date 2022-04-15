@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <uv_ext.h>
 #include <uORB/uORB.h>
-#include <uORB/uORBTopics.h>
 #include <system/state.h>
 
 /****************************************************************************
