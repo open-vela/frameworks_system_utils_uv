@@ -384,7 +384,7 @@ struct uv_topic_s {
  ****************************************************************************/
 
 int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
-                       const char *name, uv_topic_cb cb);
+                       orb_id_t meta, uv_topic_cb cb);
 
 /****************************************************************************
  * Name: uv_topic_unsubscribe

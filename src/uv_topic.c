@@ -21,8 +21,6 @@
 #include <alloca.h>
 #include <stdlib.h>
 #include <uv_ext.h>
-#include <uORB/uORB.h>
-#include <uORB/uORBTopics.h>
 
 /****************************************************************************
  * Name: uv_topic_poll_cb
@@ -51,19 +49,14 @@ static void uv_topic_poll_cb(uv_poll_t *handle, int status, int events) {
 }
 
 int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
-                       const char *name, uv_topic_cb cb) {
+                       orb_id_t meta, uv_topic_cb cb) {
   struct orb_state state = {};
-  orb_id_t meta;
   int ret;
   int fd;
 
-  if (!loop || !topic || !name || !cb)
+  if (!loop || !topic || !meta || !cb)
     return UV_EINVAL;
   topic->cb = cb;
-
-  meta = orb_get_meta(name);
-  if (!meta)
-    return UV_EINVAL;
 
   fd = orb_subscribe(meta);
   if (fd < 0)
