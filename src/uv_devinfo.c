@@ -203,7 +203,7 @@ int uv_getdevinfonumber(int *num, int item) {
     case UV_EXT_DEVINFO_SCREENSHAPE: {
       int shape;
 
-      sscanf(videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
+      sscanf((const char*)videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
       *num = shape;
       break;
     }
@@ -275,7 +275,7 @@ int uv_getdeviceinfo(uv_devinfo_t *info)
 #if defined(CONFIG_FB_MODULEINFO)
   int shape;
 
-  sscanf(videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
+  sscanf((const char*)videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
   info->screenshape = shape;
 #endif
 #endif
