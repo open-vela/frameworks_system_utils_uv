@@ -54,8 +54,8 @@
 #define UV_AUDIO_TEST_CTRL_VLMDOWM  7
 #define UV_AUDIO_TEST_CTRL_MUSIC    8
 
-#define UV_AUDIO_TEST_QUEUE "uv_audio_test_queue"
-
+#define UV_AUDIO_TEST_QUEUE     "uv_audio_test_queue"
+#define UV_AUDIO_TEST_PACKNAME  "uv_audio_test"
 #ifdef UV_AUDIO_TEST_CTRL
 
 static uv_audio_ctrl_t *ctrl_ops = NULL;
@@ -287,7 +287,7 @@ static void uv_audio_callback_cb(void *data, int event, int status, void *result
       printf("autoplay:%d\n", info->autoplay);
       printf("loop:%d\n", info->loop);
       printf("muted:%d\n", info->muted);
-      printf("volume:%f\n", info->volume);
+      printf("volume:%d\n", info->volume);
       printf("state:%d\n", info->state);
       printf("currenttime:%d\n", info->currenttime);
       printf("duration:%d\n", info->duration);
@@ -444,7 +444,7 @@ int main(int argc, char *argv[])
     goto testfail;
   }
 
-  ops->uv_audio_play_open(uv_audio_callback_cb, &data);
+  ops->uv_audio_play_open(uv_audio_callback_cb, &data, UV_AUDIO_TEST_PACKNAME);
 
   while (timeout--) {
     usleep(200000);
