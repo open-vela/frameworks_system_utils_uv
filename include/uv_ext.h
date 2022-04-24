@@ -37,6 +37,15 @@
 #include <system/state.h>
 #endif
 
+#include <syslog.h>
+
+#define UV_EXT_OK 0
+#define UV_EXT_ERROR_INTERNAL -1
+#define UV_EXT_ERROR_INVALID -2
+
+#define uv_ext_log(level, module, format, ...) \
+  syslog(level, "[" #module ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,7 +73,7 @@ extern "C" {
 #define UV_EXT_SCREENSHAPE_ROUND        1
 #define UV_EXT_SCREENSHAPE_SQUARE       2
 
-#define UV_EXT_DEVINFO_MAXLEN           30
+#define UV_EXT_DEVINFO_MAXLEN           (32 + 1)
 
 typedef struct uv_devinfo_s uv_devinfo_t;
 
@@ -297,113 +306,55 @@ void uv_aes_free(uv_aes_t *ctx);
 #endif
 
 /****************************************************************************
- * RSA encryption and decryption
+ * cipher
  ****************************************************************************/
 
 #ifdef CONFIG_LIB_MBEDTLS
 
-typedef mbedtls_pk_context uv_pk_context_t;
-typedef mbedtls_rsa_context uv_rsa_context_t;
-
-typedef struct uv_rsa_s {
-  uv_handle_t handle;
-  uv_pk_context_t pk_context;
-  uv_rsa_context_t *rsa_context;
-}uv_rsa_t;
+#define UV_EXT_DECRYPT 0
+#define UV_EXT_ENCRYPT 1
 
 /****************************************************************************
- * Name: uv_rsa_parse_key
- *
- * Description:
- *   Parse a public/private key in PEM or DER format.
- *
+ * Name: uv_base64_encode
  ****************************************************************************/
 
-int uv_rsa_parse_key(uv_rsa_t *ctx,
-                     int mode,
-                     const unsigned char *key,
-                     int keylen);
+int uv_base64_encode(uv_buf_t input, uv_buf_t *output);
 
 /****************************************************************************
- * Name: uv_rsa_set_padding
- *
- * Description:
- *   This function sets padding for RSA context.
- *
+ * Name: uv_base64_decode
  ****************************************************************************/
 
-int uv_rsa_set_padding(uv_rsa_t *ctx, int padding, int hash_id);
+int uv_base64_decode(uv_buf_t input, uv_buf_t *output);
 
 /****************************************************************************
- * Name: uv_rsa_encrypt
- *
- * Description:
- *    This function performs a PKCS#1 v2.1 OAEP encryption operation
- * (RSAES-OAEP-ENCRYPT) or a PKCS#1 v1.5 encryption operation
- * (RSAES-PKCS1-v1_5-ENCRYPT).
- *
+ * Name: uv_sign
  ****************************************************************************/
 
-int uv_rsa_encrypt(uv_rsa_t *ctx,
-                   size_t ilen,
-                   const unsigned char *input,
-                   unsigned char *output);
+int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t *output);
 
 /****************************************************************************
- * Name: uv_rsa_decrypt
- *
- * Description:
- *    This function performs a PKCS#1 v2.1 OAEP decryption operation
- * (RSAES-OAEP-ENCRYPT) or a PKCS#1 v1.5 decryption operation
- * (RSAES-PKCS1-v1_5-ENCRYPT).
- *
+ * Name: uv_verify
  ****************************************************************************/
 
-int uv_rsa_decrypt(uv_rsa_t *ctx,
-                   size_t *olen,
-                   const unsigned char *input,
-                   unsigned char *output,
-                   size_t output_max_len);
+int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t md);
 
 /****************************************************************************
- * Name: uv_rsa_encrypt_base64
- *
- * Description:
- *    Performs an RSA encryption operation and outputs it in Base64 encode.
- *
+ * Name: uv_md
  ****************************************************************************/
 
-int uv_rsa_encrypt_base64(uv_rsa_t *ctx,
-                          const unsigned char *input,
-                          unsigned char *output,
-                          size_t *olen,
-                          size_t buffsize);
+int uv_md(const char* type, uv_buf_t input, uv_buf_t *output);
 
 /****************************************************************************
- * Name: uv_rsa_decrypt_base64
- *
- * Description:
- *    Perform an RSA decryption operation.The text content to be decrypted
- * should be base64 encoded
- *
+ * Name: uv_rsa
  ****************************************************************************/
 
-int uv_rsa_decrypt_base64(uv_rsa_t *ctx,
-                          const unsigned char *input,
-                          size_t inlen,
-                          unsigned char *output,
-                          size_t *olen,
-                          size_t buffsize);
+int uv_rsa(uv_buf_t key, uv_buf_t text, uv_buf_t *output, int mode);
 
 /****************************************************************************
- * Name: uv_rsa_free
- *
- * Description:
- *    This function frees the components of an RSA key.
- *
+ * Name: uv_rsa
  ****************************************************************************/
 
-void uv_rsa_free(uv_rsa_t *ctx);
+void uv_hexify(uv_buf_t input, uv_buf_t *output);
 
 #endif
 

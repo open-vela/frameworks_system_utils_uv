@@ -46,11 +46,6 @@ PROGNAME += uv_property
 MAINSRC  += uv-property-test.c
 endif
 
-ifeq ($(CONFIG_LIB_MBEDTLS), y)
-PROGNAME += uv_rsa
-MAINSRC  += uv-rsa-test.c
-endif
-
 ifeq ($(CONFIG_UORB), y)
 PROGNAME += uv_topic
 MAINSRC  += uv-topic-test.c
