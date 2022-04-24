@@ -47,7 +47,7 @@ CSRCS += uv_db.c
 endif
 
 ifeq ($(CONFIG_LIB_MBEDTLS), y)
-CSRCS += uv_rsa.c
+CSRCS += uv_crypto.c
 endif
 
 ifeq ($(CONFIG_UORB), y)

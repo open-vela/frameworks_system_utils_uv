@@ -25,6 +25,9 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <uv_ext.h>
+#include <cutils/properties.h>
+
+#define CONFIG_FACT_WIFIMAC_KEY "ro.factory.mac_wifi"
 
 #if defined(CONFIG_VIDEO_FB)
 #  include <nuttx/video/fb.h>
@@ -149,12 +152,20 @@ int uv_devinfobuff(char *buff, int size, int item) {
       snprintf((char*)buff, size, "%s", CONFIG_REGION_NAME);
       break;
     case UV_EXT_DEVINFO_DID:
-      #if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
-        boardctl(BOARDIOC_UNIQUEID, buff);
-      #else
-        snprintf((char*)buff, size, "%s", UV_EXT_DEVINFO_DID_INFO);
-      #endif
+    {
+      uv_buf_t input, output, ret;
+      property_get(CONFIG_FACT_WIFIMAC_KEY, buff, "NA");
+      input.base = (char*)buff;
+      input.len = strlen(buff);
+      if (uv_md("MD5", input, &output) == 0) {
+        uv_hexify(output, &ret);
+        strncpy(buff, ret.base, size - 1);
+        buff[size -1] = '\0';
+        free(output.base);
+        free(ret.base);
+      }
       break;
+    }
     default:
       return UV_EINVAL;
   }
@@ -253,10 +264,19 @@ int uv_getdeviceinfo(uv_devinfo_t *info)
   snprintf(info->manufacturer, sizeof(info->manufacturer),
            "%s", CONFIG_PRODUCT_MANUFACTURER);
 
-#if defined(CONFIG_LIB_BOARDCTL) && defined(CONFIG_BOARDCTL_UNIQUEID)
-  ret = boardctl(BOARDIOC_UNIQUEID, info->did);
-  if (ret != 0) {
-    return ret;
+#if defined(CONFIG_KVDB)
+  {
+    uv_buf_t input, output, ret;
+    property_get(CONFIG_FACT_WIFIMAC_KEY, info->did, "NA");
+    input.base = (char*)info->did;
+    input.len = strlen(info->did);
+    if (uv_md("MD5", input, &output) == 0) {
+      uv_hexify(output, &ret);
+      strncpy(info->did, ret.base, sizeof(info->did) - 1);
+      info->did[sizeof(info->did) - 1] = '\0';
+      free(output.base);
+      free(ret.base);
+    }
   }
 #else
   snprintf(info->did, sizeof(info->did), "%s", UV_EXT_DEVINFO_DID_INFO);
