@@ -440,11 +440,6 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     return;
   }
 
-  if (msg->type == MIWEAR_MESSAGE_TYPE_STATUS) {
-    err("Missing logic\n");
-    return;
-  }
-
   /**
    * All other types are data, if MIWEAR_MESSAGE_NEED_REPLY_MASK is set, then
    * this data message needs reply, otherwise, simply receive it.
