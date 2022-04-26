@@ -978,24 +978,26 @@ void uv_ncm_cancel(uv_ncm_handle_t handle);
 
 typedef uint8_t miwear_message_type_t;
 
-#define MIWEAR_MESSAGE_NEED_REPLY_MASK  0x80
+#define MIWEAR_MESSAGE_NEED_REPLY_MASK      0x80
 
-#define MIWEAR_MESSAGE_TYPE_CLIENT_ID   0
-#define MIWEAR_MESSAGE_TYPE_RESPONSE    1
-#define MIWEAR_MESSAGE_TYPE_STATUS      2
-#define MIWEAR_MESSAGE_TYPE_DATA        (3 | MIWEAR_MESSAGE_NEED_REPLY_MASK)
+#define MIWEAR_MESSAGE_TYPE_CLIENT_ID       0
+#define MIWEAR_MESSAGE_TYPE_RESPONSE        1
+#define MIWEAR_MESSAGE_TYPE_STATUS          2
+#define MIWEAR_MESSAGE_TYPE_DATA            (3 | MIWEAR_MESSAGE_NEED_REPLY_MASK)
 /**
  * Send a custom type message, receiver could identify message through this type.
  * Ored the mask MIWEAR_MESSAGE_NEED_REPLY_MASK if this message needs response
  * to confirm it's received.
 */
-#define MIWEAR_MESSAGE_TYPE_CUSTOM      10
+#define MIWEAR_MESSAGE_TYPE_CUSTOM          10
 
-#define MIWEAR_STATUS_CLIENT_ID_SENT    1 /* Client sent out ID to server. */
-#define MIWEAR_STATUS_CONNECT_FAILED    2 /* Failed to connect server */
-#define MIWEAR_STATUS_CONNECTION_CLOSED 3 /* Connection closed */
-#define MIWEAR_STATUS_CLIENT_ONLINE     4 /* A new client connected to server. */
-#define MIWEAR_STATUS_PHONE_CONNECTED   5 /* TBD */
+#define MIWEAR_STATUS_CLIENT_ID_SENT        1 /* Client sent out ID to server. */
+#define MIWEAR_STATUS_CONNECT_FAILED        2 /* Failed to connect server */
+#define MIWEAR_STATUS_CONNECTION_CLOSED     3 /* Connection closed */
+#define MIWEAR_STATUS_CLIENT_ONLINE         4 /* A new client connected to server. */
+#define MIWEAR_STATUS_PHONE_CONNECTED       5 /* Phone app connected */
+#define MIWEAR_STATUS_PHONE_DISCONNECTED    6 /* Phone app disconnected */
+#define MIWEAR_STATUS_PHONE_UNINSTALLED     7 /* Phone app uninstalled */
 
 typedef struct message_status_data_s {
     int status; /* Miwear status value. */
