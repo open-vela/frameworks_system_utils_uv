@@ -26,6 +26,7 @@ VPATH += ext/src
 DEPPATH += --dep-path ext/src
 
 CSRCS += uv_devinfo.c
+CSRCS += uv_mqueue.c
 
 ifeq ($(CONFIG_LIB_MBEDTLS), y)
 CSRCS += uv_aes.c

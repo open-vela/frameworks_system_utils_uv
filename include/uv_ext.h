@@ -1137,8 +1137,9 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
 #define UV_AUDIO_EVENT_CLOSE                  0xFF
 
 typedef struct uv_audio_mqmessage_s {
-  void *data;
-  int status;
+  uint16_t cmd;
+  uint32_t status;
+  void     *data;
 } uv_audio_mqmessage_t;
 
 typedef struct playstate_s {
@@ -1520,6 +1521,30 @@ int uv_audio_get_isplay(uv_audio_t *handle);
 int uv_audio_close(uv_audio_t *handles);
 
 #endif
+
+/****************************************************************************
+ * uv_mqueue
+ ****************************************************************************/
+
+typedef struct uv_message_s {
+  int   cmd;
+  int   status;
+  void  *data;
+} uv_message_t;
+
+typedef struct uv_nxmqueue_s {
+  char *name;
+  int  mq_msgsize;
+  int  mq_maxmsg;
+} uv_nxmqueue_t;
+
+int uv_mqueue_async_send(const char *mq_name, void *data, int datasize);
+int uv_mqueue_async_recv(const char *mq_name, void *buff, int buffsize);
+int uv_mqueue_async_init(uv_loop_t *loop,
+                         uv_poll_t *pollhandle,
+                         uv_poll_cb cb,
+                         uv_nxmqueue_t *attr);
+int uv_mqueue_async_uninit(const char *name, uv_poll_t *pollhandle);
 
 /****************************************************************************
  * network
