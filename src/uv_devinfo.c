@@ -25,6 +25,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <uv_ext.h>
+#include <string.h>
 #include <cutils/properties.h>
 
 #define CONFIG_FACT_WIFIMAC_KEY "ro.factory.mac_wifi"
@@ -155,7 +156,9 @@ int uv_devinfobuff(char *buff, int size, int item) {
     {
       #if defined(CONFIG_KVDB) && defined(CONFIG_LIB_MBEDTLS)
       uv_buf_t input, output, ret;
-      property_get(CONFIG_FACT_WIFIMAC_KEY, buff, "NA");
+      char kvbuf[PROP_VALUE_MAX] = { 0 };
+      property_get(CONFIG_FACT_WIFIMAC_KEY, kvbuf, "NA");
+      strlcpy(buff, kvbuf, size);
       input.base = (char*)buff;
       input.len = strlen(buff);
       if (uv_md("MD5", input, &output) == 0) {
@@ -269,7 +272,9 @@ int uv_getdeviceinfo(uv_devinfo_t *info)
 #if defined(CONFIG_KVDB) && defined(CONFIG_LIB_MBEDTLS)
   {
     uv_buf_t input, output, ret;
-    property_get(CONFIG_FACT_WIFIMAC_KEY, info->did, "NA");
+    char kvbuf[PROP_VALUE_MAX] = { 0 };
+    property_get(CONFIG_FACT_WIFIMAC_KEY, kvbuf, "NA");
+    strlcpy(info->did, kvbuf, sizeof(info->did));
     input.base = (char*)info->did;
     input.len = strlen(info->did);
     if (uv_md("MD5", input, &output) == 0) {
