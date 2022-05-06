@@ -33,7 +33,7 @@
 
 typedef struct {
     sem_t resultwait;
-    uv_recorder_ops_t *ops;
+    uv_record_ops_t *ops;
     void *handle;
     int handlestate;                    // record handle
     int recordstate;                    // open (prepare, start)
@@ -41,7 +41,7 @@ typedef struct {
 
 void *tets;
 
-void uv_recorder_callback(void *data, int event, int status, void *result)
+void uv_record_callback(void *data, int event, int status, void *result)
 {
     uv_record_test_t *th = (uv_record_test_t*)data;
 
@@ -102,16 +102,16 @@ int main(int argc, char** argv)
     memset(recordhd, 0, sizeof(uv_record_test_t));
 
     do {
-        recordhd->ops = uv_recorder_play_init();
+        recordhd->ops = uv_record_init();
         if (!recordhd->ops) {
-            syslog(LOG_DEBUG, "[%s %d] uv_recorder_play_init fail.\n", __func__, __LINE__);
+            syslog(LOG_DEBUG, "[%s %d] uv_record_play_init fail.\n", __func__, __LINE__);
             break;
         }
 
-        if (!(recordhd->ops->uv_recorder_open && recordhd->ops->uv_recorder_prepare
-            && recordhd->ops->uv_recorder_start && recordhd->ops->uv_recorder_stop
-            && recordhd->ops->uv_recorder_pause && recordhd->ops->uv_recorder_close
-            && recordhd->ops->uv_recorder_read_data)) {
+        if (!(recordhd->ops->uv_record_open && recordhd->ops->uv_record_prepare
+            && recordhd->ops->uv_record_start && recordhd->ops->uv_record_stop
+            && recordhd->ops->uv_record_pause && recordhd->ops->uv_record_close
+            && recordhd->ops->uv_record_read_data)) {
             syslog(LOG_DEBUG, "[%s %d] record ops function error.\n", __func__, __LINE__);
             break;
         }
@@ -126,7 +126,7 @@ int main(int argc, char** argv)
         ts.tv_nsec = 0;
 
         recordhd->handlestate = UV_RECORD_TEST_HANDLE_START;
-        recordhd->ops->uv_recorder_open(uv_recorder_callback, recordhd, UV_RECORD_TEST_PACKNAME);
+        recordhd->ops->uv_record_open(uv_record_callback, recordhd, UV_RECORD_TEST_PACKNAME);
         if (recordhd->handlestate != UV_RECORD_TEST_HANDLE_END) {
             sem_timedwait(&recordhd->resultwait, &ts);
         }
@@ -136,13 +136,13 @@ int main(int argc, char** argv)
             break;
         }
 
-        recordhd->ops->uv_recorder_prepare(recordhd->handle, UV_RECORD_TEST_FILEPATH, UV_RECORD_TEST_OPTIONS);
-        recordhd->ops->uv_recorder_start(recordhd->handle);
+        recordhd->ops->uv_record_prepare(recordhd->handle, UV_RECORD_TEST_FILEPATH, UV_RECORD_TEST_OPTIONS);
+        recordhd->ops->uv_record_start(recordhd->handle);
 
         syslog(LOG_DEBUG, "[%s %d] start recording(10s)...\n", __func__, __LINE__);
         sleep(10);
 
-        recordhd->ops->uv_recorder_close(recordhd->handle);
+        recordhd->ops->uv_record_close(recordhd->handle);
         free(recordhd);
         syslog(LOG_DEBUG, "[%s %d] PASS.\n", __func__, __LINE__);
         return 0;

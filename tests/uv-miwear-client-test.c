@@ -23,6 +23,7 @@
 
 #include <debug.h>
 #include <string.h>
+#include <arch/inttypes.h>
 
 #ifndef CONFIG_MIWEAR_QAPP_PROXY_SERVER
 #define CONFIG_MIWEAR_QAPP_PROXY_SERVER "miwear-server"
@@ -53,21 +54,21 @@ static void client_recv_cb(uv_miwear_t* miwear, int status,
     return;
   }
 
-  printf("client got message: %s, len: %d, status: %d\n",
+  printf("client got message: %s, len: %"PRIu32", status: %d\n",
          (const char*)msg->data, msg->len, status);
 }
 
 void client_sent_cb(uv_miwear_t* miwear, int status, uv_miwear_message_t* msg,
                     void* cb_para)
 {
-  printf("client sent message: %s, len: %d, status: %d\n",
+  printf("client sent message: %s, len: %"PRIu32", status: %d\n",
          (const char*)msg->data, msg->len, status);
 }
 
 static void timer_run_cb(uv_timer_t* handle)
 {
   static char data[64];
-  snprintf(data, 64, "Hello from client. %d", count++);
+  snprintf(data, 64, "Hello from client. %"PRIu32"", count++);
   uv_miwear_message_t msg;
   msg.data = data;
   msg.len = strlen(data) + 1;

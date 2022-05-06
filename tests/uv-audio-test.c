@@ -253,7 +253,7 @@ static void uv_audio_callback_cb(void *data, int event, int status, void *result
     break;
 
     case UV_AUDIO_EVENT_GET_VOLUME:
-      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_GET_VOLUME(%f)\n", *(float*)result);
+      printf("uv_audio_callback_cb:UV_AUDIO_EVENT_GET_VOLUME(%d)\n", *(int*)result);
     break;
 
     case UV_AUDIO_EVENT_GET_POSITION:
@@ -459,7 +459,7 @@ int main(int argc, char *argv[])
   }
 
   ops->uv_audio_play_prepare(handle,
-              "http://m701.music.126.net/20220321202554/756cd38f0991898a219d0b2244dd1b02/jdymusic/obj/w5zDlMODwrDDiGjCn8Ky/1511339371/3baa/2841/ee34/024f4dbd2f96a2b3d7f6fdae3e85243a.mp3", NULL);
+              "https://96.f.1ting.com/local_to_cube_202004121813/96kmp3/zzzzzmp3/2014dApr/15W/15zhangkeer/01.mp3", NULL);
   ops->uv_audio_play_start(handle);
 
   printf("audio handle timeout = %d\n", timeout);
