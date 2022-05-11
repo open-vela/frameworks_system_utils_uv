@@ -123,7 +123,7 @@ int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output)
     mbedtls_pk_context pk;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
-    uv_buf_t md;
+    uv_buf_t md = {0};
     const char* pers = "-pkcs";
     int ret;
 
@@ -163,6 +163,7 @@ int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output)
     }
 
 exit:
+    free(md.base);
     mbedtls_pk_free(&pk);
     mbedtls_ctr_drbg_free(&ctr_drbg);
     mbedtls_entropy_free(&entropy);
@@ -175,7 +176,7 @@ int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign)
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     const char* pers = "-pkcs";
-    uv_buf_t md;
+    uv_buf_t md = {0};
     int ret;
 
     mbedtls_entropy_init(&entropy);
@@ -214,6 +215,7 @@ int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign)
     }
 
 exit:
+    free(md.base);
     mbedtls_pk_free(&pk);
     return ret;
 }
