@@ -371,7 +371,7 @@ static int app_unzip(unzFile zFile, const char* pkg_path)
         assert_res(unzGetCurrentFileInfo64(zFile, &zFileInfo, fileName,
                 sizeof(path) - strlen(path), NULL, 0, NULL, 0) == UNZ_OK);
 
-        if (zFileInfo.external_fa) {
+        if (0 == zFileInfo.uncompressed_size) {
             recursion_mkdir(path);
             goto next;
         }
