@@ -1545,12 +1545,37 @@ int uv_audio_close(uv_audio_t *handles);
 #define UV_RECORDER_EVENT_PAUSE          0xA5
 #define UV_RECORDER_EVENT_CLOSE          0xFF
 
+#define UV_RECORDER_BUFFER_MODE          1
+#define UV_RECORDER_NOBUFFER_MODE        0
+
+#define UV_RECORD_RESULT_SUCCESS         0       // start成功, 但是media start未开始，此时去stop
+#define UV_RECORD_RESULT_INVAL           1       // 参数错误
+#define UV_RECORD_RESULT_HANDLEING       2       // 正在获取handle
+#define UV_RECORD_RESULT_OCCUPY          3       // 资源被占用(录音中)
+#define UV_RECORD_RESULT_FAIL            4       // 录音失败
+#define UV_RECORD_RESULT_EXCEPTION       5       // 系统异常
+#define UV_RECORD_RESULT_TIMEOUT         6       // 超时
+#define UV_RECORD_RESULT_READ_SUCCESS    7       // read buffer
+#define UV_RECORD_RESULT_STOP_SUCCESS    8       // read buffer
+
+typedef void (*uv_record_callback_t)(void *data, int event, int status, void *result);
+typedef void (*uv_record_buffer_cb)(void *data, int size, int status);
+typedef void (*uv_record_result_cb)(void *data, int status, const char *result);
+
 typedef struct uv_record_buff_s {
   char *buff;
   int bufflen;
 } uv_record_buff_t;
 
-typedef void (*uv_record_callback_t)(void *data, int event, int status, void *result);
+typedef struct uv_record_attr_s {
+  char *buff;                             // buffer or pathname
+  int size;                               // buffer 大小
+  int mode;                               // 0： pathname模式， 1： buffer模式
+  int interval;                           // buffer 模式读取录音的间隔，单位ms/只有在buffer模式下才会用到
+  int duration;                           // 录音时间
+  uv_record_result_cb resultcb;
+  uv_record_buffer_cb buffercb;
+} uv_record_attr_t;
 
 typedef struct uv_record_ops_s {
   void (*uv_record_open)(uv_record_callback_t cb, void *data, const char *pkgname);
@@ -1561,7 +1586,6 @@ typedef struct uv_record_ops_s {
   int  (*uv_record_stop)(void *handle);
   int  (*uv_record_read_data)(void *handle, char *buff, int bufflen);
 } uv_record_ops_t;
-
 
 void uv_record_register(uv_record_ops_t *ops);
 uv_record_ops_t  *uv_record_init(void);
