@@ -659,6 +659,7 @@ struct uv_response_s {
 enum {
     UV_REQUEST,
     UV_DOWNLOAD,
+    UV_DOWNLOAD_PROGRESS,
     UV_UPLOAD
 };
 
@@ -769,6 +770,16 @@ int uv_request_set_data(uv_request_t* request, const void* data, ssize_t size);
  ****************************************************************************/
 
 int uv_request_set_userp(uv_request_t* request, void* userp);
+
+/****************************************************************************
+ * Name: uv_request_get_userp
+ *
+ * Description:
+ *   Get user data point
+ *
+ ****************************************************************************/
+
+void *uv_request_get_userp(uv_request_t* request);
 
 /****************************************************************************
  * Name: uv_request_get_header

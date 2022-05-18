@@ -47,6 +47,7 @@ struct uv_request_s {
     void* data;
     const char* url;
     uv_request_cb cb;
+    int (*progress_cb)(uv_request_t*, off_t, off_t);
     void* easy_handle;
     void* header_list;
     struct list_node node;
@@ -394,7 +395,22 @@ int uv_request_set_url(uv_request_t* request, const char* url)
     return 0;
 }
 
-int uv_request_set_atrribute(uv_request_t* request, int type, void* path)
+static int download_progress_callback(void* clientp,
+                                      curl_off_t dltotal,curl_off_t dlnow,
+                                      curl_off_t ultotal, curl_off_t ulnow)
+{
+    uv_request_t* request = (uv_request_t*)clientp;
+    if (!request) {
+        return -1;
+    }
+
+    if (request->progress_cb != NULL) {
+        return request->progress_cb(request, (off_t)dltotal, (off_t)dlnow);
+    }
+    return 0;
+}
+
+int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
 {
     struct curl_httppost* formpost = NULL;
     struct curl_httppost* lastptr = NULL;
@@ -409,24 +425,30 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* path)
         curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request);
         break;
     case UV_DOWNLOAD:
-        if (path == NULL) {
+        if (data == NULL) {
             return -EINVAL;
         }
-        request->response.body = (char*)strdup(path);
-        request->fd = mkfile(path);
+        request->response.body = (char*)strdup(data);
+        request->fd = mkfile(data);
         if (request->fd == NULL) {
             return -EMFILE;
         }
         curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request->fd);
         break;
+    case UV_DOWNLOAD_PROGRESS:
+        request->progress_cb = data;
+        curl_easy_setopt(request->easy_handle, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(request->easy_handle, CURLOPT_XFERINFOFUNCTION, download_progress_callback);
+        curl_easy_setopt(request->easy_handle, CURLOPT_XFERINFODATA, request);
+        break;
     case UV_UPLOAD:
-        if (path == NULL) {
+        if (data == NULL) {
             return -EINVAL;
         }
-        request->response.body = (char*)strdup(path);
+        request->response.body = (char*)strdup(data);
         curl_formadd(&formpost, &lastptr,
             CURLFORM_COPYNAME, "filename",
-            CURLFORM_FILE, path,
+            CURLFORM_FILE, data,
             CURLFORM_END);
         curl_easy_setopt(request->easy_handle, CURLOPT_HTTPPOST, formpost);
         break;
@@ -546,6 +568,11 @@ int uv_request_set_userp(uv_request_t* request, void* userp)
     request->response.userp = userp;
 
     return 0;
+}
+
+void* uv_request_get_userp(uv_request_t* request)
+{
+    return request->response.userp;
 }
 
 static void __uv_time_close(uv_handle_t* handle)
