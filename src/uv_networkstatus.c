@@ -23,97 +23,46 @@
 #include <netutils/netlib.h>
 #include <net/if.h>
 
-#define UV_NETSTATUS_IFNAME "wlan0"
+static const char *uv_netstatus_ifname_list[]={
+  "wlan0",
+  "bt-pan",
+  NULL
+};
 
-static void uv_netstatus_ip_callback(int state, uv_response_t* response)
-{
-  int result = ERROR;
-  uv_network_t* handle = (uv_network_t*)(response->userp);
-
-  if (!state && response->httpcode == 200) {
-    result = OK;
-  }
-
-  handle->cb(response->body, result, handle->data);
-}
-
-int uv_network_init(uv_loop_t *loop, uv_network_t *handle) {
+static bool uv_ifstatus_isup(const char *name){
   int ret;
+  uint8_t flags;
 
-  if (!loop || !handle) {
-    return UV_EINVAL;
-  }
+  /* Get current network status. */
 
-  ret = uv_request_init(loop, &handle->handle);
+  ret = netlib_getifstatus(name, &flags);
   if (ret != 0) {
-    return ret;
+    return false;
   }
 
-  return 0;
-}
-
-int uv_network_close(uv_network_t *handle) {
-  int ret;
-
-  if (!handle || !handle->handle) {
-    return UV_EINVAL;
+  if (IFF_IS_RUNNING(flags)) {
+    return true;
   }
 
-  ret = uv_request_close(handle->handle);
-  if (ret != 0) {
-    return ret;
-  }
-
-  return 0;
+  return false;
 }
 
 int uv_netstatus_gettype(uint8_t *type) {
-#ifndef CONFIG_ARCH_SIM
-  int ret;
-  uint8_t flags;
-#endif
+  int i;
 
   if (!type) {
     return UV_EINVAL;
   }
 
-#ifdef CONFIG_ARCH_SIM
-  *type = UV_NETSTATUS_WIFI;
-#else
-  /* Get current network status. */
-
-  ret = netlib_getifstatus(UV_NETSTATUS_IFNAME, &flags);
-  if (ret != 0) {
-    return ret;
-  }
-
-  if (IFF_IS_RUNNING(flags)) {
-    *type = UV_NETSTATUS_WIFI;
-    return 0;
-  }
-
   /* Todo: Get bluetooth connection status. */
-
-  *type = UV_NETSTATUS_NONE;
-#endif
-
-  return 0;
-}
-
-int uv_netstatus_getip(uv_network_t *handle, uv_netstatus_ipcb_t cb) {
-  if (!handle || !cb) {
-    return UV_EINVAL;
+  for (i = 0; uv_netstatus_ifname_list[i] != NULL; i++)
+  {
+    if (uv_ifstatus_isup(uv_netstatus_ifname_list[i])){
+      *type = UV_NETSTATUS_WIFI;
+      return 0;
+    }
   }
-
-  handle->cb = cb;
-
-  /* Get public network ip. */
-
-  uv_request_create(&handle->fetch);
-  uv_request_set_url(handle->fetch, "http://icanhazip.com");
-  uv_request_set_userp(handle->fetch, handle);
-  uv_request_set_atrribute(handle->fetch, UV_REQUEST, NULL);
-  uv_request_commit(handle->handle, handle->fetch, uv_netstatus_ip_callback);
-
+  
+  *type = UV_NETSTATUS_NONE;
   return 0;
 }
