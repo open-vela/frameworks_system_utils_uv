@@ -44,7 +44,8 @@
 #endif
 
 #ifndef CONFIG_MIWEAR_MESSAGE_MAX_LEN
-#define CONFIG_MIWEAR_MESSAGE_MAX_LEN 16384
+/* Nearly not limit the message length. */
+#define CONFIG_MIWEAR_MESSAGE_MAX_LEN (1024 * 1024 * 2)
 #endif
 
 #ifndef CONFIG_CLIENT_ID_LEN
