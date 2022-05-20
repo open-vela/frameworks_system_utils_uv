@@ -21,6 +21,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <stdint.h>
 #include <uv.h>
 
 #ifdef CONFIG_LIB_MBEDTLS
@@ -372,6 +373,7 @@ struct uv_topic_s {
   uv_poll_t handle;
   uv_topic_cb cb;
   size_t datalen;
+  uintptr_t flags;
   void *data;
 };
 
