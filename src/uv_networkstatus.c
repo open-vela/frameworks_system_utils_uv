@@ -62,7 +62,12 @@ int uv_netstatus_gettype(uint8_t *type) {
       return 0;
     }
   }
-  
+
+#if defined(CONFIG_ARCH_SIM)
+  *type = UV_NETSTATUS_WIFI;
+#else
   *type = UV_NETSTATUS_NONE;
+#endif
+
   return 0;
 }
