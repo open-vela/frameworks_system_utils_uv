@@ -24,7 +24,6 @@
 #include <uv_ext.h>
 #include <system/state.h>
 #include <uORB/uORB.h>
-#include <uORB/uORBTopics.h>
 #include <arpa/inet.h>
 
 /****************************************************************************
