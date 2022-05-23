@@ -21,7 +21,6 @@
 #include <uv_ext.h>
 #include <sensor/accel.h>
 #include <uORB/uORB.h>
-#include <uORB/uORBTopics.h>
 #include <stdlib.h>
 
 static int senddatacount = 0;
@@ -76,7 +75,7 @@ int main(int argc, char *argv[])
 
   /* topic subscribe */
 
-  if (uv_topic_subscribe(loop, &topic_t, "sensor_accel", topic_cb) < 0) {
+  if (uv_topic_subscribe(loop, &topic_t, ORB_ID(sensor_accel), topic_cb) < 0) {
     printf("uv_topic_subscribe fail.\n");
     goto testfail;
   }
