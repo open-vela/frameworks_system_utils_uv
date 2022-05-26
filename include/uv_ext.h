@@ -1757,8 +1757,6 @@ int uv_topicadv_close(void);
 
 #endif
 
-#ifdef CONFIG_MIWEAR_APPS
-
 typedef struct app_verify_s app_verify_t;
 
 /****************************************************************************
@@ -1837,8 +1835,6 @@ uint8_t* app_get_fingerprint(app_verify_t* app_verify_info);
  ****************************************************************************/
 
 void app_verify_close(app_verify_t* app_verify_info);
-
-#endif
 
 #ifdef CONFIG_UNQLITE
 
