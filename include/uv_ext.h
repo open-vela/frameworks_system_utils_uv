@@ -1141,6 +1141,24 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
 int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
                            const char* path, uv_miwear_recv_cb cb);
 
+
+/****************************************************************************
+ * Name: uv_miwear_iter_client
+ *
+ * Description:
+ *   Go through every client connected to server.
+ *
+ * Input Parameters:
+ *
+ *   miwear   - the miwear instance, which is initialized when returned.
+ *   cb       - the callback when every client found.
+ *   cb_para  - the callback parameter passed to cb.
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_miwear_iter_client(uv_miwear_t* miwear, void (*cb)(const char*, void*),
+                          void* cb_para);
 #endif
 
 /****************************************************************************
