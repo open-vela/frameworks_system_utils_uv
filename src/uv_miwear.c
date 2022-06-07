@@ -664,16 +664,27 @@ static int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
                                     uv_miwear_message_t* message,
                                     uv_miwear_sent_cb cb, void* cb_para)
 {
-  if (!miwear || !name || !message || !cb)
+  if (!miwear || !message || !cb)
     return UV_EINVAL;
 
   struct server* server = miwear->server;
+  struct client* client;
 
   if (!server)
     return UV_EINVAL;
 
+  /* broadcast */
+  if (name == NULL) {
+    int ret = 0;
+    list_for_every_entry(&server->client_list, client, struct client, node)
+    {
+      info("send message to client [%s]\n", client->name);
+      ret |= uv__miwear_send_to_client(client, message, cb, cb_para);
+    }
+    return !!ret;
+  }
+
   /* Find client via name. */
-  struct client* client;
   bool found = false;
   list_for_every_entry(&server->client_list, client, struct client, node)
   {
@@ -918,6 +929,25 @@ int uv_miwear_send(uv_miwear_t* miwear, const char* to,
       return uv_miwear_send_to_client(miwear, to, message, cb, cb_para);
 
     return uv_miwear_send_to_server(miwear, message, cb, cb_para);
+}
+
+int uv_miwear_iter_client(uv_miwear_t* miwear, void (*cb)(const char*, void*),
+                          void* cb_para)
+{
+  if (!miwear || !cb)
+    return UV_EINVAL;
+
+  struct server* server = miwear->server;
+  struct client* client;
+
+  if (!miwear->is_server || !server)
+    return UV_EINVAL;
+
+  list_for_every_entry(&server->client_list, client, struct client, node)
+  {
+    cb(client->name, cb_para);
+  }
+  return 0;
 }
 
 int uv_miwear_close(uv_miwear_t* miwear) {
