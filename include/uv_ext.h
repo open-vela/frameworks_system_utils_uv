@@ -495,6 +495,7 @@ typedef struct uv_sysbrightness_s {
     int (*getmode)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
     int (*keepscreenon)(uv_brightness_handle_t handle, bool val, uv_brightness_cb_t cb, void *data);
     int (*recovery)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
+    int (*turnon)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
 } uv_sysbrightness_ops_t;
 
 /****************************************************************************
@@ -592,6 +593,23 @@ int uv_brightness_setmode(uv_brightness_handle_t handle, int mode,
 
 int uv_brightness_getmode(uv_brightness_handle_t handle,
                           uv_brightness_cb_t cb, void *data);
+
+/****************************************************************************
+ * Name: uv_brightness_turnon
+ *
+ * Description:
+ *   turn on the screen
+ *
+ * Input Parameters:
+ *   handle  - brightness handle. There can only be one per application.
+ *   cb      - brightness setting completion callback
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ ****************************************************************************/
+
+int uv_brightness_turnon(uv_brightness_handle_t handle,
+                         uv_brightness_cb_t cb, void *data);
 
 /****************************************************************************
  * Name: uv_brightness_setkeepon
