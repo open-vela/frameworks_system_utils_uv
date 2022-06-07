@@ -98,6 +98,17 @@ int uv_brightness_recovery(uv_brightness_handle_t handle, uv_brightness_cb_t cb,
     return ret;
 }
 
+int uv_brightness_turnon(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data)
+{
+    int ret;
+    if (!sysbrightness.turnon || !handle || !cb) {
+        return UV_EINVAL;
+    }
+
+    ret = sysbrightness.turnon(handle, cb, data);
+    return ret;
+}
+
 int uv_brightness_init(uv_loop_t* loop, uv_brightness_handle_t* handle)
 {
     int ret;
