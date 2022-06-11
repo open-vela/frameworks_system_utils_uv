@@ -122,3 +122,9 @@ int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency) {
 
   return orb_set_frequency(topic->handle.io_watcher.fd, frequency);
 }
+
+int uv_topic_close(uv_topic_t *topic)
+{
+  uv_close((uv_handle_t *)&topic->handle, NULL);
+  return 0;
+}
