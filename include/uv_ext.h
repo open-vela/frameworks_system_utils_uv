@@ -409,6 +409,12 @@ int uv_topic_unsubscribe(uv_topic_t *topic);
 
 int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency);
 
+/****************************************************************************
+ * Name: uv_topic_close
+ ****************************************************************************/
+
+int uv_topic_close(uv_topic_t *topic);
+
 #endif
 
 /****************************************************************************
