@@ -37,9 +37,11 @@ static bool uv_ifstatus_isup(const char *name){
 
   ret = netlib_getifstatus(name, &flags);
   if (ret != 0) {
+    syslog(LOG_ERR, "uv_netstat: getifstatus failed:%d, %d\n", ret, errno);
     return false;
   }
 
+  syslog(LOG_INFO, "uv_netstat: flags: %d\n", flags);
   if (IFF_IS_RUNNING(flags)) {
     return true;
   }
@@ -59,6 +61,7 @@ int uv_netstatus_gettype(uint8_t *type) {
   {
     if (uv_ifstatus_isup(uv_netstatus_ifname_list[i])){
       *type = UV_NETSTATUS_WIFI;
+      syslog(LOG_INFO, "uv_netstat: status :wifi\n");
       return 0;
     }
   }
@@ -69,5 +72,6 @@ int uv_netstatus_gettype(uint8_t *type) {
   *type = UV_NETSTATUS_NONE;
 #endif
 
+  syslog(LOG_INFO, "uv_netstat: status :%d\n", *type);
   return 0;
 }
