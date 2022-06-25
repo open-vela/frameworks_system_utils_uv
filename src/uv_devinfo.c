@@ -20,7 +20,6 @@
 
 #include <nuttx/config.h>
 #include <nuttx/version.h>
-#include <nuttx/board.h>
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
