@@ -172,8 +172,8 @@ static void message_reader_alloc_cb(uv_handle_t* handle, size_t suggested_size,
   struct reader* reader = (struct reader*)handle->data;
 
   if (reader->state == MESSAGE_READER_STATE_HEADER) {
-    buf->base = (char*)&reader->header;
-    buf->len = sizeof(reader->header);
+    buf->base = ((char*)&reader->header) + reader->recv_len;
+    buf->len = sizeof(reader->header) - reader->recv_len;
     return;
   }
 
@@ -246,11 +246,20 @@ static void message_reader_read_cb(uv_stream_t* stream, ssize_t nread,
   }
 
   if (reader->state == MESSAGE_READER_STATE_HEADER) {
-    if (nread != sizeof(message_header_t)) {
-      warn("header read failed :%d.\n", nread);
+    if (nread > sizeof(message_header_t)) {
+        _err("fatal, wrong header len %zu\n", nread);
+        /* @todo what now... */
+        return;
+    }
+
+    reader->recv_len += nread;
+    if (reader->recv_len < sizeof(message_header_t)) {
+      warn("header read ongoing: %" PRIu32 "\n", reader->recv_len);
+      return;
     }
 
     reader->state = MESSAGE_READER_STATE_BODY;
+    reader->recv_len = 0;
     uv_read_start(reader->stream, message_reader_alloc_cb,
                   message_reader_read_cb);
     return;
