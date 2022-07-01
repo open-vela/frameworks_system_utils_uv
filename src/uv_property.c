@@ -31,6 +31,7 @@ enum {
     PROPERTY_OP_GET = 0,
     PROPERTY_OP_SET,
     PROPERTY_OP_DELETE,
+    PROPERTY_OP_CLEAR,
     PROPERTY_OP_COMMIT,
 };
 
@@ -46,6 +47,11 @@ struct uv_property_s {
 };
 typedef struct uv_property_s uv_property_t;
 
+static void uv_property_clear_cb(const char* key, const char* value, void* cookie)
+{
+    property_delete(key);
+}
+
 static void uv__property_work_cb(uv_work_t *req)
 {
   uv_property_t *property = req->data;
@@ -60,6 +66,9 @@ static void uv__property_work_cb(uv_work_t *req)
     break;
   case PROPERTY_OP_DELETE:
       property->status = property_delete(property->key);
+    break;
+  case PROPERTY_OP_CLEAR:
+      property->status = property_list(uv_property_clear_cb, NULL);
     break;
   case PROPERTY_OP_COMMIT:
       property->status = property_commit();
@@ -196,6 +205,31 @@ int uv_property_delete(uv_loop_t *loop, const char *key, uv_property_cb cb,
   property->cb = cb;
   property->arg = arg;
   property->op = PROPERTY_OP_DELETE;
+  property->work_req.data = property;
+
+  return uv_queue_work(loop, &property->work_req, uv__property_work_cb,
+                       uv__property_after_work_cb);
+}
+
+int uv_property_clear(uv_loop_t *loop, uv_property_cb cb, void *arg)
+{
+  /** synchronous mode */
+  if (cb == NULL) {
+    return property_list(uv_property_clear_cb, NULL);
+  }
+
+  if (loop == NULL)
+    return UV_EINVAL;
+
+  uv_property_t *property = NULL;
+  int ret = uv__property_alloc(&property, NULL, NULL, NULL);
+  if (ret != 0) {
+    return ret;
+  }
+
+  property->cb = cb;
+  property->arg = arg;
+  property->op = PROPERTY_OP_CLEAR;
   property->work_req.data = property;
 
   return uv_queue_work(loop, &property->work_req, uv__property_work_cb,
