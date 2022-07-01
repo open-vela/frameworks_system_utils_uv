@@ -448,6 +448,16 @@ int uv_property_set(uv_loop_t *loop, const char *key, const char *value,
                     uv_property_cb cb, void *arg);
 
 /****************************************************************************
+ * Name: uv_property_clear
+ *
+ * Description:
+ *   Delete all the KV pair in database.
+ *
+ ****************************************************************************/
+
+int uv_property_clear(uv_loop_t *loop, uv_property_cb cb, void *arg);
+
+/****************************************************************************
  * Name: uv_property_delete
  *
  * Description:
