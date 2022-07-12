@@ -68,6 +68,7 @@ endif
 ifeq ($(CONFIG_MEDIA), y)
 CSRCS += uv_audio.c
 CSRCS += uv_record.c
+CSRCS += uv_volume.c
 endif
 
 ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB), yy)

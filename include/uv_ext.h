@@ -1645,6 +1645,81 @@ uv_record_ops_t  *uv_record_init(void);
 #endif
 
 /****************************************************************************
+ * volume
+ ****************************************************************************/
+
+#ifdef CONFIG_MEDIA
+
+typedef void (*uv_volume_cb)(int status, void *cookie);
+typedef struct uv_volume_s {
+    uv_loop_t *loop;
+} uv_volume_t;
+
+/****************************************************************************
+ * Name: uv_volume_init
+ *
+ * Description:
+ *   Init the uv_volume.
+ *
+ * Input Parameters:
+ *   uv_volume - the uv_volume handle
+ *   loop      - the uv_loop
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ *   Negative on fail;
+ *
+ ****************************************************************************/
+
+int uv_volume_init(uv_volume_t *uv_volume, uv_loop_t *loop);
+
+/****************************************************************************
+ * Name: uv_volume_set
+ *
+ * Description:
+ *   Set the specified stream volume.
+ *
+ * Input Parameters:
+ *   uv_volume    - the uv_volume handle
+ *   volume       - the set volume
+ *   uv_volume_cb - the callback function called after the work finish
+ *   stream       - the media stream name
+ *   arg          - the jse volume handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ *   Negative on fail;
+ *
+ ****************************************************************************/
+
+int uv_volume_set(uv_volume_t *uv_volume, int volume, uv_volume_cb cb,
+                  const char *stream, void *arg);
+
+/****************************************************************************
+ * Name: uv_volume_get
+ *
+ * Description:
+ *   Get the specified stream volume.
+ *
+ * Input Parameters:
+ *   uv_volume    - the uv_volume handle
+ *   pvolume      - the pointer to get volume
+ *   uv_volume_cb - the callback function called after the work finish
+ *   stream       - the media stream name
+ *   arg          - the jse volume handle
+ *
+ * Returned Value:
+ *   Zero (OK) on success;
+ *   Negative on fail;
+ *
+ ****************************************************************************/
+
+int uv_volume_get(uv_volume_t *uv_volume, int *pvolume, uv_volume_cb cb,
+                  const char *stream, void *arg);
+
+#endif /* #ifdef CONFIG_MEDIA */
+
+/****************************************************************************
  * uv_mqueue
  ****************************************************************************/
 
