@@ -378,6 +378,37 @@ int uv_request_delete(uv_request_t* request)
 
     return 0;
 }
+const char* uv_request_get_url(uv_request_t* request){
+    if (!request || !request->url) {
+        return NULL;
+    }
+    return request->url;
+}
+
+uv_request_header_t uv_request_get_header_list(uv_request_t* request){
+    uv_request_header_t result;
+    result.currentIndex =0;
+    if (!request || !request->header_list) {
+        return result;
+    }
+    struct curl_slist *curr =(struct curl_slist*)request->header_list;
+    int count = 0;
+    while (curr)
+    {
+        count++;
+        curr = curr->next;
+    }
+    result.data = (char**)malloc(count + 1);
+    if(!result.data){
+        return result;
+    }
+    while (curr)
+    {
+        result.data[result.currentIndex++] = curr->data;
+        curr = curr->next;
+    }
+    return  result;
+}
 
 int uv_request_set_url(uv_request_t* request, const char* url)
 {
