@@ -770,6 +770,25 @@ int uv_request_delete(uv_request_t* request);
 int uv_request_set_url(uv_request_t* request, const char* url);
 
 /****************************************************************************
+ *
+ * Name: uv_request_get_url
+ ****************************************************************************/
+
+const char* uv_request_get_url(uv_request_t* request);
+
+typedef struct uv_request_header_s{
+  int  currentIndex;
+  char** data;
+}uv_request_header_t;
+
+/****************************************************************************
+ *
+ * Name: uv_request_get_header_list
+ ****************************************************************************/
+
+uv_request_header_t uv_request_get_header_list(uv_request_t* request);
+
+/****************************************************************************
  * Name: uv_request_append_header
  *
  * Description:
@@ -2020,6 +2039,11 @@ int uv_db_commit(uv_db_t *handle);
  ****************************************************************************/
 
 int uv_db_get(uv_db_t *handle, const char *key, uv_buf_t *value, uv_db_callback cb, void *arg);
+
+typedef struct uv_db_data_s {
+    char * key;
+    char * value;
+} uv_db_data_t;
 
 /****************************************************************************
  * Name: uv_db_set
