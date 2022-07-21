@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <uv_ext.h>
-#include <cutils/properties.h>
 
 /****************************************************************************
  * Typedef

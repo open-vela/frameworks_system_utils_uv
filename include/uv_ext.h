@@ -38,6 +38,10 @@
 #include <system/state.h>
 #endif
 
+#ifdef CONFIG_KVDB
+#include <cutils/properties.h>
+#endif
+
 #include <syslog.h>
 
 #define UV_EXT_OK 0
