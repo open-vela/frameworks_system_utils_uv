@@ -482,10 +482,8 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
         return -EINVAL;
     }
 
-    if (request->header_list != NULL) {
-        curl_easy_setopt(request->easy_handle, CURLOPT_HTTPHEADER, request->header_list);
-    }
-
+    request->header_list = curl_slist_append(request->header_list, "Expect:");
+    curl_easy_setopt(request->easy_handle, CURLOPT_HTTPHEADER, request->header_list);
     request->cb = cb;
     if (cb) {
         curl_multi_setopt(handle->multi_handle, CURLMOPT_SOCKETDATA, handle);
