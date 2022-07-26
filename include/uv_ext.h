@@ -350,6 +350,12 @@ int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t md);
 int uv_md(const char* type, uv_buf_t input, uv_buf_t *output);
 
 /****************************************************************************
+ * Name: uv_md_hmac
+ ****************************************************************************/
+
+int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t *key);
+
+/****************************************************************************
  * Name: uv_rsa
  ****************************************************************************/
 
