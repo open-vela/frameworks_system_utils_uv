@@ -69,6 +69,7 @@ int uv_rsa(uv_buf_t key, uv_buf_t text, uv_buf_t* output, int mode)
     if (ret != 0) {
         crypto_error("rsa encrypt returned -0x%04x\n", (unsigned int)-ret);
         free(output->base);
+        output->base = NULL;
         goto exit;
     }
 
@@ -97,8 +98,36 @@ int uv_md(const char* type, uv_buf_t input, uv_buf_t* output)
 
     if (mbedtls_md(info, (const unsigned char*)input.base, input.len, (unsigned char*)output->base) != 0) {
         free(output->base);
+        output->base = NULL;
         return UV_EINVAL;
     }
+    return 0;
+}
+
+int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t *key)
+{
+    const mbedtls_md_info_t* info;
+
+    output->len = 0;
+    info = mbedtls_md_info_from_string(type);
+    if (info == NULL) {
+        return UV_EINVAL;
+    }
+
+    output->len = mbedtls_md_get_size(info);
+    output->base = malloc(output->len + 1);
+    if (output->base == NULL) {
+        return UV_ENOMEM;
+    }
+
+    if (mbedtls_md_hmac(info, (const unsigned char*)key->base, key->len,
+                        (const unsigned char*)input.base, input.len,
+                        (unsigned char*)output->base) != 0) {
+        free(output->base);
+        output->base = NULL;
+        return UV_EINVAL;
+    }
+
     return 0;
 }
 
