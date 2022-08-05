@@ -49,6 +49,8 @@ endif
 ifeq ($(CONFIG_UORB), y)
 PROGNAME += uv_topic
 MAINSRC  += uv-topic-test.c
+PROGNAME += uv_topicadv
+MAINSRC  += uv-topicadv-test.c
 endif
 
 ifeq ($(CONFIG_MIWEAR_APPS), y)

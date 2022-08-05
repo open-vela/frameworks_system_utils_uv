@@ -22,6 +22,7 @@ ifneq ($(CONFIG_LIBUV_EXTENSION),)
 
 include ext/tests/Makefile
 
+VPATH += ext/tests
 VPATH += ext/src
 DEPPATH += --dep-path ext/src
 
