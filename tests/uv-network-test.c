@@ -30,30 +30,10 @@
  * Public Functions
  ****************************************************************************/
 
-/* uv_getip的回调函数，单独获取. */
-
-void uv_netstatus_ipcb(char *data, int result, void *extra) {
-  if (result == 0) {
-    printf("ip: %s\n", data);
-  } else {
-    printf("ip callback fail\n");
-  }
-}
-
 int main(int argc, char** argv)
 {
   int ret;
   uint8_t type;
-  uv_network_t net = { 0 };
-  uv_loop_t loop;
-
-  uv_loop_init(&loop);
-
-  ret = uv_network_init(&loop, &net);
-  if (ret != 0) {
-    printf("%s %d fail\n", __FILE__, __LINE__);
-    return ret;
-  }
 
   ret = uv_netstatus_gettype(&type);
   if (ret > 0) {
@@ -61,14 +41,6 @@ int main(int argc, char** argv)
   } else {
     printf("get network type fail\n");
   }
-
-  uv_netstatus_getip(&net, uv_netstatus_ipcb);
-  uv_netstatus_getip(&net, uv_netstatus_ipcb);
-  uv_netstatus_getip(&net, uv_netstatus_ipcb);
-
-  uv_run(&loop, UV_RUN_DEFAULT);
-  uv_network_close(&net);
-  uv_loop_close(&loop);
 
   return 0;
 }
