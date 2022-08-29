@@ -131,6 +131,77 @@ int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t *key
     return 0;
 }
 
+int uv_md_file(const char *type, const char *path, int batchsize, uv_buf_t *output)
+{
+    int ret = UV_EXT_OK;
+    FILE *f;
+    size_t n;
+    mbedtls_md_context_t ctx;
+    const mbedtls_md_info_t* info;
+    unsigned char *batchbuf;
+
+    output->len = 0;
+    info = mbedtls_md_info_from_string(type);
+    if (info == NULL) {
+        return UV_EINVAL;
+    }
+
+    batchbuf = malloc(batchsize);
+    if (batchbuf == NULL) {
+        return UV_ENOMEM;
+    }
+
+    if ((f = fopen(path, "rb")) == NULL) {
+        ret = UV_EIO;
+        goto errout_with_batch;
+    }
+
+    mbedtls_md_init(&ctx);
+
+    if ((ret = mbedtls_md_setup(&ctx, info, 0)) != 0) {
+        ret = UV_EINVAL;
+        goto errout_with_file;
+    }
+
+    if ((ret = mbedtls_md_starts(&ctx)) != 0) {
+        ret = UV_EINVAL;
+        goto errout_with_ctx;
+    }
+
+    while ((n = fread(batchbuf, 1, batchsize, f)) > 0) {
+        if ((ret = mbedtls_md_update(&ctx, batchbuf, n)) != 0) {
+            ret = UV_EINVAL;
+            goto errout_with_ctx;
+        }
+    }
+
+    output->len = mbedtls_md_get_size(info);
+    output->base = malloc(output->len + 1);
+    if (output->base == NULL) {
+        ret = UV_ENOMEM;
+        goto errout_with_ctx;
+    }
+
+    if (ferror(f) != 0) {
+        ret = UV_EIO;
+    } else if (mbedtls_md_finish(&ctx, (unsigned char *)output->base) != 0) {
+        ret = UV_EINVAL;
+    }
+
+    if (ret != 0) {
+        free(output->base);
+        output->base = NULL;
+    }
+
+errout_with_ctx:
+    mbedtls_md_free(&ctx);
+errout_with_file:
+    fclose(f);
+errout_with_batch:
+    free(batchbuf);
+    return ret;
+}
+
 int uv_base64_encode(uv_buf_t input, uv_buf_t* output)
 {
     int res;
@@ -147,14 +218,20 @@ int uv_base64_decode(uv_buf_t input, uv_buf_t* output)
     return mbedtls_base64_decode((unsigned char*)output->base, len, &output->len, (const unsigned char*)input.base, input.len);
 }
 
-int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output)
+int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output, int type)
 {
+    const mbedtls_md_info_t* info;
     mbedtls_pk_context pk;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     uv_buf_t md = {0};
     const char* pers = "-pkcs";
     int ret;
+
+    info = mbedtls_md_info_from_string(md_type);
+    if (info == NULL) {
+        return UV_EINVAL;
+    }
 
     mbedtls_entropy_init(&entropy);
     mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -177,14 +254,21 @@ int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output)
         goto exit;
     }
 
-    ret = uv_md(md_type, text, &md);
+    if (type == UV_EXT_TYPE_BUFFER) {
+        ret = uv_md(md_type, text, &md);
+    } else {
+        ret = uv_md_file(md_type, text.base, 1024, &md);
+    }
+
     if (ret != 0) {
         crypto_error("Digest calculation failed\n");
         goto exit;
     }
 
+    crypto_info("Sign mdtype=%s, type=%d\n", md_type, mbedtls_md_get_type(info));
+
     output->base = malloc(MBEDTLS_PK_SIGNATURE_MAX_SIZE);
-    ret = mbedtls_pk_sign(&pk, MBEDTLS_MD_SHA256, (const unsigned char*)md.base, 0,
+    ret = mbedtls_pk_sign(&pk, mbedtls_md_get_type(info), (const unsigned char*)md.base, 0,
         (unsigned char*)output->base, &output->len, mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         crypto_error("mbedtls_pk_sign returned -0x%04x\n", (unsigned int)-ret);
@@ -199,14 +283,20 @@ exit:
     return 0;
 }
 
-int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign)
+int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign, int type)
 {
+    const mbedtls_md_info_t* info;
     mbedtls_pk_context pk;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     const char* pers = "-pkcs";
     uv_buf_t md = {0};
     int ret;
+
+    info = mbedtls_md_info_from_string(md_type);
+    if (info == NULL) {
+        return UV_EINVAL;
+    }
 
     mbedtls_entropy_init(&entropy);
     mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -229,13 +319,20 @@ int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign)
         goto exit;
     }
 
-    ret = uv_md(md_type, text, &md);
+    if (type == UV_EXT_TYPE_BUFFER) {
+        ret = uv_md(md_type, text, &md);
+    } else {
+        ret = uv_md_file(md_type, text.base, 1024, &md);
+    }
+
     if (ret != 0) {
         crypto_error("Digest calculation failed\n");
         goto exit;
     }
 
-    ret = mbedtls_pk_verify(&pk, MBEDTLS_MD_SHA256, (const unsigned char*)md.base, md.len,
+    crypto_info("Verify mdtype=%s, type=%d\n", md_type, mbedtls_md_get_type(info));
+
+    ret = mbedtls_pk_verify(&pk, mbedtls_md_get_type(info), (const unsigned char*)md.base, md.len,
         (const unsigned char*)sign.base, sign.len);
 
     if (ret != 0) {
