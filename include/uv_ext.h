@@ -316,6 +316,9 @@ void uv_aes_free(uv_aes_t *ctx);
 
 #ifdef CONFIG_LIB_MBEDTLS
 
+#define UV_EXT_TYPE_BUFFER 0
+#define UV_EXT_TYPE_FILE   1
+
 #define UV_EXT_DECRYPT 0
 #define UV_EXT_ENCRYPT 1
 
@@ -335,19 +338,25 @@ int uv_base64_decode(uv_buf_t input, uv_buf_t *output);
  * Name: uv_sign
  ****************************************************************************/
 
-int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t *output);
+int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t *output, int type);
 
 /****************************************************************************
  * Name: uv_verify
  ****************************************************************************/
 
-int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t md);
+int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t md, int type);
 
 /****************************************************************************
  * Name: uv_md
  ****************************************************************************/
 
 int uv_md(const char* type, uv_buf_t input, uv_buf_t *output);
+
+/****************************************************************************
+ * Name: uv_md_file
+ ****************************************************************************/
+
+int uv_md_file(const char *type, const char *path, int batchsize, uv_buf_t *output);
 
 /****************************************************************************
  * Name: uv_md_hmac
