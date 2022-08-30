@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <uv.h>
 
+#include <uv_async_queue.h>
+
 #ifdef CONFIG_LIB_MBEDTLS
 #include <mbedtls/cipher.h>
 #include <mbedtls/rsa.h>
@@ -50,6 +52,15 @@
 
 #define uv_ext_log(level, module, format, ...) \
   syslog(level, "[" #module ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
+
+#define uv_log_debug(module, format, ...) \
+  uv_ext_log(LOG_DEBUG, module, format, ##__VA_ARGS__)
+
+#define uv_log_info(module, format, ...) \
+  uv_ext_log(LOG_INFO, module, format, ##__VA_ARGS__)
+
+#define uv_log_error(module, format, ...) \
+  uv_ext_log(LOG_ERR, module, format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {
