@@ -26,8 +26,12 @@ VPATH += ext/tests
 VPATH += ext/src
 DEPPATH += --dep-path ext/src
 
-CSRCS += uv_devinfo.c
 CSRCS += uv_mqueue.c
+CSRCS += uv_async_queue.c
+
+ifeq ($(CONFIG_KVDB), y)
+CSRCS += uv_devinfo.c
+endif
 
 ifeq ($(CONFIG_LIB_MBEDTLS), y)
 CSRCS += uv_aes.c

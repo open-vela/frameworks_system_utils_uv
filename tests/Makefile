@@ -23,8 +23,13 @@ PRIORITY  = $(CONFIG_LIBUV_EXTENSION_TEST_PRIORITY)
 STACKSIZE = $(CONFIG_LIBUV_EXTENSION_TEST_TASK_STACKSIZE)
 MODULE    = $(CONFIG_LIBUV_EXTENSION_TEST)
 
+PROGNAME += uv_async_queue
+MAINSRC  += uv-async-queue-test.c
+
+ifeq ($(CONFIG_KVDB), y)
 PROGNAME += uv_devinfo
 MAINSRC  += uv-devinfo-test.c
+endif
 
 ifeq ($(CONFIG_LIB_MBEDTLS), y)
 PROGNAME += uv_aes
