@@ -90,7 +90,7 @@ int uv_brightness_setkeepon(uv_brightness_handle_t handle, bool keep, uv_brightn
 int uv_brightness_recovery(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data)
 {
     int ret;
-    if (!sysbrightness.recovery || !handle || !cb) {
+    if (!sysbrightness.recovery || !handle) {
         return UV_EINVAL;
     }
 
