@@ -76,7 +76,7 @@ ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB), yy)
 CSRCS += uv_networkstatus.c
 endif
 
-ifeq ($(CONFIG_MIWEAR_APPS), y)
+ifeq ($(CONFIG_LIB_ZLIB)$(CONFIG_LIB_MBEDTLS), yy)
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib/zlib/contrib/minizip}
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib/zlib}
 CSRCS += app_verify.c
