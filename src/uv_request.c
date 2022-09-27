@@ -168,7 +168,9 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
         request->cb(UV_REQUEST_DONE, &request->response);
     }
 
-    curl_easy_cleanup(easy_handle);
+    if (easy_handle != NULL){
+        curl_easy_cleanup(easy_handle);
+    }
 
     if (request->header_list) {
         curl_slist_free_all(request->header_list);
@@ -374,6 +376,26 @@ int uv_request_delete(uv_request_t* request)
         return -EINVAL;
     }
 
+    if (request->fd) {
+        fclose(request->fd);
+    }
+
+    curl_multi_remove_handle(request->handle->multi_handle, request->easy_handle);
+    curl_easy_cleanup(request->easy_handle);
+
+    if (request->header_list) {
+        curl_slist_free_all(request->header_list);
+    }
+
+    if (request->response.body) {
+        free(request->response.body);
+    }
+
+    if (request->response.headers) {
+        free(request->response.headers);
+    }
+
+    request->easy_handle = NULL;
     free(request);
 
     return 0;
