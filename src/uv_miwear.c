@@ -288,15 +288,16 @@ static void message_reader_read_cb(uv_stream_t* stream, ssize_t nread,
                 message_reader_read_cb);
 }
 
-static void message_reader_start(uv_stream_t* stream, msg_reader_cb cb,
-                                 void* client)
+static struct reader* message_reader_start(uv_stream_t* stream,
+                                           msg_reader_cb cb,
+                                           void* client)
 {
   DEBUGASSERT(stream);
   DEBUGASSERT(cb);
   struct reader* reader = zalloc(sizeof(struct reader));
   if (reader == NULL) {
     err("no memory.\n");
-    return;
+    return NULL;
   }
   reader->stream = stream;
   reader->cb = cb;
@@ -304,6 +305,7 @@ static void message_reader_start(uv_stream_t* stream, msg_reader_cb cb,
 
   stream->data = reader;
   uv_read_start(stream, message_reader_alloc_cb, message_reader_read_cb);
+  return reader;
 }
 
 static void uv__miwear_client_close(struct client* client)
@@ -352,10 +354,17 @@ static void pipe_close_callback(uv_handle_t* handle)
   free(reader);
 }
 
-/* For pipe close before connection made. */
-static void pipe_close_callback_no_reader(uv_handle_t* handle)
+static void pipe_close_callback2(uv_handle_t* handle)
 {
-  struct client* client = handle->data;
+  uv_miwear_t *miwear = handle->data;
+  if (miwear->is_server)
+    return;
+
+  struct reader *reader = miwear->reader;
+  if (reader)
+    free(reader);
+
+  struct client *client = miwear->client;
   uv__miwear_client_close(client);
 }
 
@@ -518,8 +527,9 @@ static void server_listen_callback(uv_stream_t* stream, int status)
   client->state = CLIENT_STATE_CONNECTING;
   client->miwear = server->miwear;
   list_initialize(&client->sending_list);
-  message_reader_start((uv_stream_t*)&client->pipe, stream_read_callback,
-                       client);
+  server->miwear->reader = message_reader_start((uv_stream_t*)&client->pipe,
+                                                stream_read_callback,
+                                                client);
 }
 
 int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
@@ -723,8 +733,9 @@ static void client_id_sent_callback(uv_miwear_t* miwear, int status,
   info("CLIENT_ID message sent, server connected\n");
   client->state = CLIENT_STATE_CONNECTED;
 
-  message_reader_start((uv_stream_t*)&client->pipe, stream_read_callback,
-                       client);
+  miwear->reader = message_reader_start((uv_stream_t*)&client->pipe,
+                                        stream_read_callback,
+                                        client);
 
   /* Notify app of this status. */
   if (client->miwear->cb) {
@@ -816,6 +827,8 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
   uv_pipe_init(loop, &client->pipe, 0);
 
   uv_pipe_connect(connect, &client->pipe, path, client_on_connect_callback);
+
+  info("start client: %p\n", miwear);
   return 0;
 }
 
@@ -863,11 +876,10 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
 
 static int uv_miwear_stop_client(uv_miwear_t* miwear)
 {
-  /**
-   * @todo Check if there is better method.
-   */
-  miwear->client->pipe.data = miwear->client;
-  uv_close((uv_handle_t*)&miwear->client->pipe, pipe_close_callback_no_reader);
+  info("stop client: %p\n", miwear);
+
+  miwear->client->pipe.data = miwear;
+  uv_close((uv_handle_t*)&miwear->client->pipe, pipe_close_callback2);
   return 0;
 }
 

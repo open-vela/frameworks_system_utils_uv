@@ -1061,6 +1061,7 @@ struct uv_miwear_s {
   };
   uv_miwear_recv_cb cb; /* Callback will be made when received data. */
   bool is_server; /* To mark this instance is for a server or client. */
+  void* reader; /* a message reader to collect packet from pipe stream */
   void* data; /* User data. */
 };
 
