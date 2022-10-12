@@ -48,8 +48,8 @@ static void uv_topic_poll_cb(uv_poll_t *handle, int status, int events) {
   }
 }
 
-int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
-                       orb_id_t meta, uv_topic_cb cb) {
+int uv_topic_subscribe_multi(uv_loop_t *loop, uv_topic_t *topic,
+                             orb_id_t meta, int instance, uv_topic_cb cb) {
   struct orb_state state = {};
   int ret;
   int fd;
@@ -58,7 +58,7 @@ int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
     return UV_EINVAL;
   topic->cb = cb;
 
-  fd = orb_subscribe(meta);
+  fd = orb_subscribe_multi(meta, instance);
   if (fd < 0)
     return -errno;
 
@@ -92,6 +92,11 @@ int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
   }
 
   return ret;
+}
+
+int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
+                       orb_id_t meta, uv_topic_cb cb) {
+  return uv_topic_subscribe_multi(loop, topic, meta, 0, cb);
 }
 
 int uv_topic_unsubscribe(uv_topic_t *topic) {

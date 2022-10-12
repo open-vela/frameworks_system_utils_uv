@@ -408,6 +408,17 @@ struct uv_topic_s {
 };
 
 /****************************************************************************
+ * Name: uv_topic_subscribe_multi
+ *
+ * Description:
+ *   topic subscription with instance.
+ *
+ ****************************************************************************/
+
+int uv_topic_subscribe_multi(uv_loop_t *loop, uv_topic_t *topic,
+                             orb_id_t meta, int instance, uv_topic_cb cb);
+
+/****************************************************************************
  * Name: uv_topic_subscribe
  *
  * Description:
