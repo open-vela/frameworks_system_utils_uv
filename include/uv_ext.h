@@ -26,7 +26,7 @@
 
 #include <uv_async_queue.h>
 
-#ifdef CONFIG_LIB_MBEDTLS
+#ifdef CONFIG_CRYPTO_MBEDTLS
 #include <mbedtls/cipher.h>
 #include <mbedtls/rsa.h>
 #include <mbedtls/pk.h>
@@ -177,7 +177,7 @@ int uv_getlocale(uv_locale_t *locale);
  * AES encryption and decryption
  ****************************************************************************/
 
-#ifdef CONFIG_LIB_MBEDTLS
+#ifdef CONFIG_CRYPTO_MBEDTLS
 
 typedef mbedtls_cipher_context_t uv_aes_context_t;
 
@@ -325,7 +325,7 @@ void uv_aes_free(uv_aes_t *ctx);
  * cipher
  ****************************************************************************/
 
-#ifdef CONFIG_LIB_MBEDTLS
+#ifdef CONFIG_CRYPTO_MBEDTLS
 
 #define UV_EXT_TYPE_BUFFER 0
 #define UV_EXT_TYPE_FILE   1

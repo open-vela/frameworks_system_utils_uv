@@ -153,7 +153,7 @@ int uv_devinfobuff(char *buff, int size, int item) {
       break;
     case UV_EXT_DEVINFO_DID:
     {
-      #if defined(CONFIG_KVDB) && defined(CONFIG_LIB_MBEDTLS)
+      #if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
       uv_buf_t input, output, ret;
       char kvbuf[PROP_VALUE_MAX] = { 0 };
       property_get(CONFIG_FACT_WIFIMAC_KEY, kvbuf, "NA");
@@ -268,7 +268,7 @@ int uv_getdeviceinfo(uv_devinfo_t *info)
   snprintf(info->manufacturer, sizeof(info->manufacturer),
            "%s", CONFIG_PRODUCT_MANUFACTURER);
 
-#if defined(CONFIG_KVDB) && defined(CONFIG_LIB_MBEDTLS)
+#if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
   {
     uv_buf_t input, output, ret;
     char kvbuf[PROP_VALUE_MAX] = { 0 };
