@@ -31,7 +31,7 @@ PROGNAME += uv_devinfo
 MAINSRC  += uv-devinfo-test.c
 endif
 
-ifeq ($(CONFIG_LIB_MBEDTLS), y)
+ifeq ($(CONFIG_CRYPTO_MBEDTLS), y)
 PROGNAME += uv_aes
 MAINSRC  += uv-aes-test.c
 endif

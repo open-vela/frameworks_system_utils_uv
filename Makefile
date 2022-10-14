@@ -33,7 +33,7 @@ ifeq ($(CONFIG_KVDB), y)
 CSRCS += uv_devinfo.c
 endif
 
-ifeq ($(CONFIG_LIB_MBEDTLS), y)
+ifeq ($(CONFIG_CRYPTO_MBEDTLS), y)
 CSRCS += uv_aes.c
 endif
 
@@ -52,7 +52,7 @@ CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/unqlite/unql
 CSRCS += uv_db.c
 endif
 
-ifeq ($(CONFIG_LIB_MBEDTLS), y)
+ifeq ($(CONFIG_CRYPTO_MBEDTLS), y)
 CSRCS += uv_crypto.c
 endif
 
@@ -80,7 +80,7 @@ ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB), yy)
 CSRCS += uv_networkstatus.c
 endif
 
-ifeq ($(CONFIG_LIB_ZLIB)$(CONFIG_LIB_MBEDTLS), yy)
+ifeq ($(CONFIG_LIB_ZLIB)$(CONFIG_CRYPTO_MBEDTLS), yy)
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib/zlib/contrib/minizip}
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib/zlib}
 CSRCS += app_verify.c
