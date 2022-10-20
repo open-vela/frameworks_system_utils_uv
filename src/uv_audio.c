@@ -147,20 +147,20 @@ int uv_audio_create(uv_audio_t *handle, media_event_callback callback,
   return ret;
 }
 
-int uv_audio_set_url(uv_audio_t *handle, const char *url) {
+int uv_audio_set_url(uv_audio_t *handle, const char *url, bool force) {
   int ret;
 
   if (!handle  || !handle->iofhandle || !url) {
     return UV_EINVAL;
   }
 
-  if (!(handle->autoplay
-      || UV_EXT_AUDIO_STATE_PLAY  == handle->playstate
-      || UV_EXT_AUDIO_STATE_PAUSE == handle->playstate)) {
+  if (handle->autoplay == false && force == false) {
     return 0;
   }
 
-  uv_audio_stop(handle);
+  if (handle->playstate != UV_EXT_AUDIO_STATE_STOP) {
+    media_player_stop(handle->iofhandle);
+  }
 
   ret = media_player_prepare(handle->iofhandle, url, NULL);
   if (ret < 0) {
@@ -198,7 +198,7 @@ int uv_audio_set_autoplay(uv_audio_t *handle, bool autoplay) {
         && UV_EXT_AUDIO_STATE_PLAY  != handle->playstate
         && UV_EXT_AUDIO_STATE_PAUSE != handle->playstate) {
       uv_audio_stop(handle);
-      uv_audio_set_url(handle, handle->url);
+      uv_audio_set_url(handle, handle->url, false);
     }
   }
 
