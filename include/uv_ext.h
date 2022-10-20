@@ -1345,6 +1345,7 @@ int uv_audio_async_messgae_init(uv_loop_t *loop,
 #define UV_EXT_AUDIO_STATE_PAUSE      2
 #define UV_EXT_AUDIO_STATE_STOP       3
 #define UV_EXT_AUDIO_STATE_COMPLETE   4
+#define UV_EXT_AUDIO_STATE_STOPING    5
 
 #define UV_EXT_AUDIO_EVENT_ERROR              MEDIA_EVENT_NOP
 #define UV_EXT_AUDIO_EVENT_STARTED            MEDIA_EVENT_STARTED
@@ -1400,7 +1401,7 @@ int uv_audio_create(uv_audio_t *handle, media_event_callback callback,
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_set_url(uv_audio_t *handles, const char *url);
+int uv_audio_set_url(uv_audio_t *handles, const char *url, bool force);
 
 /****************************************************************************
  * Name: uv_audio_prepare
