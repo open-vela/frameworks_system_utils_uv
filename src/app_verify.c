@@ -127,20 +127,6 @@ static int mkfile(const char* path)
 }
 
 /**
- * @brief Save file
- */
-int write_file(const char*path, const void* data, size_t size)
-{
-    FILE* fd;
-    int res = -1;
-    fd = fopen(path, "wb");
-    assert(fd);
-    res = fwrite(data, size, 1, fd);
-    fclose(fd);
-    return res;
-}
-
-/**
  * @brief analysis len-data block
  */
 static uint8_t* parse_block(uint8_t* data, data_block_t* block)
