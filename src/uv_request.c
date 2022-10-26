@@ -387,6 +387,16 @@ int uv_request_delete(uv_request_t* request)
         curl_slist_free_all(request->header_list);
     }
 
+
+    curl_easy_cleanup(request->easy_handle);
+    if (list_in_list(&request->node)) {
+        list_delete(&request->node);
+        request->easy_handle = NULL;
+        free(request);
+        return 0;
+    }
+
+    curl_multi_remove_handle(request->handle->multi_handle, request->easy_handle);
     if (request->response.body) {
         free(request->response.body);
     }
