@@ -68,7 +68,11 @@
 #endif
 
 #ifndef CONFIG_PRODUCT_NAME
+#ifdef CONFIG_DEVICE_NAME
+#define CONFIG_PRODUCT_NAME CONFIG_DEVICE_NAME
+#else
 #define CONFIG_PRODUCT_NAME "Dev Product"
+#endif
 #endif
 
 #ifndef CONFIG_LANGUAGE_NAME
