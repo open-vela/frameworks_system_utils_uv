@@ -387,9 +387,8 @@ int uv_request_delete(uv_request_t* request)
         curl_slist_free_all(request->header_list);
     }
 
-
-    curl_easy_cleanup(request->easy_handle);
     if (list_in_list(&request->node)) {
+        curl_easy_cleanup(request->easy_handle);
         list_delete(&request->node);
         request->easy_handle = NULL;
         free(request);
@@ -397,6 +396,7 @@ int uv_request_delete(uv_request_t* request)
     }
 
     curl_multi_remove_handle(request->handle->multi_handle, request->easy_handle);
+    curl_easy_cleanup(request->easy_handle);
     if (request->response.body) {
         free(request->response.body);
     }
