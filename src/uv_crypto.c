@@ -280,7 +280,7 @@ exit:
     mbedtls_pk_free(&pk);
     mbedtls_ctr_drbg_free(&ctr_drbg);
     mbedtls_entropy_free(&entropy);
-    return 0;
+    return ret;
 }
 
 int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign, int type)
