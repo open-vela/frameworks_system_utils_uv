@@ -1361,6 +1361,7 @@ struct uv_audio_chain_s {
 
   bool      loop;
   char      *url;
+  char      *oldurl;
   char      streamtype[UV_EXT_AUDIO_STREAMTYPE_MAX];
   bool      autoplay;
   bool      muted;
