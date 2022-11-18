@@ -370,6 +370,7 @@ int uv_request_set_method(uv_request_t* request, const char* method)
     return 0;
 }
 
+
 int uv_request_delete(uv_request_t* request)
 {
     if (!request) {
@@ -380,13 +381,11 @@ int uv_request_delete(uv_request_t* request)
         fclose(request->fd);
     }
 
-    curl_multi_remove_handle(request->handle->multi_handle, request->easy_handle);
-    curl_easy_cleanup(request->easy_handle);
-
     if (request->header_list) {
         curl_slist_free_all(request->header_list);
     }
 
+    request->handle->connections_cnt--;
     if (list_in_list(&request->node)) {
         curl_easy_cleanup(request->easy_handle);
         list_delete(&request->node);
@@ -410,6 +409,7 @@ int uv_request_delete(uv_request_t* request)
 
     return 0;
 }
+
 const char* uv_request_get_url(uv_request_t* request){
     if (!request || !request->url) {
         return NULL;
