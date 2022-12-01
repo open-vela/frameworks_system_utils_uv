@@ -430,7 +430,7 @@ uv_request_header_t uv_request_get_header_list(uv_request_t* request){
         count++;
         curr = curr->next;
     }
-    result.data = (char**)malloc(count + 1);
+    result.data = (char**)malloc(count);
     if(!result.data){
         return result;
     }
