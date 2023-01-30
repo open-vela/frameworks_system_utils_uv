@@ -558,6 +558,7 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
         curl_multi_setopt(handle->multi_handle, CURLMOPT_TIMERFUNCTION, NULL);
     }
 
+    curl_easy_setopt(request->easy_handle, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(request->easy_handle, CURLOPT_HEADERFUNCTION, __curl_header_cb);
     curl_easy_setopt(request->easy_handle, CURLOPT_HEADERDATA, request);
     curl_easy_setopt(request->easy_handle, CURLOPT_URL, request->url);
