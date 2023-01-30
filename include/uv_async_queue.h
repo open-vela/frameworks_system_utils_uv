@@ -35,11 +35,12 @@ typedef void (*uv_async_queue_cb)(uv_async_queue_t *, void *);
 
 typedef struct uv_async_queue_s
 {
-    void *data;
+    /* uv_async_t must be placed first in the structure */
     uv_async_t async;
     uv_mutex_t mutex;
     uv_async_queue_cb cb;
     uv_close_cb close_cb;
+    void *data;
     QUEUE queue;
 }uv_async_queue_t;
 
