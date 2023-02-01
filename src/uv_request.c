@@ -30,12 +30,12 @@
 #include <nuttx/list.h>
 
 #ifndef CONFIG_UV_REQUEST_MAX_LINKS
-#define CONFIG_UV_REQUEST_MAX_LINKS 2
+#define CONFIG_UV_REQUEST_MAX_LINKS 5
 #endif
 
 struct uv_request_session_s {
     struct list_node list;
-    int connections_cnt;
+    uint32_t connections_cnt;
     uv_loop_t* loop;
     CURLM* multi_handle;
     uv_timer_t timeout;
