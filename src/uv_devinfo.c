@@ -25,7 +25,7 @@
 #include <fcntl.h>
 #include <uv_ext.h>
 #include <string.h>
-#include <cutils/properties.h>
+#include <kvdb.h>
 
 #define CONFIG_FACT_WIFIMAC_KEY "ro.factory.mac_wifi"
 
