@@ -41,7 +41,7 @@
 #endif
 
 #ifdef CONFIG_KVDB
-#include <cutils/properties.h>
+#include <kvdb.h>
 #endif
 
 #include <syslog.h>
