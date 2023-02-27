@@ -42,6 +42,63 @@ static int file_cache_cmp(file_cache_t* a, file_cache_t* b)
     return strcasecmp(a->url, b->url);
 }
 
+static int unlink_recursive(FAR char *path)
+{
+  struct dirent *d;
+  struct stat stat;
+  size_t len;
+  int ret;
+  DIR *dp;
+
+  ret = lstat(path, &stat);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  if (!S_ISDIR(stat.st_mode))
+    {
+      return unlink(path);
+    }
+
+  dp = opendir(path);
+  if (dp == NULL)
+    {
+      return -1;
+    }
+
+  len = strlen(path);
+  if (len > 0 && path[len - 1] == '/')
+    {
+      path[--len] = '\0';
+    }
+
+  while ((d = readdir(dp)) != NULL)
+    {
+      if (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0)
+        {
+          continue;
+        }
+
+      snprintf(&path[len], PATH_MAX - len, "/%s", d->d_name);
+      ret = unlink_recursive(path);
+      if (ret < 0)
+        {
+          closedir(dp);
+          return ret;
+        }
+    }
+
+  ret = closedir(dp);
+  if (ret >= 0)
+    {
+      path[len] = '\0';
+      ret = rmdir(path);
+    }
+
+  return ret;
+}
+
 RB_GENERATE_STATIC(file_cache_tree_s, file_cache_s, tree_entry, file_cache_cmp);
 
 uv_ncm_t* uv_ncm_init(uv_loop_t* loop, const char* cache_path)
@@ -55,7 +112,7 @@ uv_ncm_t* uv_ncm_init(uv_loop_t* loop, const char* cache_path)
     ncm->cache_path = strdup(cache_path);
     assert(ncm->cache_path);
     ncm->loop = loop;
-
+    unlink_recursive(ncm->cache_path);
     uv_request_init(loop, &ncm->handle);
     return ncm;
 }
