@@ -485,6 +485,11 @@ int uv_topic_get_interval(uv_topic_t *topic, unsigned int *interval);
 
 /****************************************************************************
  * Name: uv_topic_close
+ *
+ * Description:
+ *   Call uv_close internally, used for simple case when `topic` is static.
+ *   If `topic` is dynamically alloced, use uv_close directly and free memory
+ *   in `close_cb`.
  ****************************************************************************/
 
 int uv_topic_close(uv_topic_t *topic);
