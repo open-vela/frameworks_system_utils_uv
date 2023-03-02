@@ -129,6 +129,27 @@ int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency) {
   return orb_set_frequency(topic->handle.io_watcher.fd, frequency);
 }
 
+int uv_topic_get_frequency(uv_topic_t *topic, unsigned int *frequency) {
+  if (!topic)
+    return UV_EINVAL;
+
+  return orb_get_frequency(topic->handle.io_watcher.fd, frequency);
+}
+
+int uv_topic_set_interval(uv_topic_t *topic, unsigned int interval) {
+  if (!topic)
+    return UV_EINVAL;
+
+  return orb_set_interval(topic->handle.io_watcher.fd, interval);
+}
+
+int uv_topic_get_interval(uv_topic_t *topic, unsigned int *interval) {
+  if (!topic)
+    return UV_EINVAL;
+
+  return orb_get_interval(topic->handle.io_watcher.fd, interval);
+}
+
 int uv_topic_close(uv_topic_t *topic)
 {
   uv_close((uv_handle_t *)&topic->handle, NULL);

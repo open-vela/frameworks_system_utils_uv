@@ -451,6 +451,38 @@ int uv_topic_unsubscribe(uv_topic_t *topic);
 
 int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency);
 
+
+/****************************************************************************
+ * Name: uv_topic_get_frequency
+ *
+ * Description:
+ *   get topic sampling rate.
+ *
+ ****************************************************************************/
+
+int uv_topic_get_frequency(uv_topic_t *topic, unsigned int *frequency);
+
+/****************************************************************************
+ * Name: uv_topic_set_interval
+ *
+ * Description:
+ *   Set the minimum interval between which updates seen for a subscription.
+ *
+ ****************************************************************************/
+
+int uv_topic_set_interval(uv_topic_t *topic, unsigned int interval);
+
+
+/****************************************************************************
+ * Name: uv_topic_get_interval
+ *
+ * Description:
+ *   Get the minimum interval between which updates seen for a subscription.
+ *
+ ****************************************************************************/
+
+int uv_topic_get_interval(uv_topic_t *topic, unsigned int *interval);
+
 /****************************************************************************
  * Name: uv_topic_close
  ****************************************************************************/
