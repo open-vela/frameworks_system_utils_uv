@@ -404,7 +404,8 @@ struct uv_topic_s {
   uv_topic_cb cb;
   size_t datalen;
   uintptr_t flags;
-  void *data;
+  orb_id_t meta;
+  void *meta_data;
 };
 
 /****************************************************************************

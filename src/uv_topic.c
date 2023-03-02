@@ -36,7 +36,7 @@ static void uv_topic_poll_cb(uv_poll_t *handle, int status, int events) {
   if (status < 0) {
     topic->cb(topic, status, NULL, 0);
   } else if (events & UV_READABLE) {
-    void *data = topic->data ? topic->data : alloca(topic->datalen);
+    void *data = topic->meta_data ? topic->meta_data : alloca(topic->datalen);
     ssize_t ret = orb_copy_multi(handle->io_watcher.fd, data, topic->datalen);
     if (ret > 0) {
       topic->cb(topic, 0, data, ret);
@@ -57,6 +57,7 @@ int uv_topic_subscribe_multi(uv_loop_t *loop, uv_topic_t *topic,
   if (!loop || !topic || !meta || !cb)
     return UV_EINVAL;
   topic->cb = cb;
+  topic->meta = meta;
 
   fd = orb_subscribe_multi(meta, instance);
   if (fd < 0)
@@ -73,10 +74,10 @@ int uv_topic_subscribe_multi(uv_loop_t *loop, uv_topic_t *topic,
   if (state.queue_size > 1)
     topic->datalen *= state.queue_size;
 
-  topic->data = NULL;
+  topic->meta_data = NULL;
   if (topic->datalen > 128) {
-    topic->data = malloc(topic->datalen);
-    if (!topic->data) {
+    topic->meta_data = malloc(topic->datalen);
+    if (!topic->meta_data) {
       orb_unsubscribe(fd);
       return UV_ENOMEM;
     }
@@ -85,9 +86,9 @@ int uv_topic_subscribe_multi(uv_loop_t *loop, uv_topic_t *topic,
   ret = uv_poll_start(&topic->handle, UV_READABLE | UV_DISCONNECT, uv_topic_poll_cb);
   if (ret < 0) {
     orb_unsubscribe(fd);
-    if (topic->data != NULL) {
-      free(topic->data);
-      topic->data = NULL;
+    if (topic->meta_data != NULL) {
+      free(topic->meta_data);
+      topic->meta_data = NULL;
     }
   }
 
@@ -113,9 +114,9 @@ int uv_topic_unsubscribe(uv_topic_t *topic) {
   if (ret < 0)
     ret = -errno;
 
-  if (topic->data != NULL) {
-    free(topic->data);
-    topic->data = NULL;
+  if (topic->meta_data != NULL) {
+    free(topic->meta_data);
+    topic->meta_data = NULL;
   }
 
   return ret;
