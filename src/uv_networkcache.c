@@ -4,6 +4,7 @@
 #include "string.h"
 #include "uv/tree.h"
 #include "uv_ext.h"
+#include <limits.h>
 #include <unistd.h>
 
 typedef void (*uv_ncm_cb_t)(int, const char*, void*);
@@ -109,8 +110,9 @@ uv_ncm_t* uv_ncm_init(uv_loop_t* loop, const char* cache_path)
 
     ncm = calloc(1, sizeof(struct uv_ncm_s));
     assert(ncm);
-    ncm->cache_path = strdup(cache_path);
+    ncm->cache_path = malloc(PATH_MAX);
     assert(ncm->cache_path);
+    strlcpy(ncm->cache_path, cache_path, PATH_MAX);
     ncm->loop = loop;
     unlink_recursive(ncm->cache_path);
     uv_request_init(loop, &ncm->handle);
