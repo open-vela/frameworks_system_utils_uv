@@ -52,12 +52,6 @@
 #define CONFIG_CLIENT_ID_LEN 64
 #endif
 
-typedef struct message_header_s {
-  miwear_message_type_t type;
-  uint32_t len;
-  uint32_t id;
-} message_header_t;
-
 /**
  * The actual message send over socket, added id field for auto response
  * process.
@@ -135,7 +129,7 @@ struct reader {
   uv_stream_t* stream;
 
   message_reader_state_t state;
-  message_header_t header;
+  uv_miwear_header_t header;
 
   /* The message received. */
   uv_miwear_message_t message;
@@ -207,7 +201,7 @@ static void message_reader_alloc_cb(uv_handle_t* handle, size_t suggested_size,
     }
 
     /* Copy the header to packet */
-    memcpy(&reader->message, &reader->header, sizeof(message_header_t));
+    memcpy(&reader->message, &reader->header, sizeof(uv_miwear_header_t));
     reader->message.data = body;
 
     buf->base = (char*)reader->message.data;
@@ -246,14 +240,14 @@ static void message_reader_read_cb(uv_stream_t* stream, ssize_t nread,
   }
 
   if (reader->state == MESSAGE_READER_STATE_HEADER) {
-    if (nread > sizeof(message_header_t)) {
+    if (nread > sizeof(uv_miwear_header_t)) {
         _err("fatal, wrong header len %zu\n", nread);
         /* @todo what now... */
         return;
     }
 
     reader->recv_len += nread;
-    if (reader->recv_len < sizeof(message_header_t)) {
+    if (reader->recv_len < sizeof(uv_miwear_header_t)) {
       warn("header read ongoing: %" PRIu32 "\n", reader->recv_len);
       return;
     }
@@ -337,10 +331,10 @@ static void uv__miwear_client_close(struct client* client)
     data.parameter = client->name;
 
     uv_miwear_message_t msg;
-    msg.type = MIWEAR_MESSAGE_TYPE_STATUS;
+    msg.header.type = MIWEAR_MESSAGE_TYPE_STATUS;
+    msg.header.len = sizeof(data);
+    msg.header.id = 0;
     msg.data = &data;
-    msg.len = sizeof(data);
-    msg.id = 0;
     client->miwear->cb(client->miwear, 0, &msg, client->name);
   }
 
@@ -393,7 +387,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     return;
   }
 
-  if (msg->type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
+  if (msg->header.type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
     /* The first message from client. Only server could receive this message. */
     struct server* server = client->miwear->server;
     info("Got connection from client: %s\n", (char*)msg->data);
@@ -411,10 +405,10 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
       data.parameter = client->name;
 
       uv_miwear_message_t msg;
-      msg.type = MIWEAR_MESSAGE_TYPE_STATUS;
+      msg.header.type = MIWEAR_MESSAGE_TYPE_STATUS;
+      msg.header.len = sizeof(data);
+      msg.header.id = 0;
       msg.data = &data;
-      msg.len = sizeof(data);
-      msg.id = 0;
       client->miwear->cb(client->miwear, 0, &msg, client->name);
     }
 
@@ -422,8 +416,8 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     return;
   }
 
-  if (msg->type == MIWEAR_MESSAGE_TYPE_RESPONSE) {
-    if (msg->len != sizeof(message_response_t)) {
+  if (msg->header.type == MIWEAR_MESSAGE_TYPE_RESPONSE) {
+    if (msg->header.len != sizeof(message_response_t)) {
       err("Unrecognized response packet, client: %s\n", client->name);
       return;
     }
@@ -438,7 +432,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     bool found = false;
     list_for_every_entry(&client->sending_list, wreq, miwear_wreq_t, node)
     {
-      if (wreq->message.id == response->id) {
+      if (wreq->message.header.id == response->id) {
         found = true;
         break;
       }
@@ -465,24 +459,24 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
   */
 
   info("got message to/from client:%s, msg:%d, len:%"PRIu32"\n", client->name,
-       msg->type, msg->len);
+       msg->header.type, msg->header.len);
 
   if (client->state != CLIENT_STATE_CONNECTED) {
     err("Data received when client not connected.");
   }
 
-  if(msg->type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
+  if(msg->header.type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
       message_response_t* response = malloc(sizeof(message_response_t));
       if (response == NULL) {
         err("No memory for response.");
         return;
       }
-      response->id = msg->id;
+      response->id = msg->header.id;
 
-      uv_miwear_message_t msg;
+      uv_miwear_message_t msg = { 0 };
       msg.data = response;
-      msg.len = sizeof(message_response_t);
-      msg.type = MIWEAR_MESSAGE_TYPE_RESPONSE;
+      msg.header.len = sizeof(message_response_t);
+      msg.header.type = MIWEAR_MESSAGE_TYPE_RESPONSE;
       int ret = uv__miwear_send_to_client(client, &msg,
                                           response_sent_callback, NULL);
       if (ret != 0) {
@@ -619,7 +613,7 @@ static void uv_write_done_callback(uv_write_t* req, int status)
 
   if (status != 0) {
     err("Failed sending data, client: %s, id: %"PRIu32", status: %d\n",
-        wreq->client->name, wreq->message.id, status);
+        wreq->client->name, wreq->message.header.id, status);
     /* For all other messages, no responses needed, make the callback now.*/
     if (wreq->cb) {
       wreq->cb(wreq->miwear, status, &wreq->message, wreq->cb_para);
@@ -629,9 +623,9 @@ static void uv_write_done_callback(uv_write_t* req, int status)
   }
 
   info("sent to %s, type:%d, id: %"PRIu32"\n", wreq->client->name,
-       wreq->message.type, wreq->message.id);
+       wreq->message.header.type, wreq->message.header.id);
 
-  if (wreq->message.type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
+  if (wreq->message.header.type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
     /* Add this request to sending list that waiting for response. */
     struct client* client = wreq->client;
     list_add_tail(&client->sending_list, &wreq->node);
@@ -662,11 +656,11 @@ static int uv__miwear_send_to_client(struct client* client,
   wreq->miwear = client->miwear;
   wreq->client = client;
 
-  wreq->message.id = client->message_id++;
+  wreq->message.header.id = client->message_id++;
 
   uv_buf_t b[2];
-  b[0] = uv_buf_init((char*)&wreq->message, sizeof(message_header_t));
-  b[1] = uv_buf_init((char*)message->data, message->len);
+  b[0] = uv_buf_init((char*)&wreq->message, sizeof(uv_miwear_header_t));
+  b[1] = uv_buf_init((char*)message->data, message->header.len);
 
   int error = uv_write(&wreq->req, (uv_stream_t*)&client->pipe, b, 2,
                        uv_write_done_callback);
@@ -742,11 +736,11 @@ static void client_id_sent_callback(uv_miwear_t* miwear, int status,
     uv_miwear_status_t data;
     data.status = MIWEAR_STATUS_CLIENT_ID_SENT;
 
-    uv_miwear_message_t msg;
-    msg.type = MIWEAR_MESSAGE_TYPE_STATUS;
+    uv_miwear_message_t msg = { 0 };
+    msg.header.type = MIWEAR_MESSAGE_TYPE_STATUS;
+    msg.header.len = sizeof(data);
+    msg.header.id = 0;
     msg.data = &data;
-    msg.len = sizeof(data);
-    msg.id = 0;
 
     client->miwear->cb(client->miwear, 0, &msg, client->name);
   }
@@ -766,11 +760,11 @@ static void client_on_connect_callback(uv_connect_t* req, int status)
       data.status = MIWEAR_STATUS_CONNECT_FAILED;
       data.parameter = (void*)status;
 
-      uv_miwear_message_t msg;
-      msg.type = MIWEAR_MESSAGE_TYPE_STATUS;
+      uv_miwear_message_t msg = { 0 };
+      msg.header.type = MIWEAR_MESSAGE_TYPE_STATUS;
+      msg.header.len = sizeof(data);
+      msg.header.id = 0;
       msg.data = &data;
-      msg.len = sizeof(data);
-      msg.id = 0;
       client->miwear->cb(client->miwear, status, &msg, client->name);
     }
     free(req);
@@ -782,10 +776,10 @@ static void client_on_connect_callback(uv_connect_t* req, int status)
   client->state = CLIENT_STATE_HANDSHAKING;
 
   /* Write first message to server, which is the CLIENT_ID message. */
-  uv_miwear_message_t msg;
+  uv_miwear_message_t msg  ={ 0 };
   msg.data = client->name;
-  msg.len = strlen(client->name) + 1;
-  msg.type = MIWEAR_MESSAGE_TYPE_CLIENT_ID;
+  msg.header.len = strlen(client->name) + 1;
+  msg.header.type = MIWEAR_MESSAGE_TYPE_CLIENT_ID;
 
   uv_miwear_send_to_server(client->miwear, &msg,
                            client_id_sent_callback, NULL);
@@ -894,7 +888,7 @@ static int uv_miwear_send_to_server(uv_miwear_t* miwear,
 
   if (client->state == CLIENT_STATE_HANDSHAKING) {
     /* only CLIENT_ID message could be sent at this stage. */
-    if (message->type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
+    if (message->header.type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
       goto send_msg_continue;
     }
   }
@@ -905,7 +899,8 @@ static int uv_miwear_send_to_server(uv_miwear_t* miwear,
   }
 
 send_msg_continue:
-  info("Send to server MSG: %d, len: %"PRIu32"\n", message->type, message->len);
+  info("Send to server MSG: %d, len: %"PRIu32"\n", message->header.type,
+       message->header.len);
 
   miwear_wreq_t* wreq = malloc(sizeof(miwear_wreq_t));
   if (wreq == NULL)
@@ -915,14 +910,14 @@ send_msg_continue:
   wreq->cb_para = cb_para;
   wreq->message = *message;
 
-  wreq->message.id = client->message_id++;
+  wreq->message.header.id = client->message_id++;
   wreq->miwear = miwear;
   wreq->client = client;
 
   uv_buf_t b[2];
 
-  b[0] = uv_buf_init((char*)&wreq->message, sizeof(message_header_t));
-  b[1] = uv_buf_init((char*)message->data, message->len);
+  b[0] = uv_buf_init((char*)&wreq->message, sizeof(uv_miwear_header_t));
+  b[1] = uv_buf_init((char*)message->data, message->header.len);
 
   int error = uv_write(&wreq->req, (uv_stream_t*)&client->pipe, b, 2,
                        uv_write_done_callback);
