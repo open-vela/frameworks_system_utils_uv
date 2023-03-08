@@ -1100,11 +1100,16 @@ typedef struct message_status_data_s {
     void *parameter; /* Parameter for some status. */
 } uv_miwear_status_t;
 
+typedef struct message_header_s {
+  miwear_message_type_t type;
+  uint32_t len;
+  uint32_t id;
+  int32_t uservalue;
+} uv_miwear_header_t;
+
 typedef struct uv_miwear_msg_s {
-    miwear_message_type_t type;
-    uint32_t len;
-    uint32_t id; /* The id auto generated for this message. */
-    const void* data;
+    uv_miwear_header_t header;
+    void* data;
 } uv_miwear_message_t;
 
 typedef struct uv_miwear_s uv_miwear_t;
