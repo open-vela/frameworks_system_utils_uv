@@ -21,7 +21,7 @@
 #include <alloca.h>
 #include <uv_ext.h>
 #include <mbedtls/platform.h>
-#include <mbedtls/cipher_internal.h>
+#include <mbedtls/cipher.h>
 #include <mbedtls/base64.h>
 
 int uv_aes_init(uv_aes_t *ctx, int aestype, int mode) {
@@ -37,10 +37,9 @@ int uv_aes_init(uv_aes_t *ctx, int aestype, int mode) {
     return UV_EFAULT;
   }
 
-  if (!(pctx->cipher_ctx = info->base->ctx_alloc_func())) {
+  if (!mbedtls_cipher_setup(pctx, info)) {
     return UV_EFAULT;
   }
-  pctx->cipher_info = info;
 
   mbedtls_cipher_set_padding_mode(pctx, mode);
 
