@@ -44,7 +44,8 @@ int uv_rsa(uv_buf_t key, uv_buf_t text, uv_buf_t* output, int mode)
         goto exit;
     }
 
-    ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0);
+    ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0,
+                               mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char*)key.base, key.len + 1);
     }
@@ -244,7 +245,8 @@ int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output, 
         goto exit;
     }
 
-    ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0);
+    ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0,
+                               mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char*)key.base, key.len + 1);
     }
@@ -269,7 +271,7 @@ int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output, 
 
     output->base = malloc(MBEDTLS_PK_SIGNATURE_MAX_SIZE);
     ret = mbedtls_pk_sign(&pk, mbedtls_md_get_type(info), (const unsigned char*)md.base, 0,
-        (unsigned char*)output->base, &output->len, mbedtls_ctr_drbg_random, &ctr_drbg);
+        (unsigned char*)output->base, MBEDTLS_PK_SIGNATURE_MAX_SIZE, &output->len, mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         crypto_error("mbedtls_pk_sign returned -0x%04x\n", (unsigned int)-ret);
         goto exit;
@@ -309,7 +311,8 @@ int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign, i
         goto exit;
     }
 
-    ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0);
+    ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0,
+                               mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char*)key.base, key.len + 1);
     }
