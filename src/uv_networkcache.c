@@ -155,21 +155,15 @@ static char* download_file_cb(int state, uv_response_t* response)
     download->cache->download_list = NULL;
     download->cache->ready = true;
 
-    if (state != UV_REQUEST_DONE) {
-        if (download->cb != NULL) {
-            download->cb(response->httpcode, NULL, (void*)download->userp);
-        }
-        free(download);
-        return NULL;
-    }
-
     for (int i = 0; i < download_nums; i++) {
         if (download_list == NULL) {
             break;
         }
         download = download_list[i];
         if (download->cb != NULL) {
-            download->cb(UV_REQUEST_DONE, response->body, (void*)download->userp);
+            download->cb(state != UV_REQUEST_DONE ? response->httpcode : UV_REQUEST_DONE,
+                         state != UV_REQUEST_DONE ? NULL: response->body,
+                         (void*)download->userp);
         }
         free(download);
     }
