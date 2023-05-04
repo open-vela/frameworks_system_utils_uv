@@ -41,7 +41,7 @@ PROGNAME += uv_locale
 MAINSRC  += uv-locale-test.c
 endif
 
-ifeq ($(CONFIG_LIB_CURL), y)
+ifeq ($(CONFIG_UTILS_CURL), y)
 PROGNAME += uv_request
 MAINSRC  += uv-request-test.c
 endif
@@ -72,7 +72,7 @@ PROGNAME += uv_record
 MAINSRC  += uv-record-test.c
 endif
 
-ifeq ($(CONFIG_LIB_CURL)$(CONFIG_UORB),yy)
+ifeq ($(CONFIG_UTILS_CURL)$(CONFIG_UORB),yy)
 PROGNAME += uv_network
 MAINSRC  += uv-network-test.c
 endif
@@ -82,7 +82,7 @@ PROGNAME += app_verify
 MAINSRC  += app-verify-test.c
 endif
 
-ifeq ($(CONFIG_LIB_CURL), y)
+ifeq ($(CONFIG_UTILS_CURL), y)
 PROGNAME += uv_ncm
 MAINSRC  += uv-ncm-test.c
 endif
