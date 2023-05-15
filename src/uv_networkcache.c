@@ -216,21 +216,23 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
     download->cache = calloc(1, sizeof(file_cache_t));
     download->cache->url = strdup(url);
 
+    file_cache_t* cache_res;
     file_cache_t* cache;
-    cache = RB_INSERT(file_cache_tree_s, &download->ncm->file_cache_tree,
+    cache_res = RB_INSERT(file_cache_tree_s, &download->ncm->file_cache_tree,
         download->cache);
-    if (cache != NULL) {
-        cache->download_nums++;
-        cache->download_list = realloc(cache->download_list,
-            cache->download_nums * sizeof(download_t*));
-        cache->download_list[cache->download_nums - 1] = download;
-        *handle = download->cache;
+    cache = cache_res == NULL ? download->cache : cache_res;
+
+    cache->download_nums++;
+    cache->download_list = realloc(cache->download_list,
+        cache->download_nums * sizeof(download_t*));
+    cache->download_list[cache->download_nums - 1] = download;
+
+    if (cache_res != NULL) {
+        *handle = cache;
+        free(download->cache->url);
+        free(download->cache);
+        download->cache = cache;
         return 0;
-    } else {
-        download->cache->download_nums++;
-        download->cache->download_list = realloc(download->cache->download_list,
-            download->cache->download_nums * sizeof(download_t*));
-        download->cache->download_list[download->cache->download_nums - 1] = download;
     }
 
     uv_request_create(&download->request);
