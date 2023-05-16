@@ -169,6 +169,7 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
     }
 
     if (easy_handle != NULL){
+        curl_multi_remove_handle(request->handle->multi_handle, easy_handle);
         curl_easy_cleanup(easy_handle);
     }
 
