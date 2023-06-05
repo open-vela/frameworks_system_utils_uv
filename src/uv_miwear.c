@@ -29,16 +29,6 @@
 #include <sys/socket.h>
 #include <uv.h>
 
-#if 0
-#define warn _warn
-#define info _info
-#define err _err
-#else
-#define warn _none
-#define info _none
-#define err _none
-#endif
-
 #ifndef CONFIG_MIWEAR_QAPP_PROXY_SERVER
 #define CONFIG_MIWEAR_QAPP_PROXY_SERVER "miwear-server"
 #endif
@@ -189,14 +179,14 @@ static void message_reader_alloc_cb(uv_handle_t* handle, size_t suggested_size,
 
     /* For debug purpose, limit the max message length. */
     if (len > CONFIG_MIWEAR_MESSAGE_MAX_LEN) {
-      err("Fatal error, message length check failed: %"PRIu32", suggested: %zu\n", len,
+      nerr("Fatal error, message length check failed: %"PRIu32", suggested: %zu\n", len,
           suggested_size);
       DEBUGASSERT(0);
     }
 
     void* body = malloc(len);
     if (body == NULL) {
-      err("Fatal error: no memory, request len: %"PRIu32".\n", len);
+      nerr("Fatal error: no memory, request len: %"PRIu32".\n", len);
       return;
     }
 
@@ -206,7 +196,7 @@ static void message_reader_alloc_cb(uv_handle_t* handle, size_t suggested_size,
 
     buf->base = (char*)reader->message.data;
     buf->len = len;
-    info("msg body alloc: %"PRIu32".\n", len);
+    ninfo("msg body alloc: %"PRIu32".\n", len);
     return;
   }
 
@@ -229,7 +219,7 @@ static void message_reader_read_cb(uv_stream_t* stream, ssize_t nread,
 
   if (nread < 0) {
     /* Check errno, need to continue to read. */
-    warn("IPC client read met EOF\n");
+    nwarn("IPC client read met EOF\n");
     if (reader->cb) {
       reader->cb(reader->stream, NULL, reader->client);
       return;
@@ -248,7 +238,7 @@ static void message_reader_read_cb(uv_stream_t* stream, ssize_t nread,
 
     reader->recv_len += nread;
     if (reader->recv_len < sizeof(uv_miwear_header_t)) {
-      warn("header read ongoing: %" PRIu32 "\n", reader->recv_len);
+      nwarn("header read ongoing: %" PRIu32 "\n", reader->recv_len);
       return;
     }
 
@@ -276,7 +266,7 @@ static void message_reader_read_cb(uv_stream_t* stream, ssize_t nread,
     return;
   }
 
-  err("Unexpected reader state: %d\n", reader->state);
+  nerr("Unexpected reader state: %d\n", reader->state);
 
   uv_read_start(reader->stream, message_reader_alloc_cb,
                 message_reader_read_cb);
@@ -290,7 +280,7 @@ static struct reader* message_reader_start(uv_stream_t* stream,
   DEBUGASSERT(cb);
   struct reader* reader = zalloc(sizeof(struct reader));
   if (reader == NULL) {
-    err("no memory.\n");
+    nerr("no memory.\n");
     return NULL;
   }
   reader->stream = stream;
@@ -390,7 +380,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
   if (msg->header.type == MIWEAR_MESSAGE_TYPE_CLIENT_ID) {
     /* The first message from client. Only server could receive this message. */
     struct server* server = client->miwear->server;
-    info("Got connection from client: %s\n", (char*)msg->data);
+    ninfo("Got connection from client: %s\n", (char*)msg->data);
     strlcpy(client->name, msg->data, CONFIG_CLIENT_ID_LEN);
     client->state = CLIENT_STATE_CONNECTED;
 
@@ -412,19 +402,19 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
       client->miwear->cb(client->miwear, 0, &msg, client->name);
     }
 
-    info("client count: %d\n", server->client_count);
+    ninfo("client count: %d\n", server->client_count);
     return;
   }
 
   if (msg->header.type == MIWEAR_MESSAGE_TYPE_RESPONSE) {
     if (msg->header.len != sizeof(message_response_t)) {
-      err("Unrecognized response packet, client: %s\n", client->name);
+      nerr("Unrecognized response packet, client: %s\n", client->name);
       return;
     }
 
     const message_response_t* response = msg->data;
-    info("Got response, client %s, to message id: 0x%08"PRIx32"\n", client->name,
-         response->id);
+    ninfo("Got response, client %s, to message id: 0x%08"PRIx32"\n", client->name,
+          response->id);
 
     /* Loop through the write-requests waiting for response. */
     miwear_wreq_t* wreq;
@@ -439,7 +429,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     }
 
     if (!found) {
-      err("Unrecognized response id: 0x%08"PRIx32"\n", response->id);
+      nerr("Unrecognized response id: 0x%08"PRIx32"\n", response->id);
       return;
     }
 
@@ -458,17 +448,17 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
    * this data message needs reply, otherwise, simply receive it.
   */
 
-  info("got message to/from client:%s, msg:%d, len:%"PRIu32"\n", client->name,
+  ninfo("got message to/from client:%s, msg:%d, len:%"PRIu32"\n", client->name,
        msg->header.type, msg->header.len);
 
   if (client->state != CLIENT_STATE_CONNECTED) {
-    err("Data received when client not connected.");
+    nerr("Data received when client not connected.");
   }
 
   if(msg->header.type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
       message_response_t* response = malloc(sizeof(message_response_t));
       if (response == NULL) {
-        err("No memory for response.");
+        nerr("No memory for response.");
         return;
       }
       response->id = msg->header.id;
@@ -481,7 +471,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
                                           response_sent_callback, NULL);
       if (ret != 0) {
         /* Sender should send the message again because of missing response. */
-        err("Cannot send response to client.\n");
+        nerr("Cannot send response to client.\n");
         return;
       }
   }
@@ -496,25 +486,25 @@ static void server_listen_callback(uv_stream_t* stream, int status)
   struct server* server = stream->data;
 
   if (status < 0) {
-    err("uv listen error: %s", uv_strerror(status));
+    nerr("uv listen error: %s", uv_strerror(status));
     return;
   }
 
   struct client* client = zalloc(sizeof(struct client));
   if (client == NULL) {
-    err("No memory for client structure.\n");
+    nerr("No memory for client structure.\n");
     return;
   }
 
   int error = uv_pipe_init(stream->loop, &client->pipe, 0);
   if (error != 0) {
-    err("pipe init failed: %s\n", uv_strerror(error));
+    nerr("pipe init failed: %s\n", uv_strerror(error));
     return;
   }
 
   error = uv_accept(stream, (uv_stream_t*)&client->pipe);
   if (error != 0) {
-    err("uv_accept failed: %s\n", uv_strerror(error));
+    nerr("uv_accept failed: %s\n", uv_strerror(error));
     return;
   }
 
@@ -535,7 +525,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
   struct server* server;
   server = zalloc(sizeof(struct server));
   if (server == NULL) {
-    err("no memory.");
+    nerr("no memory.");
     return UV_ENOMEM;
   }
 
@@ -550,19 +540,19 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
 
   int err = uv_pipe_init(loop, &server->pipe, 0);
   if (err != 0) {
-    err("pipe init failed: %s\n", uv_strerror(err));
+    nerr("pipe init failed: %s\n", uv_strerror(err));
     goto server_start_err;
   }
 
   err = uv_fs_unlink(loop, &fs, path, NULL);
   if (err != 0 && err != UV_ENOENT) {
-    err("uv_fs_unlink() fail  uv error: %s", uv_strerror(err));
+    nerr("uv_fs_unlink() fail  uv error: %s", uv_strerror(err));
     goto server_start_err;
   }
 
   err = uv_pipe_bind(&server->pipe, path);
   if (err != 0) {
-    err("pipe bind failed: %s\n", uv_strerror(err));
+    nerr("pipe bind failed: %s\n", uv_strerror(err));
     goto server_start_err;
   }
 
@@ -571,7 +561,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
   err = uv_listen((uv_stream_t*)&server->pipe, SOMAXCONN,
                   server_listen_callback);
   if (err != 0) {
-    err("uv_listen failed: %s\n", uv_strerror(err));
+    nerr("uv_listen failed: %s\n", uv_strerror(err));
     goto server_start_err;
   }
 
@@ -579,13 +569,13 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
   /* Start RPMSG server */
   err = uv_pipe_init(loop, &server->pipe_rpmsg, 0);
   if (err != 0) {
-    err("pipe_rpmsg init failed: %s\n", uv_strerror(err));
+    nerr("pipe_rpmsg init failed: %s\n", uv_strerror(err));
     goto server_start_err;
   }
 
   err = uv_pipe_rpmsg_bind(&server->pipe_rpmsg, path, "");
   if (err != 0) {
-    err("pipe_rpmsg bind failed: %s\n", uv_strerror(err));
+    nerr("pipe_rpmsg bind failed: %s\n", uv_strerror(err));
     goto server_start_err;
   }
 
@@ -593,7 +583,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
   err = uv_listen((uv_stream_t*)&server->pipe_rpmsg, 16,
                   server_listen_callback);
   if (err != 0) {
-    err("pipe_rpmsg listen failed: %s\n", uv_strerror(err));
+    nerr("pipe_rpmsg listen failed: %s\n", uv_strerror(err));
     goto server_start_err;
   }
 #endif
@@ -612,7 +602,7 @@ static void uv_write_done_callback(uv_write_t* req, int status)
   miwear_wreq_t* wreq = (miwear_wreq_t*)req;
 
   if (status != 0) {
-    err("Failed sending data, client: %s, id: %"PRIu32", status: %d\n",
+    nerr("Failed sending data, client: %s, id: %"PRIu32", status: %d\n",
         wreq->client->name, wreq->message.header.id, status);
     /* For all other messages, no responses needed, make the callback now.*/
     if (wreq->cb) {
@@ -622,8 +612,8 @@ static void uv_write_done_callback(uv_write_t* req, int status)
     return;
   }
 
-  info("sent to %s, type:%d, id: %"PRIu32"\n", wreq->client->name,
-       wreq->message.header.type, wreq->message.header.id);
+  ninfo("sent to %s, type:%d, id: %"PRIu32"\n", wreq->client->name,
+        wreq->message.header.type, wreq->message.header.id);
 
   if (wreq->message.header.type & MIWEAR_MESSAGE_NEED_REPLY_MASK) {
     /* Add this request to sending list that waiting for response. */
@@ -666,7 +656,7 @@ static int uv__miwear_send_to_client(struct client* client,
                        uv_write_done_callback);
 
   if (error) {
-    err("stream write failed.\n");
+    nerr("stream write failed.\n");
     return error;
   }
 
@@ -691,7 +681,7 @@ static int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
     int ret = 0;
     list_for_every_entry(&server->client_list, client, struct client, node)
     {
-      info("send message to client [%s]\n", client->name);
+      ninfo("send message to client [%s]\n", client->name);
       ret |= uv__miwear_send_to_client(client, message, cb, cb_para);
     }
     return !!ret;
@@ -707,10 +697,10 @@ static int uv_miwear_send_to_client(uv_miwear_t* miwear, const char* name,
     }
   }
   if (!found) {
-    err("Client %s not found\n", name);
+    nerr("Client %s not found\n", name);
     return UV_ENXIO;
   }
-  info("send message to client [%s]\n", client->name);
+  ninfo("send message to client [%s]\n", client->name);
   return uv__miwear_send_to_client(client, message, cb, cb_para);
 }
 
@@ -724,7 +714,7 @@ static void client_id_sent_callback(uv_miwear_t* miwear, int status,
     return;
   }
 
-  info("CLIENT_ID message sent, server connected\n");
+  ninfo("CLIENT_ID message sent, server connected\n");
   client->state = CLIENT_STATE_CONNECTED;
 
   miwear->reader = message_reader_start((uv_stream_t*)&client->pipe,
@@ -753,7 +743,7 @@ static void client_on_connect_callback(uv_connect_t* req, int status)
   /* Check connection status. */
   if (status != 0) {
     client->state = CLIENT_STATE_DISCONNECTED;
-    err("Fatal error: failed to connect server: %d\n", status);
+    nerr("Fatal error: failed to connect server: %d\n", status);
 
     if (client->miwear->cb) {
       uv_miwear_status_t data;
@@ -771,7 +761,7 @@ static void client_on_connect_callback(uv_connect_t* req, int status)
     return;
   }
 
-  info("server connected, send CLIENT_ID message now.\n");
+  ninfo("server connected, send CLIENT_ID message now.\n");
 
   client->state = CLIENT_STATE_HANDSHAKING;
 
@@ -797,7 +787,7 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
   struct client* client;
   client = malloc(sizeof(struct client));
   if (client == NULL) {
-    err("no memory.");
+    nerr("no memory.");
     return UV_ENOMEM;
   }
   memset(client, 0, sizeof(struct client));
@@ -812,7 +802,7 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
 
   uv_connect_t* connect = malloc(sizeof(uv_connect_t));
   if (connect == NULL) {
-    err("No memory.\n");
+    nerr("No memory.\n");
     return UV_ENOMEM;
   }
 
@@ -822,7 +812,7 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
 
   uv_pipe_connect(connect, &client->pipe, path, client_on_connect_callback);
 
-  info("start client: %p\n", miwear);
+  ninfo("start client: %p\n", miwear);
   return 0;
 }
 
@@ -839,7 +829,7 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
   struct client* client;
   client = malloc(sizeof(struct client));
   if (client == NULL) {
-    err("no memory.");
+    nerr("no memory.");
     return UV_ENOMEM;
   }
   memset(client, 0, sizeof(struct client));
@@ -854,7 +844,7 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
 
   uv_connect_t* connect = malloc(sizeof(uv_connect_t));
   if (connect == NULL) {
-    err("No memory.\n");
+    nerr("No memory.\n");
     return UV_ENOMEM;
   }
 
@@ -870,7 +860,7 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
 
 static int uv_miwear_stop_client(uv_miwear_t* miwear)
 {
-  info("stop client: %p\n", miwear);
+  ninfo("stop client: %p\n", miwear);
 
   miwear->client->pipe.data = miwear;
   uv_close((uv_handle_t*)&miwear->client->pipe, pipe_close_callback2);
@@ -894,13 +884,13 @@ static int uv_miwear_send_to_server(uv_miwear_t* miwear,
   }
 
   if (client->state != CLIENT_STATE_CONNECTED) {
-    err("client not connected.\n");
+    nerr("client not connected.\n");
     return -1;
   }
 
 send_msg_continue:
-  info("Send to server MSG: %d, len: %"PRIu32"\n", message->header.type,
-       message->header.len);
+  ninfo("Send to server MSG: %d, len: %"PRIu32"\n", message->header.type,
+        message->header.len);
 
   miwear_wreq_t* wreq = malloc(sizeof(miwear_wreq_t));
   if (wreq == NULL)
@@ -923,7 +913,7 @@ send_msg_continue:
                        uv_write_done_callback);
 
   if (error) {
-    err("stream write failed.\n");
+    nerr("stream write failed.\n");
     return ERROR;
   }
 
