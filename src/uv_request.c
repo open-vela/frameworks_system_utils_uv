@@ -340,7 +340,11 @@ int uv_request_init(uv_loop_t* loop, uv_request_session_t** handle)
     list_initialize(&(*handle)->list);
     (*handle)->loop = loop;
     (*handle)->multi_handle = curl_multi_init();
-
+    curl_multi_setopt((*handle)->multi_handle,
+                      CURLMOPT_MAX_TOTAL_CONNECTIONS,
+                      CONFIG_UV_REQUEST_MAX_LINKS);
+    curl_multi_setopt((*handle)->multi_handle, CURLMOPT_MAXCONNECTS,
+                      CONFIG_UV_REQUEST_MAX_LINKS);
     return 0;
 }
 
@@ -559,6 +563,7 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
         curl_multi_setopt(handle->multi_handle, CURLMOPT_TIMERFUNCTION, NULL);
     }
 
+    curl_easy_setopt(request->easy_handle, CURLOPT_TCP_KEEPALIVE, 0L);
     curl_easy_setopt(request->easy_handle, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(request->easy_handle, CURLOPT_HEADERFUNCTION, __curl_header_cb);
     curl_easy_setopt(request->easy_handle, CURLOPT_HEADERDATA, request);
