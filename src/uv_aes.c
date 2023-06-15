@@ -37,7 +37,7 @@ int uv_aes_init(uv_aes_t *ctx, int aestype, int mode) {
     return UV_EFAULT;
   }
 
-  if (!mbedtls_cipher_setup(pctx, info)) {
+  if (mbedtls_cipher_setup(pctx, info)) {
     return UV_EFAULT;
   }
 
