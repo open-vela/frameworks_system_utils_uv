@@ -48,7 +48,7 @@ CSRCS += uv_property.c
 endif
 
 ifeq ($(CONFIG_UNQLITE), y)
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/unqlite/unqlite}
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/unqlite/unqlite
 CSRCS += uv_db.c
 endif
 
@@ -81,8 +81,8 @@ CSRCS += uv_networkstatus.c
 endif
 
 ifeq ($(CONFIG_LIB_ZLIB)$(CONFIG_CRYPTO_MBEDTLS), yy)
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib/zlib/contrib/minizip}
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)/external/zlib/zlib}
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/zlib/zlib/contrib/minizip
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/zlib/zlib
 CSRCS += app_verify.c
 endif
 
