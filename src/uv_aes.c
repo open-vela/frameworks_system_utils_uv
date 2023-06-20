@@ -19,10 +19,17 @@
  ****************************************************************************/
 
 #include <alloca.h>
+#include <string.h>
 #include <uv_ext.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/cipher.h>
 #include <mbedtls/base64.h>
+
+static void add_pkcs_padding(unsigned char *output, size_t output_len, size_t data_len) {
+    size_t padding_len = output_len - data_len;
+
+    memset(output + data_len, padding_len, padding_len);
+}
 
 int uv_aes_init(uv_aes_t *ctx, int aestype, int mode) {
   if (!ctx)
@@ -41,7 +48,13 @@ int uv_aes_init(uv_aes_t *ctx, int aestype, int mode) {
     return UV_EFAULT;
   }
 
-  mbedtls_cipher_set_padding_mode(pctx, mode);
+  if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode) {
+    if (MBEDTLS_PADDING_PKCS7 == mode) {
+      pctx->add_padding = add_pkcs_padding;
+    }
+  } else {
+    mbedtls_cipher_set_padding_mode(pctx, mode);
+  }
 
   return 0;
 }
@@ -119,19 +132,50 @@ int uv_aes_encrypt(uv_aes_t *ctx,
   }
 
   uv_aes_context_t *pctx = &ctx->aes_context;
-  int ret, outlen = 0;
-  size_t len;
+  int ret;
+  size_t len, outlen = 0, i, block_size, blocks, remaining;
+  unsigned char *block;
 
-  ret = mbedtls_cipher_update(pctx, input, ilen, output, &len);
+  block_size = mbedtls_cipher_get_block_size(pctx);
+  blocks = ilen / block_size;
+
+  for (i = 0; i < blocks; i++) {
+    ret = mbedtls_cipher_update(pctx, input, block_size, output, &len);
+    if (ret != 0) {
+      return ret;
+    }
+
+    input += len;
+    output += len;
+    outlen += len;
+  }
+
+  /* process the remaining data */
+
+  remaining = ilen - outlen;
+  if (remaining != 0 && pctx->add_padding != NULL) {
+    if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode) {
+      block = (unsigned char *)alloca(block_size);
+      memcpy(block, input, remaining);
+      pctx->add_padding(block, block_size, remaining);
+      ret = mbedtls_cipher_update(pctx, block, block_size, output, &len);
+    } else if (MBEDTLS_MODE_CBC == pctx->cipher_info->mode) {
+      ret = mbedtls_cipher_update(pctx, input, remaining, output, &len);
+    }
+
+    if (ret != 0) {
+      return ret;
+    }
+
+    output += len;
+    outlen += len;
+  }
+
+  ret = mbedtls_cipher_finish(pctx, output, &len);
   if (ret != 0) {
     return ret;
   }
 
-  outlen += len;
-  ret = mbedtls_cipher_finish(pctx, output + (char)outlen, &len);
-  if (ret != 0) {
-    return ret;
-  }
   outlen += len;
   *olen = outlen;
 
