@@ -1853,8 +1853,7 @@ int uv_mqueue_async_uninit(const char *name, uv_poll_t *pollhandle);
  * network
  ****************************************************************************/
 
-#if defined(CONFIG_UTILS_CURL) && defined(CONFIG_UORB)
-
+#if defined(CONFIG_UTILS_CURL)
 #define UV_NETSTATUS_WIFI           1
 #define UV_NETSTATUS_BLUETOOTH      2
 #define UV_NETSTATUS_NONE           3
