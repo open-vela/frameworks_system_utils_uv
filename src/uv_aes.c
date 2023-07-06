@@ -137,6 +137,10 @@ int uv_aes_encrypt(uv_aes_t *ctx,
   unsigned char *block;
 
   block_size = mbedtls_cipher_get_block_size(pctx);
+  if (block_size == 0) {
+    return MBEDTLS_ERR_CIPHER_INVALID_CONTEXT;
+  }
+
   blocks = ilen / block_size;
 
   for (i = 0; i < blocks; i++) {
