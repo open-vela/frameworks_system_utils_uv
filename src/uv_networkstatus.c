@@ -27,6 +27,7 @@ static const char* uv_netstatus_ifname_list[] = {
     "wlan0",
     "bt-pan",
     "bt-net",
+    "tun0",
     NULL
 };
 
