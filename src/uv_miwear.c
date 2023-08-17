@@ -463,11 +463,11 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
       }
       response->id = msg->header.id;
 
-      uv_miwear_message_t msg = { 0 };
-      msg.data = response;
-      msg.header.len = sizeof(message_response_t);
-      msg.header.type = MIWEAR_MESSAGE_TYPE_RESPONSE;
-      int ret = uv__miwear_send_to_client(client, &msg,
+      uv_miwear_message_t reply = { 0 };
+      reply.data = response;
+      reply.header.len = sizeof(message_response_t);
+      reply.header.type = MIWEAR_MESSAGE_TYPE_RESPONSE;
+      int ret = uv__miwear_send_to_client(client, &reply,
                                           response_sent_callback, NULL);
       if (ret != 0) {
         /* Sender should send the message again because of missing response. */
