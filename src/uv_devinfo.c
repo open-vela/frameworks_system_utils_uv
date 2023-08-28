@@ -309,8 +309,15 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
 
     sscanf((const char*)videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
     info->screenshape = shape;
+#else
+  info->screenshape = UV_EXT_SCREENSHAPE_ROUND;
 #endif
 #endif
 
+#ifdef CONFIG_MIWEAR_APPS
+  info->devicetype = UV_EXT_DEVINFO_WATCH;
+#else
+  info->devicetype = UV_EXT_DEVINFO_UNKNOW;
+#endif
     return ret;
 }

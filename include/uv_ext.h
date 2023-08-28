@@ -85,6 +85,11 @@ extern "C" {
 #define UV_EXT_DEVINFO_DID (UV_EXT_DEVINFO_REGION + 1)
 #define UV_EXT_DEVINFO_MAX (UV_EXT_DEVINFO_DID + 1)
 
+#define UV_EXT_DEVINFO_UNKNOW 0
+#define UV_EXT_DEVINFO_WATCH 1
+#define UV_EXT_DEVINFO_BAND 2
+#define UV_EXT_DEVINFO_SMARTSPEAKER 3
+
 #define UV_EXT_SCREENSHAPE_ROUND 1
 #define UV_EXT_SCREENSHAPE_SQUARE 2
 
@@ -106,6 +111,7 @@ struct uv_devinfo_s {
     int osversioncode;
     int screenwidth;
     int screenheight;
+    int devicetype;
 };
 
 /****************************************************************************
