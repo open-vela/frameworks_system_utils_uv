@@ -43,61 +43,53 @@ static int file_cache_cmp(file_cache_t* a, file_cache_t* b)
     return strcasecmp(a->url, b->url);
 }
 
-static int unlink_recursive(FAR char *path)
+static int unlink_recursive(FAR char* path)
 {
-  struct dirent *d;
-  struct stat stat;
-  size_t len;
-  int ret;
-  DIR *dp;
+    struct dirent* d;
+    struct stat stat;
+    size_t len;
+    int ret;
+    DIR* dp;
 
-  ret = lstat(path, &stat);
-  if (ret < 0)
-    {
-      return ret;
+    ret = lstat(path, &stat);
+    if (ret < 0) {
+        return ret;
     }
 
-  if (!S_ISDIR(stat.st_mode))
-    {
-      return unlink(path);
+    if (!S_ISDIR(stat.st_mode)) {
+        return unlink(path);
     }
 
-  dp = opendir(path);
-  if (dp == NULL)
-    {
-      return -1;
+    dp = opendir(path);
+    if (dp == NULL) {
+        return -1;
     }
 
-  len = strlen(path);
-  if (len > 0 && path[len - 1] == '/')
-    {
-      path[--len] = '\0';
+    len = strlen(path);
+    if (len > 0 && path[len - 1] == '/') {
+        path[--len] = '\0';
     }
 
-  while ((d = readdir(dp)) != NULL)
-    {
-      if (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0)
-        {
-          continue;
+    while ((d = readdir(dp)) != NULL) {
+        if (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0) {
+            continue;
         }
 
-      snprintf(&path[len], PATH_MAX - len, "/%s", d->d_name);
-      ret = unlink_recursive(path);
-      if (ret < 0)
-        {
-          closedir(dp);
-          return ret;
+        snprintf(&path[len], PATH_MAX - len, "/%s", d->d_name);
+        ret = unlink_recursive(path);
+        if (ret < 0) {
+            closedir(dp);
+            return ret;
         }
     }
 
-  ret = closedir(dp);
-  if (ret >= 0)
-    {
-      path[len] = '\0';
-      ret = rmdir(path);
+    ret = closedir(dp);
+    if (ret >= 0) {
+        path[len] = '\0';
+        ret = rmdir(path);
     }
 
-  return ret;
+    return ret;
 }
 
 RB_GENERATE_STATIC(file_cache_tree_s, file_cache_s, tree_entry, file_cache_cmp);
@@ -162,8 +154,8 @@ static char* download_file_cb(int state, uv_response_t* response)
         download = download_list[i];
         if (download->cb != NULL) {
             download->cb(state != UV_REQUEST_DONE ? response->httpcode : UV_REQUEST_DONE,
-                         state != UV_REQUEST_DONE ? NULL: response->body,
-                         (void*)download->userp);
+                state != UV_REQUEST_DONE ? NULL : response->body,
+                (void*)download->userp);
         }
         free(download);
     }
@@ -206,7 +198,7 @@ static int checkpath(const char* path)
 }
 
 static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
-     void* userp, file_cache_t** handle)
+    void* userp, file_cache_t** handle)
 {
     char* temp_path;
     download_t* download = calloc(1, sizeof(download_t));
@@ -305,7 +297,7 @@ void uv_ncm_cancel(uv_ncm_handle_t handle)
     download_t** download_list = cache->download_list;
     int download_nums = cache->download_nums;
 
-    if (cache->ready == true){
+    if (cache->ready == true) {
         return;
     }
 

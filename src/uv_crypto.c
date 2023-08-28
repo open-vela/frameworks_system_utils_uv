@@ -45,7 +45,7 @@ int uv_rsa(uv_buf_t key, uv_buf_t text, uv_buf_t* output, int mode)
     }
 
     ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0,
-                               mbedtls_ctr_drbg_random, &ctr_drbg);
+        mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char*)key.base, key.len + 1);
     }
@@ -105,7 +105,7 @@ int uv_md(const char* type, uv_buf_t input, uv_buf_t* output)
     return 0;
 }
 
-int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t *key)
+int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t* key)
 {
     const mbedtls_md_info_t* info;
 
@@ -122,8 +122,9 @@ int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t *key
     }
 
     if (mbedtls_md_hmac(info, (const unsigned char*)key->base, key->len,
-                        (const unsigned char*)input.base, input.len,
-                        (unsigned char*)output->base) != 0) {
+            (const unsigned char*)input.base, input.len,
+            (unsigned char*)output->base)
+        != 0) {
         free(output->base);
         output->base = NULL;
         return UV_EINVAL;
@@ -132,14 +133,14 @@ int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t *key
     return 0;
 }
 
-int uv_md_file(const char *type, const char *path, int batchsize, uv_buf_t *output)
+int uv_md_file(const char* type, const char* path, int batchsize, uv_buf_t* output)
 {
     int ret = UV_EXT_OK;
-    FILE *f;
+    FILE* f;
     size_t n;
     mbedtls_md_context_t ctx;
     const mbedtls_md_info_t* info;
-    unsigned char *batchbuf;
+    unsigned char* batchbuf;
 
     output->len = 0;
     info = mbedtls_md_info_from_string(type);
@@ -185,7 +186,7 @@ int uv_md_file(const char *type, const char *path, int batchsize, uv_buf_t *outp
 
     if (ferror(f) != 0) {
         ret = UV_EIO;
-    } else if (mbedtls_md_finish(&ctx, (unsigned char *)output->base) != 0) {
+    } else if (mbedtls_md_finish(&ctx, (unsigned char*)output->base) != 0) {
         ret = UV_EINVAL;
     }
 
@@ -225,7 +226,7 @@ int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output, 
     mbedtls_pk_context pk;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
-    uv_buf_t md = {0};
+    uv_buf_t md = { 0 };
     const char* pers = "-pkcs";
     int ret;
 
@@ -246,7 +247,7 @@ int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output, 
     }
 
     ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0,
-                               mbedtls_ctr_drbg_random, &ctr_drbg);
+        mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char*)key.base, key.len + 1);
     }
@@ -292,7 +293,7 @@ int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign, i
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     const char* pers = "-pkcs";
-    uv_buf_t md = {0};
+    uv_buf_t md = { 0 };
     int ret;
 
     info = mbedtls_md_info_from_string(md_type);
@@ -312,7 +313,7 @@ int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t sign, i
     }
 
     ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0,
-                               mbedtls_ctr_drbg_random, &ctr_drbg);
+        mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char*)key.base, key.len + 1);
     }
@@ -349,28 +350,27 @@ exit:
     return ret;
 }
 
-void uv_hexify(uv_buf_t input, uv_buf_t *output)
+void uv_hexify(uv_buf_t input, uv_buf_t* output)
 {
-    char *obuf = malloc(input.len *2 + 1);
-    const unsigned char *ibuf = (const unsigned char*)input.base;
+    char* obuf = malloc(input.len * 2 + 1);
+    const unsigned char* ibuf = (const unsigned char*)input.base;
     int len = input.len;
     output->base = obuf;
-    output->len = input.len *2;
+    output->len = input.len * 2;
     output->base[output->len] = '\0';
 
     unsigned char l, h;
 
-    while( len != 0 )
-    {
+    while (len != 0) {
         h = *ibuf / 16;
         l = *ibuf % 16;
 
-        if( h < 10 )
+        if (h < 10)
             *obuf++ = '0' + h;
         else
             *obuf++ = 'a' + h - 10;
 
-        if( l < 10 )
+        if (l < 10)
             *obuf++ = '0' + l;
         else
             *obuf++ = 'a' + l - 10;
@@ -379,4 +379,3 @@ void uv_hexify(uv_buf_t input, uv_buf_t *output)
         len--;
     }
 }
-

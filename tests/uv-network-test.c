@@ -21,10 +21,10 @@
  * Included Files
  ****************************************************************************/
 
-#include <uv_ext.h>
+#include <arpa/inet.h>
 #include <system/state.h>
 #include <uORB/uORB.h>
-#include <arpa/inet.h>
+#include <uv_ext.h>
 
 /****************************************************************************
  * Public Functions
@@ -32,15 +32,15 @@
 
 int main(int argc, char** argv)
 {
-  int ret;
-  uint8_t type;
+    int ret;
+    uint8_t type;
 
-  ret = uv_netstatus_gettype(&type);
-  if (ret > 0) {
-    printf("network type: %d\n", type);
-  } else {
-    printf("get network type fail\n");
-  }
+    ret = uv_netstatus_gettype(&type);
+    if (ret > 0) {
+        printf("network type: %d\n", type);
+    } else {
+        printf("get network type fail\n");
+    }
 
-  return 0;
+    return 0;
 }

@@ -18,16 +18,17 @@
  * Included Files
  ****************************************************************************/
 
-#include <uv_ext.h>
 #include <uv/errno.h>
+#include <uv_ext.h>
 
-static uv_record_ops_t *recorder_ops = NULL;
+static uv_record_ops_t* recorder_ops = NULL;
 
-void uv_record_register(uv_record_ops_t *ops) {
-  recorder_ops = ops;
+void uv_record_register(uv_record_ops_t* ops)
+{
+    recorder_ops = ops;
 }
 
-uv_record_ops_t  *uv_record_init(void) {
-  return recorder_ops;
+uv_record_ops_t* uv_record_init(void)
+{
+    return recorder_ops;
 }
-

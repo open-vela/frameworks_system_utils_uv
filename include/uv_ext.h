@@ -28,8 +28,8 @@
 
 #ifdef CONFIG_CRYPTO_MBEDTLS
 #include <mbedtls/cipher.h>
-#include <mbedtls/rsa.h>
 #include <mbedtls/pk.h>
+#include <mbedtls/rsa.h>
 #endif
 
 #ifdef CONFIG_MEDIA
@@ -51,16 +51,16 @@
 #define UV_EXT_ERROR_INVALID -2
 
 #define uv_ext_log(level, module, format, ...) \
-  syslog(level, "[" #module ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
+    syslog(level, "[" #module ":%d]" format "\n", __LINE__, ##__VA_ARGS__)
 
 #define uv_log_debug(module, format, ...) \
-  uv_ext_log(LOG_DEBUG, module, format, ##__VA_ARGS__)
+    uv_ext_log(LOG_DEBUG, module, format, ##__VA_ARGS__)
 
 #define uv_log_info(module, format, ...) \
-  uv_ext_log(LOG_INFO, module, format, ##__VA_ARGS__)
+    uv_ext_log(LOG_INFO, module, format, ##__VA_ARGS__)
 
 #define uv_log_error(module, format, ...) \
-  uv_ext_log(LOG_ERR, module, format, ##__VA_ARGS__)
+    uv_ext_log(LOG_ERR, module, format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,43 +70,42 @@ extern "C" {
  * devinfo
  ****************************************************************************/
 
-#define UV_EXT_DEVINFO_SCREENWIDTH      1
-#define UV_EXT_DEVINFO_SCREENHEIGHT     (UV_EXT_DEVINFO_SCREENWIDTH + 1)
-#define UV_EXT_DEVINFO_SCREENSHAPE      (UV_EXT_DEVINFO_SCREENHEIGHT + 1)
-#define UV_EXT_DEVINFO_OSVERSIONCODE    (UV_EXT_DEVINFO_SCREENSHAPE + 1)
-#define UV_EXT_DEVINFO_BRAND            (UV_EXT_DEVINFO_OSVERSIONCODE + 1)
-#define UV_EXT_DEVINFO_MANUFACTURER     (UV_EXT_DEVINFO_BRAND + 1)
-#define UV_EXT_DEVINFO_MODEL            (UV_EXT_DEVINFO_MANUFACTURER + 1)
-#define UV_EXT_DEVINFO_PRODUCT          (UV_EXT_DEVINFO_MODEL + 1)
-#define UV_EXT_DEVINFO_OSTYPE           (UV_EXT_DEVINFO_PRODUCT + 1)
-#define UV_EXT_DEVINFO_OSVERSIONNAME    (UV_EXT_DEVINFO_OSTYPE + 1)
-#define UV_EXT_DEVINFO_LANGUAGE         (UV_EXT_DEVINFO_OSVERSIONNAME + 1)
-#define UV_EXT_DEVINFO_REGION           (UV_EXT_DEVINFO_LANGUAGE + 1)
-#define UV_EXT_DEVINFO_DID              (UV_EXT_DEVINFO_REGION + 1)
-#define UV_EXT_DEVINFO_MAX              (UV_EXT_DEVINFO_DID + 1)
+#define UV_EXT_DEVINFO_SCREENWIDTH 1
+#define UV_EXT_DEVINFO_SCREENHEIGHT (UV_EXT_DEVINFO_SCREENWIDTH + 1)
+#define UV_EXT_DEVINFO_SCREENSHAPE (UV_EXT_DEVINFO_SCREENHEIGHT + 1)
+#define UV_EXT_DEVINFO_OSVERSIONCODE (UV_EXT_DEVINFO_SCREENSHAPE + 1)
+#define UV_EXT_DEVINFO_BRAND (UV_EXT_DEVINFO_OSVERSIONCODE + 1)
+#define UV_EXT_DEVINFO_MANUFACTURER (UV_EXT_DEVINFO_BRAND + 1)
+#define UV_EXT_DEVINFO_MODEL (UV_EXT_DEVINFO_MANUFACTURER + 1)
+#define UV_EXT_DEVINFO_PRODUCT (UV_EXT_DEVINFO_MODEL + 1)
+#define UV_EXT_DEVINFO_OSTYPE (UV_EXT_DEVINFO_PRODUCT + 1)
+#define UV_EXT_DEVINFO_OSVERSIONNAME (UV_EXT_DEVINFO_OSTYPE + 1)
+#define UV_EXT_DEVINFO_LANGUAGE (UV_EXT_DEVINFO_OSVERSIONNAME + 1)
+#define UV_EXT_DEVINFO_REGION (UV_EXT_DEVINFO_LANGUAGE + 1)
+#define UV_EXT_DEVINFO_DID (UV_EXT_DEVINFO_REGION + 1)
+#define UV_EXT_DEVINFO_MAX (UV_EXT_DEVINFO_DID + 1)
 
+#define UV_EXT_SCREENSHAPE_ROUND 1
+#define UV_EXT_SCREENSHAPE_SQUARE 2
 
-#define UV_EXT_SCREENSHAPE_ROUND        1
-#define UV_EXT_SCREENSHAPE_SQUARE       2
-
-#define UV_EXT_DEVINFO_MAXLEN           (32 + 1)
+#define UV_EXT_DEVINFO_MAXLEN (32 + 1)
 
 typedef struct uv_devinfo_s uv_devinfo_t;
 
 struct uv_devinfo_s {
-  char brand[UV_EXT_DEVINFO_MAXLEN];
-  char manufacturer[UV_EXT_DEVINFO_MAXLEN];
-  char model[UV_EXT_DEVINFO_MAXLEN];
-  char product[UV_EXT_DEVINFO_MAXLEN];
-  char ostype[UV_EXT_DEVINFO_MAXLEN];
-  char osversionname[UV_EXT_DEVINFO_MAXLEN];
-  char language[UV_EXT_DEVINFO_MAXLEN];
-  char region[UV_EXT_DEVINFO_MAXLEN];
-  char did[UV_EXT_DEVINFO_MAXLEN];
-  int screenshape;
-  int osversioncode;
-  int screenwidth;
-  int screenheight;
+    char brand[UV_EXT_DEVINFO_MAXLEN];
+    char manufacturer[UV_EXT_DEVINFO_MAXLEN];
+    char model[UV_EXT_DEVINFO_MAXLEN];
+    char product[UV_EXT_DEVINFO_MAXLEN];
+    char ostype[UV_EXT_DEVINFO_MAXLEN];
+    char osversionname[UV_EXT_DEVINFO_MAXLEN];
+    char language[UV_EXT_DEVINFO_MAXLEN];
+    char region[UV_EXT_DEVINFO_MAXLEN];
+    char did[UV_EXT_DEVINFO_MAXLEN];
+    int screenshape;
+    int osversioncode;
+    int screenwidth;
+    int screenheight;
 };
 
 /****************************************************************************
@@ -124,7 +123,7 @@ struct uv_devinfo_s {
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_devinfobuff(char *buff, int size, int item);
+int uv_devinfobuff(char* buff, int size, int item);
 
 /****************************************************************************
  * Name: uv_getdevinfonumber
@@ -140,7 +139,7 @@ int uv_devinfobuff(char *buff, int size, int item);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_getdevinfonumber(int *num, int item);
+int uv_getdevinfonumber(int* num, int item);
 
 /****************************************************************************
  * Name: uv_getdeviceinfo
@@ -155,7 +154,7 @@ int uv_getdevinfonumber(int *num, int item);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_getdeviceinfo(uv_devinfo_t *info);
+int uv_getdeviceinfo(uv_devinfo_t* info);
 
 /****************************************************************************
  * locale
@@ -167,11 +166,11 @@ int uv_getdeviceinfo(uv_devinfo_t *info);
 typedef struct uv_locale_s uv_locale_t;
 
 struct uv_locale_s {
-  char language[UV_EXT_LOCALE_MAX_SIZE];
-  char country_region[UV_EXT_LOCALE_MAX_SIZE];
+    char language[UV_EXT_LOCALE_MAX_SIZE];
+    char country_region[UV_EXT_LOCALE_MAX_SIZE];
 };
 
-int uv_getlocale(uv_locale_t *locale);
+int uv_getlocale(uv_locale_t* locale);
 
 /****************************************************************************
  * AES encryption and decryption
@@ -182,9 +181,9 @@ int uv_getlocale(uv_locale_t *locale);
 typedef mbedtls_cipher_context_t uv_aes_context_t;
 
 typedef struct uv_aes_s {
-  uv_handle_t handle;
-  uv_aes_context_t aes_context;
-}uv_aes_t;
+    uv_handle_t handle;
+    uv_aes_context_t aes_context;
+} uv_aes_t;
 
 /****************************************************************************
  * Name: uv_aes_init
@@ -194,7 +193,7 @@ typedef struct uv_aes_s {
  *
  ****************************************************************************/
 
-int uv_aes_init(uv_aes_t *ctx, int aestype, int mode);
+int uv_aes_init(uv_aes_t* ctx, int aestype, int mode);
 
 /****************************************************************************
  * Name: uv_aes_set_iv
@@ -204,10 +203,10 @@ int uv_aes_init(uv_aes_t *ctx, int aestype, int mode);
  *
  ****************************************************************************/
 
-int uv_aes_set_iv(uv_aes_t *ctx,
-                  const unsigned char *iv,
-                  int ivoffset,
-                  int iv_len);
+int uv_aes_set_iv(uv_aes_t* ctx,
+    const unsigned char* iv,
+    int ivoffset,
+    int iv_len);
 
 /****************************************************************************
  * Name: uv_aes_set_iv_base64
@@ -218,10 +217,10 @@ int uv_aes_set_iv(uv_aes_t *ctx,
  *
  ****************************************************************************/
 
-int uv_aes_set_iv_base64(uv_aes_t *ctx,
-                         const unsigned char *iv,
-                         int ivoffset,
-                         int iv_len);
+int uv_aes_set_iv_base64(uv_aes_t* ctx,
+    const unsigned char* iv,
+    int ivoffset,
+    int iv_len);
 
 /****************************************************************************
  * Name: uv_aes_set_key
@@ -231,10 +230,10 @@ int uv_aes_set_iv_base64(uv_aes_t *ctx,
  *
  ****************************************************************************/
 
-int uv_aes_set_key(uv_aes_t *ctx,
-                   int optype,
-                   const unsigned char *key,
-                   int key_bitlen);
+int uv_aes_set_key(uv_aes_t* ctx,
+    int optype,
+    const unsigned char* key,
+    int key_bitlen);
 
 /****************************************************************************
  * Name: uv_aes_set_key_base64
@@ -245,10 +244,10 @@ int uv_aes_set_key(uv_aes_t *ctx,
  *
  ****************************************************************************/
 
-int uv_aes_set_key_base64(uv_aes_t *ctx,
-                          int optype,
-                          const unsigned char *key,
-                          int key_bitlen);
+int uv_aes_set_key_base64(uv_aes_t* ctx,
+    int optype,
+    const unsigned char* key,
+    int key_bitlen);
 
 /****************************************************************************
  * Name: uv_aes_encrypt
@@ -258,11 +257,11 @@ int uv_aes_set_key_base64(uv_aes_t *ctx,
  *
  ****************************************************************************/
 
-int uv_aes_encrypt(uv_aes_t *ctx,
-                   const unsigned char *input,
-                   size_t ilen,
-                   unsigned char *output,
-                   size_t *olen);
+int uv_aes_encrypt(uv_aes_t* ctx,
+    const unsigned char* input,
+    size_t ilen,
+    unsigned char* output,
+    size_t* olen);
 
 /****************************************************************************
  * Name: uv_aes_encrypt
@@ -272,11 +271,11 @@ int uv_aes_encrypt(uv_aes_t *ctx,
  *
  ****************************************************************************/
 
-int uv_aes_decrypt(uv_aes_t *ctx,
-                   const unsigned char *input,
-                   size_t ilen,
-                   unsigned char *output,
-                   size_t *olen);
+int uv_aes_decrypt(uv_aes_t* ctx,
+    const unsigned char* input,
+    size_t ilen,
+    unsigned char* output,
+    size_t* olen);
 
 /****************************************************************************
  * Name: uv_aes_encrypt_base64
@@ -287,12 +286,12 @@ int uv_aes_decrypt(uv_aes_t *ctx,
  *
  ****************************************************************************/
 
-int uv_aes_encrypt_base64(uv_aes_t *ctx,
-                          const unsigned char *input,
-                          size_t ilen,
-                          unsigned char *output,
-                          int outsize,
-                          size_t *olen);
+int uv_aes_encrypt_base64(uv_aes_t* ctx,
+    const unsigned char* input,
+    size_t ilen,
+    unsigned char* output,
+    int outsize,
+    size_t* olen);
 
 /****************************************************************************
  * Name: uv_aes_decrypt_base64
@@ -302,11 +301,11 @@ int uv_aes_encrypt_base64(uv_aes_t *ctx,
  *
  ****************************************************************************/
 
-int uv_aes_decrypt_base64(uv_aes_t *ctx,
-                          const unsigned char *input,
-                          size_t ilen,
-                          unsigned char *output,
-                          size_t *olen);
+int uv_aes_decrypt_base64(uv_aes_t* ctx,
+    const unsigned char* input,
+    size_t ilen,
+    unsigned char* output,
+    size_t* olen);
 
 /****************************************************************************
  * Name: uv_aes_free
@@ -317,7 +316,7 @@ int uv_aes_decrypt_base64(uv_aes_t *ctx,
  *
  ****************************************************************************/
 
-void uv_aes_free(uv_aes_t *ctx);
+void uv_aes_free(uv_aes_t* ctx);
 
 #endif
 
@@ -328,7 +327,7 @@ void uv_aes_free(uv_aes_t *ctx);
 #ifdef CONFIG_CRYPTO_MBEDTLS
 
 #define UV_EXT_TYPE_BUFFER 0
-#define UV_EXT_TYPE_FILE   1
+#define UV_EXT_TYPE_FILE 1
 
 #define UV_EXT_DECRYPT 0
 #define UV_EXT_ENCRYPT 1
@@ -337,19 +336,19 @@ void uv_aes_free(uv_aes_t *ctx);
  * Name: uv_base64_encode
  ****************************************************************************/
 
-int uv_base64_encode(uv_buf_t input, uv_buf_t *output);
+int uv_base64_encode(uv_buf_t input, uv_buf_t* output);
 
 /****************************************************************************
  * Name: uv_base64_decode
  ****************************************************************************/
 
-int uv_base64_decode(uv_buf_t input, uv_buf_t *output);
+int uv_base64_decode(uv_buf_t input, uv_buf_t* output);
 
 /****************************************************************************
  * Name: uv_sign
  ****************************************************************************/
 
-int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t *output, int type);
+int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output, int type);
 
 /****************************************************************************
  * Name: uv_verify
@@ -361,31 +360,31 @@ int uv_verify(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t md, int
  * Name: uv_md
  ****************************************************************************/
 
-int uv_md(const char* type, uv_buf_t input, uv_buf_t *output);
+int uv_md(const char* type, uv_buf_t input, uv_buf_t* output);
 
 /****************************************************************************
  * Name: uv_md_file
  ****************************************************************************/
 
-int uv_md_file(const char *type, const char *path, int batchsize, uv_buf_t *output);
+int uv_md_file(const char* type, const char* path, int batchsize, uv_buf_t* output);
 
 /****************************************************************************
  * Name: uv_md_hmac
  ****************************************************************************/
 
-int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t *key);
+int uv_md_hmac(const char* type, uv_buf_t input, uv_buf_t* output, uv_buf_t* key);
 
 /****************************************************************************
  * Name: uv_rsa
  ****************************************************************************/
 
-int uv_rsa(uv_buf_t key, uv_buf_t text, uv_buf_t *output, int mode);
+int uv_rsa(uv_buf_t key, uv_buf_t text, uv_buf_t* output, int mode);
 
 /****************************************************************************
  * Name: uv_rsa
  ****************************************************************************/
 
-void uv_hexify(uv_buf_t input, uv_buf_t *output);
+void uv_hexify(uv_buf_t input, uv_buf_t* output);
 
 #endif
 
@@ -396,16 +395,16 @@ void uv_hexify(uv_buf_t input, uv_buf_t *output);
 #ifdef CONFIG_UORB
 
 typedef struct uv_topic_s uv_topic_t;
-typedef void (*uv_topic_cb)(uv_topic_t *topic, int status,
-                            void *data, size_t datalen);
+typedef void (*uv_topic_cb)(uv_topic_t* topic, int status,
+    void* data, size_t datalen);
 
 struct uv_topic_s {
-  uv_poll_t handle;
-  uv_topic_cb cb;
-  size_t datalen;
-  uintptr_t flags;
-  orb_id_t meta;
-  void *meta_data;
+    uv_poll_t handle;
+    uv_topic_cb cb;
+    size_t datalen;
+    uintptr_t flags;
+    orb_id_t meta;
+    void* meta_data;
 };
 
 /****************************************************************************
@@ -416,8 +415,8 @@ struct uv_topic_s {
  *
  ****************************************************************************/
 
-int uv_topic_subscribe_multi(uv_loop_t *loop, uv_topic_t *topic,
-                             orb_id_t meta, int instance, uv_topic_cb cb);
+int uv_topic_subscribe_multi(uv_loop_t* loop, uv_topic_t* topic,
+    orb_id_t meta, int instance, uv_topic_cb cb);
 
 /****************************************************************************
  * Name: uv_topic_subscribe
@@ -427,8 +426,8 @@ int uv_topic_subscribe_multi(uv_loop_t *loop, uv_topic_t *topic,
  *
  ****************************************************************************/
 
-int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
-                       orb_id_t meta, uv_topic_cb cb);
+int uv_topic_subscribe(uv_loop_t* loop, uv_topic_t* topic,
+    orb_id_t meta, uv_topic_cb cb);
 
 /****************************************************************************
  * Name: uv_topic_unsubscribe
@@ -438,7 +437,7 @@ int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
  *
  ****************************************************************************/
 
-int uv_topic_unsubscribe(uv_topic_t *topic);
+int uv_topic_unsubscribe(uv_topic_t* topic);
 
 /****************************************************************************
  * Name: uv_topic_set_frequency
@@ -449,8 +448,7 @@ int uv_topic_unsubscribe(uv_topic_t *topic);
  *
  ****************************************************************************/
 
-int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency);
-
+int uv_topic_set_frequency(uv_topic_t* topic, unsigned int frequency);
 
 /****************************************************************************
  * Name: uv_topic_get_frequency
@@ -460,7 +458,7 @@ int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency);
  *
  ****************************************************************************/
 
-int uv_topic_get_frequency(uv_topic_t *topic, unsigned int *frequency);
+int uv_topic_get_frequency(uv_topic_t* topic, unsigned int* frequency);
 
 /****************************************************************************
  * Name: uv_topic_set_interval
@@ -470,8 +468,7 @@ int uv_topic_get_frequency(uv_topic_t *topic, unsigned int *frequency);
  *
  ****************************************************************************/
 
-int uv_topic_set_interval(uv_topic_t *topic, unsigned int interval);
-
+int uv_topic_set_interval(uv_topic_t* topic, unsigned int interval);
 
 /****************************************************************************
  * Name: uv_topic_get_interval
@@ -481,7 +478,7 @@ int uv_topic_set_interval(uv_topic_t *topic, unsigned int interval);
  *
  ****************************************************************************/
 
-int uv_topic_get_interval(uv_topic_t *topic, unsigned int *interval);
+int uv_topic_get_interval(uv_topic_t* topic, unsigned int* interval);
 
 /****************************************************************************
  * Name: uv_topic_close
@@ -492,7 +489,7 @@ int uv_topic_get_interval(uv_topic_t *topic, unsigned int *interval);
  *   in `close_cb`.
  ****************************************************************************/
 
-int uv_topic_close(uv_topic_t *topic);
+int uv_topic_close(uv_topic_t* topic);
 
 #endif
 
@@ -502,7 +499,7 @@ int uv_topic_close(uv_topic_t *topic);
 
 #ifdef CONFIG_KVDB
 
-typedef void (*uv_property_cb)(int status, const char *key, char *value, void *arg);
+typedef void (*uv_property_cb)(int status, const char* key, char* value, void* arg);
 
 /****************************************************************************
  * Name: uv_property_get
@@ -512,8 +509,8 @@ typedef void (*uv_property_cb)(int status, const char *key, char *value, void *a
  *
  ****************************************************************************/
 
-int uv_property_get(uv_loop_t *loop, const char *key, char *value,
-                    const char *default_value, uv_property_cb cb, void *arg);
+int uv_property_get(uv_loop_t* loop, const char* key, char* value,
+    const char* default_value, uv_property_cb cb, void* arg);
 
 /****************************************************************************
  * Name: uv_property_set
@@ -523,8 +520,8 @@ int uv_property_get(uv_loop_t *loop, const char *key, char *value,
  *
  ****************************************************************************/
 
-int uv_property_set(uv_loop_t *loop, const char *key, const char *value,
-                    uv_property_cb cb, void *arg);
+int uv_property_set(uv_loop_t* loop, const char* key, const char* value,
+    uv_property_cb cb, void* arg);
 
 /****************************************************************************
  * Name: uv_property_clear
@@ -534,7 +531,7 @@ int uv_property_set(uv_loop_t *loop, const char *key, const char *value,
  *
  ****************************************************************************/
 
-int uv_property_clear(uv_loop_t *loop, uv_property_cb cb, void *arg);
+int uv_property_clear(uv_loop_t* loop, uv_property_cb cb, void* arg);
 
 /****************************************************************************
  * Name: uv_property_delete
@@ -544,8 +541,8 @@ int uv_property_clear(uv_loop_t *loop, uv_property_cb cb, void *arg);
  *
  ****************************************************************************/
 
-int uv_property_delete(uv_loop_t *loop, const char *key, uv_property_cb cb,
-                       void *arg);
+int uv_property_delete(uv_loop_t* loop, const char* key, uv_property_cb cb,
+    void* arg);
 
 /****************************************************************************
  * Name: property_commit
@@ -555,7 +552,7 @@ int uv_property_delete(uv_loop_t *loop, const char *key, uv_property_cb cb,
  *
  ****************************************************************************/
 
-int uv_property_commit(uv_loop_t *loop, uv_property_cb cb, void *arg);
+int uv_property_commit(uv_loop_t* loop, uv_property_cb cb, void* arg);
 
 #endif
 
@@ -577,20 +574,20 @@ int uv_property_commit(uv_loop_t *loop, uv_property_cb cb, void *arg);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-typedef void (*uv_brightness_cb_t)(int status, int val, void *data);
+typedef void (*uv_brightness_cb_t)(int status, int val, void* data);
 
-typedef void * uv_brightness_handle_t;
+typedef void* uv_brightness_handle_t;
 
 typedef struct uv_sysbrightness_s {
     int (*init)(uv_loop_t* loop, uv_brightness_handle_t* handle);
     int (*close)(uv_brightness_handle_t handle);
-    int (*setval)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb, void *data);
-    int (*getval)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
-    int (*setmode)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb, void *data);
-    int (*getmode)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
-    int (*keepscreenon)(uv_brightness_handle_t handle, bool val, uv_brightness_cb_t cb, void *data);
-    int (*recovery)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
-    int (*turnon)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data);
+    int (*setval)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb, void* data);
+    int (*getval)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void* data);
+    int (*setmode)(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb, void* data);
+    int (*getmode)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void* data);
+    int (*keepscreenon)(uv_brightness_handle_t handle, bool val, uv_brightness_cb_t cb, void* data);
+    int (*recovery)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void* data);
+    int (*turnon)(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void* data);
 } uv_sysbrightness_ops_t;
 
 /****************************************************************************
@@ -619,7 +616,7 @@ int uv_sysbrightness_register(uv_sysbrightness_ops_t* brightness);
  ****************************************************************************/
 
 int uv_brightness_recovery(uv_brightness_handle_t handle,
-                           uv_brightness_cb_t cb, void *data);
+    uv_brightness_cb_t cb, void* data);
 
 /****************************************************************************
  * Name: uv_brightness_setval
@@ -636,7 +633,7 @@ int uv_brightness_recovery(uv_brightness_handle_t handle,
  ****************************************************************************/
 
 int uv_brightness_setval(uv_brightness_handle_t handle, int val,
-                         uv_brightness_cb_t cb, void *data);
+    uv_brightness_cb_t cb, void* data);
 
 /****************************************************************************
  * Name: uv_brightness_getval
@@ -652,7 +649,7 @@ int uv_brightness_setval(uv_brightness_handle_t handle, int val,
  ****************************************************************************/
 
 int uv_brightness_getval(uv_brightness_handle_t handle,
-                         uv_brightness_cb_t cb, void *data);
+    uv_brightness_cb_t cb, void* data);
 
 /****************************************************************************
  * Name: uv_brightness_setmode
@@ -670,7 +667,7 @@ int uv_brightness_getval(uv_brightness_handle_t handle,
  ****************************************************************************/
 
 int uv_brightness_setmode(uv_brightness_handle_t handle, int mode,
-                          uv_brightness_cb_t cb, void *data);
+    uv_brightness_cb_t cb, void* data);
 
 /****************************************************************************
  * Name: uv_brightness_getmode
@@ -687,7 +684,7 @@ int uv_brightness_setmode(uv_brightness_handle_t handle, int mode,
  ****************************************************************************/
 
 int uv_brightness_getmode(uv_brightness_handle_t handle,
-                          uv_brightness_cb_t cb, void *data);
+    uv_brightness_cb_t cb, void* data);
 
 /****************************************************************************
  * Name: uv_brightness_turnon
@@ -704,7 +701,7 @@ int uv_brightness_getmode(uv_brightness_handle_t handle,
  ****************************************************************************/
 
 int uv_brightness_turnon(uv_brightness_handle_t handle,
-                         uv_brightness_cb_t cb, void *data);
+    uv_brightness_cb_t cb, void* data);
 
 /****************************************************************************
  * Name: uv_brightness_setkeepon
@@ -723,7 +720,7 @@ int uv_brightness_turnon(uv_brightness_handle_t handle,
  ****************************************************************************/
 
 int uv_brightness_setkeepon(uv_brightness_handle_t handle, bool keep,
-                            uv_brightness_cb_t cb, void *data);
+    uv_brightness_cb_t cb, void* data);
 
 /****************************************************************************
  * Name: uv_brightness_init
@@ -788,7 +785,7 @@ typedef struct uv_response_s uv_response_t;
 typedef void (*uv_request_cb)(int state, uv_response_t* response);
 
 struct data_block_s {
-    uint8_t *data;
+    uint8_t* data;
     ssize_t size;
 };
 
@@ -851,10 +848,10 @@ int uv_request_set_url(uv_request_t* request, const char* url);
 
 const char* uv_request_get_url(uv_request_t* request);
 
-typedef struct uv_request_header_s{
-  int  currentIndex;
-  char** data;
-}uv_request_header_t;
+typedef struct uv_request_header_s {
+    int currentIndex;
+    char** data;
+} uv_request_header_t;
 
 /****************************************************************************
  *
@@ -911,7 +908,7 @@ int uv_request_set_userp(uv_request_t* request, void* userp);
  *
  ****************************************************************************/
 
-void *uv_request_get_userp(uv_request_t* request);
+void* uv_request_get_userp(uv_request_t* request);
 
 /****************************************************************************
  * Name: uv_request_get_header
@@ -953,23 +950,22 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data);
 int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_request_cb cb);
 
 typedef struct uv_ncm_s uv_ncm_t;
-typedef void*  uv_ncm_handle_t;
-typedef void (*uv_ncm_cb_t)(int , const char *, void *);
+typedef void* uv_ncm_handle_t;
+typedef void (*uv_ncm_cb_t)(int, const char*, void*);
 
-typedef enum{
-  UV_NCM_RES_ERROR,
-  UV_NCM_RES_LOCAL_PATH,
-  UV_NCM_RES_DOWNLOAD_START,
-  UV_NCM_RES_CACHE_HIT
-}uv_ncm_res_t;
+typedef enum {
+    UV_NCM_RES_ERROR,
+    UV_NCM_RES_LOCAL_PATH,
+    UV_NCM_RES_DOWNLOAD_START,
+    UV_NCM_RES_CACHE_HIT
+} uv_ncm_res_t;
 
-typedef struct uv_ncm_cfg_s
-{
-  const char** res_path;
-  const char* path;
-  uv_ncm_cb_t cb;
-  void* userp;
-}uv_ncm_cfg_t;
+typedef struct uv_ncm_cfg_s {
+    const char** res_path;
+    const char* path;
+    uv_ncm_cb_t cb;
+    void* userp;
+} uv_ncm_cfg_t;
 
 /****************************************************************************
  * Name: uv_ncm_init
@@ -1022,7 +1018,7 @@ int uv_ncm_close(uv_ncm_t* ncm);
  *   real path or fallback
  ****************************************************************************/
 
-uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const uv_ncm_cfg_t* cfg, uv_ncm_handle_t *handle);
+uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const uv_ncm_cfg_t* cfg, uv_ncm_handle_t* handle);
 
 /****************************************************************************
  * Name: uv_ncm_get_cache
@@ -1074,37 +1070,37 @@ void uv_ncm_cancel(uv_ncm_handle_t handle);
 
 typedef uint8_t miwear_message_type_t;
 
-#define MIWEAR_MESSAGE_NEED_REPLY_MASK      0x80
+#define MIWEAR_MESSAGE_NEED_REPLY_MASK 0x80
 
-#define MIWEAR_MESSAGE_TYPE_CLIENT_ID       0
-#define MIWEAR_MESSAGE_TYPE_RESPONSE        1
-#define MIWEAR_MESSAGE_TYPE_STATUS          2
-#define MIWEAR_MESSAGE_TYPE_DATA            (3 | MIWEAR_MESSAGE_NEED_REPLY_MASK)
+#define MIWEAR_MESSAGE_TYPE_CLIENT_ID 0
+#define MIWEAR_MESSAGE_TYPE_RESPONSE 1
+#define MIWEAR_MESSAGE_TYPE_STATUS 2
+#define MIWEAR_MESSAGE_TYPE_DATA (3 | MIWEAR_MESSAGE_NEED_REPLY_MASK)
 /**
  * Send a custom type message, receiver could identify message through this type.
  * Ored the mask MIWEAR_MESSAGE_NEED_REPLY_MASK if this message needs response
  * to confirm it's received.
-*/
-#define MIWEAR_MESSAGE_TYPE_CUSTOM          10
+ */
+#define MIWEAR_MESSAGE_TYPE_CUSTOM 10
 
-#define MIWEAR_STATUS_CLIENT_ID_SENT        1 /* Client sent out ID to server. */
-#define MIWEAR_STATUS_CONNECT_FAILED        2 /* Failed to connect server */
-#define MIWEAR_STATUS_CONNECTION_CLOSED     3 /* Connection closed */
-#define MIWEAR_STATUS_CLIENT_ONLINE         4 /* A new client connected to server. */
-#define MIWEAR_STATUS_PHONE_CONNECTED       5 /* Phone app connected */
-#define MIWEAR_STATUS_PHONE_DISCONNECTED    6 /* Phone app disconnected */
-#define MIWEAR_STATUS_PHONE_UNINSTALLED     7 /* Phone app uninstalled */
+#define MIWEAR_STATUS_CLIENT_ID_SENT 1 /* Client sent out ID to server. */
+#define MIWEAR_STATUS_CONNECT_FAILED 2 /* Failed to connect server */
+#define MIWEAR_STATUS_CONNECTION_CLOSED 3 /* Connection closed */
+#define MIWEAR_STATUS_CLIENT_ONLINE 4 /* A new client connected to server. */
+#define MIWEAR_STATUS_PHONE_CONNECTED 5 /* Phone app connected */
+#define MIWEAR_STATUS_PHONE_DISCONNECTED 6 /* Phone app disconnected */
+#define MIWEAR_STATUS_PHONE_UNINSTALLED 7 /* Phone app uninstalled */
 
 typedef struct message_status_data_s {
     int status; /* Miwear status value. */
-    void *parameter; /* Parameter for some status. */
+    void* parameter; /* Parameter for some status. */
 } uv_miwear_status_t;
 
 typedef struct message_header_s {
-  miwear_message_type_t type;
-  uint32_t len;
-  uint32_t id;
-  int32_t uservalue;
+    miwear_message_type_t type;
+    uint32_t len;
+    uint32_t id;
+    int32_t uservalue;
 } uv_miwear_header_t;
 
 typedef struct uv_miwear_msg_s {
@@ -1114,22 +1110,21 @@ typedef struct uv_miwear_msg_s {
 
 typedef struct uv_miwear_s uv_miwear_t;
 
-typedef void(*uv_miwear_sent_cb)(uv_miwear_t* miwear, int status,
-                                 uv_miwear_message_t* msg, void* cb_para);
-typedef void(*uv_miwear_recv_cb)(uv_miwear_t* miwear, int status,
-                                 uv_miwear_message_t* msg, const char* client);
+typedef void (*uv_miwear_sent_cb)(uv_miwear_t* miwear, int status,
+    uv_miwear_message_t* msg, void* cb_para);
+typedef void (*uv_miwear_recv_cb)(uv_miwear_t* miwear, int status,
+    uv_miwear_message_t* msg, const char* client);
 
 struct uv_miwear_s {
-  union {
-    struct server* server;
-    struct client* client;
-  };
-  uv_miwear_recv_cb cb; /* Callback will be made when received data. */
-  bool is_server; /* To mark this instance is for a server or client. */
-  void* reader; /* a message reader to collect packet from pipe stream */
-  void* data; /* User data. */
+    union {
+        struct server* server;
+        struct client* client;
+    };
+    uv_miwear_recv_cb cb; /* Callback will be made when received data. */
+    bool is_server; /* To mark this instance is for a server or client. */
+    void* reader; /* a message reader to collect packet from pipe stream */
+    void* data; /* User data. */
 };
-
 
 /****************************************************************************
  * Name: uv_miwear_connect
@@ -1152,7 +1147,7 @@ struct uv_miwear_s {
  ****************************************************************************/
 
 int uv_miwear_connect(uv_loop_t* loop, uv_miwear_t* miwear,
-                      const char* pkg_name, uv_miwear_recv_cb cb);
+    const char* pkg_name, uv_miwear_recv_cb cb);
 
 /****************************************************************************
  * Name: uv_miwear_send
@@ -1173,8 +1168,7 @@ int uv_miwear_connect(uv_loop_t* loop, uv_miwear_t* miwear,
  ****************************************************************************/
 
 int uv_miwear_send(uv_miwear_t* miwear, const char* to, uv_miwear_message_t* message,
-                   uv_miwear_sent_cb cb, void* cb_para);
-
+    uv_miwear_sent_cb cb, void* cb_para);
 
 /****************************************************************************
  * Name: uv_miwear_close
@@ -1211,8 +1205,8 @@ int uv_miwear_close(uv_miwear_t* miwear);
  ****************************************************************************/
 
 int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
-                           const char* name, const char* path,
-                           uv_miwear_recv_cb cb);
+    const char* name, const char* path,
+    uv_miwear_recv_cb cb);
 
 #ifdef CONFIG_NET_RPMSG
 /****************************************************************************
@@ -1235,10 +1229,10 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
  ****************************************************************************/
 
 int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
-                                 const char* client_name,
-                                 const char* server_path,
-                                 const char* cpu_name,
-                                 uv_miwear_recv_cb cb);
+    const char* client_name,
+    const char* server_path,
+    const char* cpu_name,
+    uv_miwear_recv_cb cb);
 #endif
 
 /****************************************************************************
@@ -1259,8 +1253,7 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
  ****************************************************************************/
 
 int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
-                           const char* path, uv_miwear_recv_cb cb);
-
+    const char* path, uv_miwear_recv_cb cb);
 
 /****************************************************************************
  * Name: uv_miwear_iter_client
@@ -1278,7 +1271,7 @@ int uv_miwear_start_server(uv_loop_t* loop, uv_miwear_t* miwear,
  ****************************************************************************/
 
 int uv_miwear_iter_client(uv_miwear_t* miwear, void (*cb)(const char*, void*),
-                          void* cb_para);
+    void* cb_para);
 #endif
 
 /****************************************************************************
@@ -1289,128 +1282,128 @@ int uv_miwear_iter_client(uv_miwear_t* miwear, void (*cb)(const char*, void*),
 
 /*********************** Asynchronous interface *****************************/
 
-#define UV_AUDIO_EVENT_ERROR                  0x80
-#define UV_AUDIO_EVENT_OPEN                   0x81
-#define UV_AUDIO_EVENT_PREPARE                0x82
-#define UV_AUDIO_EVENT_START                  0x83
-#define UV_AUDIO_EVENT_PAUSE                  0x84
-#define UV_AUDIO_EVENT_STOP                   0x85
-#define UV_AUDIO_EVENT_GET_VOLUME             0x86
-#define UV_AUDIO_EVENT_GET_POSITION           0x87
-#define UV_AUDIO_EVENT_GET_DURATION           0x88
-#define UV_AUDIO_EVENT_PLAY_STATE             0x89
-#define UV_AUDIO_EVENT_COMPLETE               0x8A
-#define UV_AUDIO_EVENT_SEEK                   0x8B
-#define UV_AUDIO_EVENT_ALLSTATE               0x8C
-#define UV_AUDIO_EVENT_VOLUMECHANGE           0x8D
-#define UV_AUDIO_EVENT_CLOSE                  0xFF
+#define UV_AUDIO_EVENT_ERROR 0x80
+#define UV_AUDIO_EVENT_OPEN 0x81
+#define UV_AUDIO_EVENT_PREPARE 0x82
+#define UV_AUDIO_EVENT_START 0x83
+#define UV_AUDIO_EVENT_PAUSE 0x84
+#define UV_AUDIO_EVENT_STOP 0x85
+#define UV_AUDIO_EVENT_GET_VOLUME 0x86
+#define UV_AUDIO_EVENT_GET_POSITION 0x87
+#define UV_AUDIO_EVENT_GET_DURATION 0x88
+#define UV_AUDIO_EVENT_PLAY_STATE 0x89
+#define UV_AUDIO_EVENT_COMPLETE 0x8A
+#define UV_AUDIO_EVENT_SEEK 0x8B
+#define UV_AUDIO_EVENT_ALLSTATE 0x8C
+#define UV_AUDIO_EVENT_VOLUMECHANGE 0x8D
+#define UV_AUDIO_EVENT_CLOSE 0xFF
 
 typedef struct uv_audio_mqmessage_s {
-  uint16_t cmd;
-  uint32_t status;
-  void     *data;
+    uint16_t cmd;
+    uint32_t status;
+    void* data;
 } uv_audio_mqmessage_t;
 
 typedef struct playstate_s {
-  /* The currently playing audio media uri, returns an empty string when stopped. */
-  char *src;
-  /* Playing status, respectively 'play', 'pause', 'stop'*/
-  int state;
-  /* The volume of the current audio, the default current system media volume. */
-  int volume;
-  /* The current progress of the current audio, in seconds. */
-  unsigned int currenttime;
-  /* The total duration of the currently playing audio. */
-  unsigned int duration;
-  /* Whether the current audio is playing automatically. */
-  bool autoplay;
-  /* Whether the current audio is playing in a loop. */
-  int loop;
-  /* Whether the current audio is playing silently. */
-  bool muted;
-  /* allstate private data. */
-  void *data;
+    /* The currently playing audio media uri, returns an empty string when stopped. */
+    char* src;
+    /* Playing status, respectively 'play', 'pause', 'stop'*/
+    int state;
+    /* The volume of the current audio, the default current system media volume. */
+    int volume;
+    /* The current progress of the current audio, in seconds. */
+    unsigned int currenttime;
+    /* The total duration of the currently playing audio. */
+    unsigned int duration;
+    /* Whether the current audio is playing automatically. */
+    bool autoplay;
+    /* Whether the current audio is playing in a loop. */
+    int loop;
+    /* Whether the current audio is playing silently. */
+    bool muted;
+    /* allstate private data. */
+    void* data;
 } uv_audio_allstate_t;
 
-typedef void (*uv_audio_callback_t)(void *data, int event, int status, void *result);
-typedef void (*uv_audio_music_meta_callback_t)(char *title, char *artist, char *albumt);
+typedef void (*uv_audio_callback_t)(void* data, int event, int status, void* result);
+typedef void (*uv_audio_music_meta_callback_t)(char* title, char* artist, char* albumt);
 
 typedef struct uv_audio_ops_s {
-  void (*uv_audio_play_open)(uv_audio_callback_t cb, void *data, const char *pkgname);
-  int  (*uv_audio_play_play)(void *handle, const char *url, const char *options);
-  int  (*uv_audio_play_prepare)(void *handle, const char *url, const char *options);
-  int  (*uv_audio_play_start)(void *handle);
-  int  (*uv_audio_play_pause)(void *handle);
-  int  (*uv_audio_play_stop)(void *handle);
-  int  (*uv_audio_play_set_loop)(void *handle, int loop);
-  int  (*uv_audio_play_set_volume)(void *handle, int volume);
-  int  (*uv_audio_play_get_volume)(void *handle);
-  int  (*uv_audio_play_muted)(void *handle, bool muted);
-  int  (*uv_audio_play_set_seek)(void *handle, unsigned int msec);
-  int  (*uv_audio_play_get_position)(void *handle);
-  int  (*uv_audio_play_get_duration)(void *handle);
-  int  (*uv_audio_play_state)(void *handle);
-  int  (*uv_audio_play_allstate)(void *handle, void *data);
-  int  (*uv_audio_play_close)(void *handle);
-  int  (*uv_audio_play_notify)(char *title, char *artist, char *albumt);
+    void (*uv_audio_play_open)(uv_audio_callback_t cb, void* data, const char* pkgname);
+    int (*uv_audio_play_play)(void* handle, const char* url, const char* options);
+    int (*uv_audio_play_prepare)(void* handle, const char* url, const char* options);
+    int (*uv_audio_play_start)(void* handle);
+    int (*uv_audio_play_pause)(void* handle);
+    int (*uv_audio_play_stop)(void* handle);
+    int (*uv_audio_play_set_loop)(void* handle, int loop);
+    int (*uv_audio_play_set_volume)(void* handle, int volume);
+    int (*uv_audio_play_get_volume)(void* handle);
+    int (*uv_audio_play_muted)(void* handle, bool muted);
+    int (*uv_audio_play_set_seek)(void* handle, unsigned int msec);
+    int (*uv_audio_play_get_position)(void* handle);
+    int (*uv_audio_play_get_duration)(void* handle);
+    int (*uv_audio_play_state)(void* handle);
+    int (*uv_audio_play_allstate)(void* handle, void* data);
+    int (*uv_audio_play_close)(void* handle);
+    int (*uv_audio_play_notify)(char* title, char* artist, char* albumt);
 } uv_audio_ops_t;
 
 typedef struct uv_audio_ctrl_s {
-  int (*uv_audio_ctrl_prevsong)(void);
-  int (*uv_audio_ctrl_nextsong)(void);
-  int (*uv_audio_ctrl_play)(void);
-  int (*uv_audio_ctrl_pause)(void);
-  int (*uv_audio_ctrl_stop)(void);
-  int (*uv_audio_ctrl_volumeup)(void);
-  int (*uv_audio_ctrl_volumedown)(void);
-  int (*uv_audio_ctrl_get_music_meta)(void);
+    int (*uv_audio_ctrl_prevsong)(void);
+    int (*uv_audio_ctrl_nextsong)(void);
+    int (*uv_audio_ctrl_play)(void);
+    int (*uv_audio_ctrl_pause)(void);
+    int (*uv_audio_ctrl_stop)(void);
+    int (*uv_audio_ctrl_volumeup)(void);
+    int (*uv_audio_ctrl_volumedown)(void);
+    int (*uv_audio_ctrl_get_music_meta)(void);
 } uv_audio_ctrl_t;
 
-void uv_audio_play_register(uv_audio_ops_t *ctrl);
-void uv_audio_ctrl_register(uv_audio_ctrl_t *ctrl);
-uv_audio_ops_t  *uv_audio_play_init(void);
-uv_audio_ctrl_t *uv_audio_ctrl_init(void);
-int uv_audio_async_messgae_send(const char *mq_name,
-                                uv_audio_mqmessage_t *data);
-int uv_audio_async_messgae_recv(const char *mq_name,
-                                uv_audio_mqmessage_t *data);
-int uv_audio_async_messgae_init(uv_loop_t *loop,
-                                uv_poll_t *pollhandle,
-                                const char *mq_name,
-                                uv_poll_cb cb);
+void uv_audio_play_register(uv_audio_ops_t* ctrl);
+void uv_audio_ctrl_register(uv_audio_ctrl_t* ctrl);
+uv_audio_ops_t* uv_audio_play_init(void);
+uv_audio_ctrl_t* uv_audio_ctrl_init(void);
+int uv_audio_async_messgae_send(const char* mq_name,
+    uv_audio_mqmessage_t* data);
+int uv_audio_async_messgae_recv(const char* mq_name,
+    uv_audio_mqmessage_t* data);
+int uv_audio_async_messgae_init(uv_loop_t* loop,
+    uv_poll_t* pollhandle,
+    const char* mq_name,
+    uv_poll_cb cb);
 
 /*********************** Synchronous interface *****************************/
 
-#define UV_EXT_AUDIO_STREAMTYPE_MAX   20
+#define UV_EXT_AUDIO_STREAMTYPE_MAX 20
 
-#define UV_EXT_AUDIO_STATE_UKNOW      0
-#define UV_EXT_AUDIO_STATE_PLAY       1
-#define UV_EXT_AUDIO_STATE_PAUSE      2
-#define UV_EXT_AUDIO_STATE_STOP       3
-#define UV_EXT_AUDIO_STATE_COMPLETE   4
-#define UV_EXT_AUDIO_STATE_STOPING    5
+#define UV_EXT_AUDIO_STATE_UKNOW 0
+#define UV_EXT_AUDIO_STATE_PLAY 1
+#define UV_EXT_AUDIO_STATE_PAUSE 2
+#define UV_EXT_AUDIO_STATE_STOP 3
+#define UV_EXT_AUDIO_STATE_COMPLETE 4
+#define UV_EXT_AUDIO_STATE_STOPING 5
 
-#define UV_EXT_AUDIO_EVENT_ERROR              MEDIA_EVENT_NOP
-#define UV_EXT_AUDIO_EVENT_STARTED            MEDIA_EVENT_STARTED
-#define UV_EXT_AUDIO_EVENT_STOPPED            MEDIA_EVENT_STOPPED
-#define UV_EXT_AUDIO_EVENT_COMPLETE           MEDIA_EVENT_COMPLETED
-#define UV_EXT_AUDIO_EVENT_EVENT_PREPARED     MEDIA_EVENT_PREPARED
-#define UV_EXT_AUDIO_EVENT_PAUSED             MEDIA_EVENT_PAUSED
+#define UV_EXT_AUDIO_EVENT_ERROR MEDIA_EVENT_NOP
+#define UV_EXT_AUDIO_EVENT_STARTED MEDIA_EVENT_STARTED
+#define UV_EXT_AUDIO_EVENT_STOPPED MEDIA_EVENT_STOPPED
+#define UV_EXT_AUDIO_EVENT_COMPLETE MEDIA_EVENT_COMPLETED
+#define UV_EXT_AUDIO_EVENT_EVENT_PREPARED MEDIA_EVENT_PREPARED
+#define UV_EXT_AUDIO_EVENT_PAUSED MEDIA_EVENT_PAUSED
 
 typedef struct uv_audio_chain_s uv_audio_t;
 
 struct uv_audio_chain_s {
-  void      *iofhandle;
+    void* iofhandle;
 
-  bool      loop;
-  char      *url;
-  char      *oldurl;
-  char      streamtype[UV_EXT_AUDIO_STREAMTYPE_MAX];
-  bool      autoplay;
-  bool      muted;
-  int       playstate;
-  int       init;
-  float     volume;
+    bool loop;
+    char* url;
+    char* oldurl;
+    char streamtype[UV_EXT_AUDIO_STREAMTYPE_MAX];
+    bool autoplay;
+    bool muted;
+    int playstate;
+    int init;
+    float volume;
 };
 
 /****************************************************************************
@@ -1428,8 +1421,8 @@ struct uv_audio_chain_s {
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_create(uv_audio_t *handle, media_event_callback callback,
-                    void* parame);
+int uv_audio_create(uv_audio_t* handle, media_event_callback callback,
+    void* parame);
 
 /****************************************************************************
  * Name: uv_audio_set_url
@@ -1445,7 +1438,7 @@ int uv_audio_create(uv_audio_t *handle, media_event_callback callback,
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_set_url(uv_audio_t *handles, const char *url, bool force);
+int uv_audio_set_url(uv_audio_t* handles, const char* url, bool force);
 
 /****************************************************************************
  * Name: uv_audio_prepare
@@ -1461,7 +1454,7 @@ int uv_audio_set_url(uv_audio_t *handles, const char *url, bool force);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_prepare(uv_audio_t *handle, const char *url);
+int uv_audio_prepare(uv_audio_t* handle, const char* url);
 
 /****************************************************************************
  * Name: uv_audio_set_autoplay
@@ -1479,7 +1472,7 @@ int uv_audio_prepare(uv_audio_t *handle, const char *url);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_set_autoplay(uv_audio_t *handle, bool autoplay);
+int uv_audio_set_autoplay(uv_audio_t* handle, bool autoplay);
 
 /****************************************************************************
  * Name: uv_audio_play
@@ -1494,7 +1487,7 @@ int uv_audio_set_autoplay(uv_audio_t *handle, bool autoplay);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_play(uv_audio_t *handles);
+int uv_audio_play(uv_audio_t* handles);
 
 /****************************************************************************
  * Name: uv_audio_pause
@@ -1509,7 +1502,7 @@ int uv_audio_play(uv_audio_t *handles);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_pause(uv_audio_t *handles);
+int uv_audio_pause(uv_audio_t* handles);
 
 /****************************************************************************
  * Name: uv_audio_stop
@@ -1524,7 +1517,7 @@ int uv_audio_pause(uv_audio_t *handles);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_stop(uv_audio_t *handles);
+int uv_audio_stop(uv_audio_t* handles);
 
 /****************************************************************************
  * Name: uv_audio_loop
@@ -1540,7 +1533,7 @@ int uv_audio_stop(uv_audio_t *handles);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_loop(uv_audio_t *handles, int loop);
+int uv_audio_loop(uv_audio_t* handles, int loop);
 
 /****************************************************************************
  * Name: uv_audio_set_volume
@@ -1556,7 +1549,7 @@ int uv_audio_loop(uv_audio_t *handles, int loop);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_set_volume(uv_audio_t *handles, float volume);
+int uv_audio_set_volume(uv_audio_t* handles, float volume);
 
 /****************************************************************************
  * Name: uv_audio_get_volume
@@ -1574,7 +1567,7 @@ int uv_audio_set_volume(uv_audio_t *handles, float volume);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_get_volume(uv_audio_t *handles, float *volume);
+int uv_audio_get_volume(uv_audio_t* handles, float* volume);
 
 /****************************************************************************
  * Name: uv_audio_muted
@@ -1590,7 +1583,7 @@ int uv_audio_get_volume(uv_audio_t *handles, float *volume);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_muted(uv_audio_t *handles, bool muted);
+int uv_audio_muted(uv_audio_t* handles, bool muted);
 
 /****************************************************************************
  * Name: uv_audio_streamtype
@@ -1607,7 +1600,7 @@ int uv_audio_muted(uv_audio_t *handles, bool muted);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_streamtype(uv_audio_t *handles, const char *type);
+int uv_audio_streamtype(uv_audio_t* handles, const char* type);
 
 /****************************************************************************
  * Name: uv_audio_set_currenttime
@@ -1623,7 +1616,7 @@ int uv_audio_streamtype(uv_audio_t *handles, const char *type);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_set_currenttime(uv_audio_t *handles, unsigned int sec);
+int uv_audio_set_currenttime(uv_audio_t* handles, unsigned int sec);
 
 /****************************************************************************
  * Name: uv_audio_get_currenttime
@@ -1641,7 +1634,7 @@ int uv_audio_set_currenttime(uv_audio_t *handles, unsigned int sec);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_get_currenttime(uv_audio_t *handles, unsigned int *sec);
+int uv_audio_get_currenttime(uv_audio_t* handles, unsigned int* sec);
 
 /****************************************************************************
  * Name: uv_audio_get_duration
@@ -1659,7 +1652,7 @@ int uv_audio_get_currenttime(uv_audio_t *handles, unsigned int *sec);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_get_duration(uv_audio_t *handles, unsigned int *sec);
+int uv_audio_get_duration(uv_audio_t* handles, unsigned int* sec);
 
 /****************************************************************************
  * Name: uv_audio_get_isplay
@@ -1674,7 +1667,7 @@ int uv_audio_get_duration(uv_audio_t *handles, unsigned int *sec);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_get_isplay(uv_audio_t *handle);
+int uv_audio_get_isplay(uv_audio_t* handle);
 
 /****************************************************************************
  * Name: uv_audio_close
@@ -1689,64 +1682,64 @@ int uv_audio_get_isplay(uv_audio_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_audio_close(uv_audio_t *handles);
+int uv_audio_close(uv_audio_t* handles);
 
 /****************************************************************************
  * recorder
  ****************************************************************************/
 
-#define UV_RECORDER_EVENT_OPEN           0xA0
-#define UV_RECORDER_EVENT_PREPARE        0xA1
-#define UV_RECORDER_EVENT_START          0xA2
-#define UV_RECORDER_EVENT_STOP           0xA3
-#define UV_RECORDER_EVENT_READ           0xA4
-#define UV_RECORDER_EVENT_PAUSE          0xA5
-#define UV_RECORDER_EVENT_CLOSE          0xFF
+#define UV_RECORDER_EVENT_OPEN 0xA0
+#define UV_RECORDER_EVENT_PREPARE 0xA1
+#define UV_RECORDER_EVENT_START 0xA2
+#define UV_RECORDER_EVENT_STOP 0xA3
+#define UV_RECORDER_EVENT_READ 0xA4
+#define UV_RECORDER_EVENT_PAUSE 0xA5
+#define UV_RECORDER_EVENT_CLOSE 0xFF
 
-#define UV_RECORDER_BUFFER_MODE          1
-#define UV_RECORDER_NOBUFFER_MODE        0
+#define UV_RECORDER_BUFFER_MODE 1
+#define UV_RECORDER_NOBUFFER_MODE 0
 
-#define UV_RECORD_RESULT_SUCCESS         0       // start成功, 但是media start未开始，此时去stop
-#define UV_RECORD_RESULT_INVAL           1       // 参数错误
-#define UV_RECORD_RESULT_HANDLEING       2       // 正在获取handle
-#define UV_RECORD_RESULT_OCCUPY          3       // 资源被占用(录音中)
-#define UV_RECORD_RESULT_FAIL            4       // 录音失败
-#define UV_RECORD_RESULT_EXCEPTION       5       // 系统异常
-#define UV_RECORD_RESULT_TIMEOUT         6       // 超时
-#define UV_RECORD_RESULT_READ_SUCCESS    7       // read buffer
-#define UV_RECORD_RESULT_STOP_SUCCESS    8       // read buffer
+#define UV_RECORD_RESULT_SUCCESS 0 // start成功, 但是media start未开始，此时去stop
+#define UV_RECORD_RESULT_INVAL 1 // 参数错误
+#define UV_RECORD_RESULT_HANDLEING 2 // 正在获取handle
+#define UV_RECORD_RESULT_OCCUPY 3 // 资源被占用(录音中)
+#define UV_RECORD_RESULT_FAIL 4 // 录音失败
+#define UV_RECORD_RESULT_EXCEPTION 5 // 系统异常
+#define UV_RECORD_RESULT_TIMEOUT 6 // 超时
+#define UV_RECORD_RESULT_READ_SUCCESS 7 // read buffer
+#define UV_RECORD_RESULT_STOP_SUCCESS 8 // read buffer
 
-typedef void (*uv_record_callback_t)(void *data, int event, int status, void *result);
-typedef void (*uv_record_buffer_cb)(void *data, int size, int status);
-typedef void (*uv_record_result_cb)(void *data, int status, const char *result);
+typedef void (*uv_record_callback_t)(void* data, int event, int status, void* result);
+typedef void (*uv_record_buffer_cb)(void* data, int size, int status);
+typedef void (*uv_record_result_cb)(void* data, int status, const char* result);
 
 typedef struct uv_record_buff_s {
-  char *buff;
-  int bufflen;
+    char* buff;
+    int bufflen;
 } uv_record_buff_t;
 
 typedef struct uv_record_attr_s {
-  char *buff;                             // buffer or pathname
-  int size;                               // buffer 大小
-  int mode;                               // 0： pathname模式， 1： buffer模式
-  int interval;                           // buffer 模式读取录音的间隔，单位ms/只有在buffer模式下才会用到
-  int duration;                           // 录音时间
-  uv_record_result_cb resultcb;
-  uv_record_buffer_cb buffercb;
+    char* buff; // buffer or pathname
+    int size; // buffer 大小
+    int mode; // 0： pathname模式， 1： buffer模式
+    int interval; // buffer 模式读取录音的间隔，单位ms/只有在buffer模式下才会用到
+    int duration; // 录音时间
+    uv_record_result_cb resultcb;
+    uv_record_buffer_cb buffercb;
 } uv_record_attr_t;
 
 typedef struct uv_record_ops_s {
-  void (*uv_record_open)(uv_record_callback_t cb, void *data, const char *pkgname);
-  int  (*uv_record_prepare)(void *handle, const char *url, const char *options);
-  int  (*uv_record_close)(void *handle);
-  int  (*uv_record_start)(void *handle);
-  int  (*uv_record_pause)(void *handle);
-  int  (*uv_record_stop)(void *handle);
-  int  (*uv_record_read_data)(void *handle, char *buff, int bufflen);
+    void (*uv_record_open)(uv_record_callback_t cb, void* data, const char* pkgname);
+    int (*uv_record_prepare)(void* handle, const char* url, const char* options);
+    int (*uv_record_close)(void* handle);
+    int (*uv_record_start)(void* handle);
+    int (*uv_record_pause)(void* handle);
+    int (*uv_record_stop)(void* handle);
+    int (*uv_record_read_data)(void* handle, char* buff, int bufflen);
 } uv_record_ops_t;
 
-void uv_record_register(uv_record_ops_t *ops);
-uv_record_ops_t  *uv_record_init(void);
+void uv_record_register(uv_record_ops_t* ops);
+uv_record_ops_t* uv_record_init(void);
 
 #endif
 
@@ -1756,9 +1749,9 @@ uv_record_ops_t  *uv_record_init(void);
 
 #ifdef CONFIG_MEDIA
 
-typedef void (*uv_volume_cb)(int status, void *cookie);
+typedef void (*uv_volume_cb)(int status, void* cookie);
 typedef struct uv_volume_s {
-    uv_loop_t *loop;
+    uv_loop_t* loop;
 } uv_volume_t;
 
 /****************************************************************************
@@ -1777,7 +1770,7 @@ typedef struct uv_volume_s {
  *
  ****************************************************************************/
 
-int uv_volume_init(uv_volume_t *uv_volume, uv_loop_t *loop);
+int uv_volume_init(uv_volume_t* uv_volume, uv_loop_t* loop);
 
 /****************************************************************************
  * Name: uv_volume_set
@@ -1798,8 +1791,8 @@ int uv_volume_init(uv_volume_t *uv_volume, uv_loop_t *loop);
  *
  ****************************************************************************/
 
-int uv_volume_set(uv_volume_t *uv_volume, int volume, uv_volume_cb cb,
-                  const char *stream, void *arg);
+int uv_volume_set(uv_volume_t* uv_volume, int volume, uv_volume_cb cb,
+    const char* stream, void* arg);
 
 /****************************************************************************
  * Name: uv_volume_get
@@ -1820,8 +1813,8 @@ int uv_volume_set(uv_volume_t *uv_volume, int volume, uv_volume_cb cb,
  *
  ****************************************************************************/
 
-int uv_volume_get(uv_volume_t *uv_volume, int *pvolume, uv_volume_cb cb,
-                  const char *stream, void *arg);
+int uv_volume_get(uv_volume_t* uv_volume, int* pvolume, uv_volume_cb cb,
+    const char* stream, void* arg);
 
 #endif /* #ifdef CONFIG_MEDIA */
 
@@ -1830,43 +1823,43 @@ int uv_volume_get(uv_volume_t *uv_volume, int *pvolume, uv_volume_cb cb,
  ****************************************************************************/
 
 typedef struct uv_message_s {
-  int   cmd;
-  int   status;
-  void  *data;
+    int cmd;
+    int status;
+    void* data;
 } uv_message_t;
 
 typedef struct uv_nxmqueue_s {
-  char *name;
-  int  mq_msgsize;
-  int  mq_maxmsg;
+    char* name;
+    int mq_msgsize;
+    int mq_maxmsg;
 } uv_nxmqueue_t;
 
-int uv_mqueue_async_send(const char *mq_name, void *data, int datasize);
-int uv_mqueue_async_recv(const char *mq_name, void *buff, int buffsize);
-int uv_mqueue_async_init(uv_loop_t *loop,
-                         uv_poll_t *pollhandle,
-                         uv_poll_cb cb,
-                         uv_nxmqueue_t *attr);
-int uv_mqueue_async_uninit(const char *name, uv_poll_t *pollhandle);
+int uv_mqueue_async_send(const char* mq_name, void* data, int datasize);
+int uv_mqueue_async_recv(const char* mq_name, void* buff, int buffsize);
+int uv_mqueue_async_init(uv_loop_t* loop,
+    uv_poll_t* pollhandle,
+    uv_poll_cb cb,
+    uv_nxmqueue_t* attr);
+int uv_mqueue_async_uninit(const char* name, uv_poll_t* pollhandle);
 
 /****************************************************************************
  * network
  ****************************************************************************/
 
 #if defined(CONFIG_UTILS_CURL)
-#define UV_NETSTATUS_WIFI           1
-#define UV_NETSTATUS_BLUETOOTH      2
-#define UV_NETSTATUS_NONE           3
+#define UV_NETSTATUS_WIFI 1
+#define UV_NETSTATUS_BLUETOOTH 2
+#define UV_NETSTATUS_NONE 3
 
-typedef void (*uv_netstatus_ipcb_t)(char *data, int result, void *extra);
+typedef void (*uv_netstatus_ipcb_t)(char* data, int result, void* extra);
 
 typedef struct uv_network_s uv_network_t;
 
 struct uv_network_s {
-  uv_request_session_t *handle;
-  uv_request_t *fetch;
-  uv_netstatus_ipcb_t cb;
-  void *data;
+    uv_request_session_t* handle;
+    uv_request_t* fetch;
+    uv_netstatus_ipcb_t cb;
+    void* data;
 };
 
 /****************************************************************************
@@ -1883,7 +1876,7 @@ struct uv_network_s {
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_network_init(uv_loop_t *loop, uv_network_t *handle);
+int uv_network_init(uv_loop_t* loop, uv_network_t* handle);
 
 /****************************************************************************
  * Name: uv_network_close
@@ -1899,7 +1892,7 @@ int uv_network_init(uv_loop_t *loop, uv_network_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_network_close(uv_network_t *handle);
+int uv_network_close(uv_network_t* handle);
 
 /****************************************************************************
  * Name: uv_netstatus_gettype
@@ -1914,7 +1907,7 @@ int uv_network_close(uv_network_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_netstatus_gettype(uint8_t *type);
+int uv_netstatus_gettype(uint8_t* type);
 
 /****************************************************************************
  * Name: uv_netstatus_getip
@@ -1930,7 +1923,7 @@ int uv_netstatus_gettype(uint8_t *type);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_netstatus_getip(uv_network_t *handle, uv_netstatus_ipcb_t cb);
+int uv_netstatus_getip(uv_network_t* handle, uv_netstatus_ipcb_t cb);
 
 #endif
 
@@ -1953,7 +1946,7 @@ int uv_netstatus_getip(uv_network_t *handle, uv_netstatus_ipcb_t cb);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_topicadv_init(uv_loop_t *loop);
+int uv_topicadv_init(uv_loop_t* loop);
 
 /****************************************************************************
  * Name: uv_topicadv_close
@@ -2053,7 +2046,7 @@ void app_verify_close(app_verify_t* app_verify_info);
 #ifdef CONFIG_UNQLITE
 
 typedef struct uv_db_s uv_db_t;
-typedef void (*uv_db_callback)(int status, const char *key, uv_buf_t value, void *cookie);
+typedef void (*uv_db_callback)(int status, const char* key, uv_buf_t value, void* cookie);
 
 /****************************************************************************
  * Name: uv_db_init
@@ -2070,7 +2063,7 @@ typedef void (*uv_db_callback)(int status, const char *key, uv_buf_t value, void
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_db_init(uv_loop_t *loop, uv_db_t **handle, const char *path);
+int uv_db_init(uv_loop_t* loop, uv_db_t** handle, const char* path);
 
 /****************************************************************************
  * Name: uv_db_close
@@ -2085,7 +2078,7 @@ int uv_db_init(uv_loop_t *loop, uv_db_t **handle, const char *path);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_db_close(uv_db_t *handle);
+int uv_db_close(uv_db_t* handle);
 
 /****************************************************************************
  * Name: uv_db_commit
@@ -2100,8 +2093,7 @@ int uv_db_close(uv_db_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_db_commit(uv_db_t *handle);
-
+int uv_db_commit(uv_db_t* handle);
 
 /****************************************************************************
  * Name: uv_db_get
@@ -2120,11 +2112,11 @@ int uv_db_commit(uv_db_t *handle);
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_db_get(uv_db_t *handle, const char *key, uv_buf_t *value, uv_db_callback cb, void *arg);
+int uv_db_get(uv_db_t* handle, const char* key, uv_buf_t* value, uv_db_callback cb, void* arg);
 
 typedef struct uv_db_data_s {
-    char * key;
-    char * value;
+    char* key;
+    char* value;
 } uv_db_data_t;
 
 /****************************************************************************
@@ -2144,7 +2136,7 @@ typedef struct uv_db_data_s {
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_db_set(uv_db_t *handle, const char *key, uv_buf_t *value, uv_db_callback cb, void *arg);
+int uv_db_set(uv_db_t* handle, const char* key, uv_buf_t* value, uv_db_callback cb, void* arg);
 
 /****************************************************************************
  * Name: uv_db_delete
@@ -2162,7 +2154,7 @@ int uv_db_set(uv_db_t *handle, const char *key, uv_buf_t *value, uv_db_callback 
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_db_delete(uv_db_t *handle, const char *key, uv_db_callback cb, void *arg);
+int uv_db_delete(uv_db_t* handle, const char* key, uv_db_callback cb, void* arg);
 
 /****************************************************************************
  * Name: uv_db_key
@@ -2181,7 +2173,7 @@ int uv_db_delete(uv_db_t *handle, const char *key, uv_db_callback cb, void *arg)
  *   Zero (OK) on success;
  ****************************************************************************/
 
-int uv_db_key(uv_db_t* handle, int index, char **key, uv_db_callback cb, void* arg);
+int uv_db_key(uv_db_t* handle, int index, char** key, uv_db_callback cb, void* arg);
 
 /****************************************************************************
  * Name: uv_db_list

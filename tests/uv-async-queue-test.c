@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <uv_ext.h>
 
-
 static uv_async_queue_t async_queue;
 
 /****************************************************************************
@@ -36,14 +35,12 @@ static void async_queue_cb(uv_async_queue_t* queue_async, void* data)
 
 static void work_cb(uv_work_t* handle)
 {
-    while (1)
-    {
+    while (1) {
         uv_async_queue_send(&async_queue, "uv_async_send test 1");
         uv_async_queue_send(&async_queue, "uv_async_send test 2");
         uv_async_queue_send(&async_queue, "uv_async_send test 3");
         usleep(100);
     }
-
 }
 
 /****************************************************************************
@@ -54,7 +51,7 @@ int main(void)
 {
     uv_loop_t* loop;
     uv_timer_t timer;
-    uv_work_t  work_queue;
+    uv_work_t work_queue;
 
     loop = malloc(sizeof(uv_loop_t));
     uv_loop_init(loop);

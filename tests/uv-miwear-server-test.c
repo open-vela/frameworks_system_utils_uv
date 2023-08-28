@@ -20,9 +20,9 @@
 
 #include <uv_ext.h>
 
+#include <arch/inttypes.h>
 #include <debug.h>
 #include <string.h>
-#include <arch/inttypes.h>
 
 #ifndef CONFIG_MIWEAR_QAPP_PROXY_SERVER
 #define CONFIG_MIWEAR_QAPP_PROXY_SERVER "miwear-server"
@@ -31,75 +31,75 @@
 static uv_miwear_t server;
 
 static void server_recv_cb(uv_miwear_t* miwear, int status,
-                           uv_miwear_message_t* msg, const char* client)
+    uv_miwear_message_t* msg, const char* client)
 {
-  if (msg->type == MIWEAR_MESSAGE_TYPE_STATUS) {
-    const uv_miwear_status_t* miwear_status = msg->data;
-    if (miwear_status->status == MIWEAR_STATUS_CLIENT_ONLINE) {
-      printf("Server got connection from %s.\n",
-             (char*)miwear_status->parameter);
-    } else if (miwear_status->status == MIWEAR_STATUS_CONNECTION_CLOSED) {
-      printf("Server closed connection with [%s]\n",
-             (char*)miwear_status->parameter);
-    } else {
-      printf("Server got status message: %d\n", miwear_status->status);
+    if (msg->type == MIWEAR_MESSAGE_TYPE_STATUS) {
+        const uv_miwear_status_t* miwear_status = msg->data;
+        if (miwear_status->status == MIWEAR_STATUS_CLIENT_ONLINE) {
+            printf("Server got connection from %s.\n",
+                (char*)miwear_status->parameter);
+        } else if (miwear_status->status == MIWEAR_STATUS_CONNECTION_CLOSED) {
+            printf("Server closed connection with [%s]\n",
+                (char*)miwear_status->parameter);
+        } else {
+            printf("Server got status message: %d\n", miwear_status->status);
+        }
+        return;
     }
-    return;
-  }
 
-  if (status != 0) {
-    printf("server got unexpected status: %d\n", status);
-    return;
-  }
+    if (status != 0) {
+        printf("server got unexpected status: %d\n", status);
+        return;
+    }
 
-  printf("server got message: %s, len: %"PRIu32", status: %d\n",
-         (const char*)msg->data, msg->len, status);
+    printf("server got message: %s, len: %" PRIu32 ", status: %d\n",
+        (const char*)msg->data, msg->len, status);
 }
 
 void server_sent_cb(uv_miwear_t* miwear, int status, uv_miwear_message_t* msg,
-                    void* cb_para)
+    void* cb_para)
 {
-  printf("server sent message: %s, len: %"PRIu32", status: %d\n",
-         (const char*)msg->data, msg->len, status);
+    printf("server sent message: %s, len: %" PRIu32 ", status: %d\n",
+        (const char*)msg->data, msg->len, status);
 }
 
 static void timer_run_cb(uv_timer_t* handle)
 {
-  static uint32_t count;
-  static char data[64];
-  snprintf(data, 64, "Hello from server. %"PRIu32"", count++);
-  uv_miwear_message_t msg;
-  msg.data = data;
-  msg.len = strlen(data) + 1;
-  msg.type = MIWEAR_MESSAGE_TYPE_DATA;
-  uv_miwear_send(&server, "com.xiaomi.xms.wearable.demo", &msg, server_sent_cb,
-                 NULL);
+    static uint32_t count;
+    static char data[64];
+    snprintf(data, 64, "Hello from server. %" PRIu32 "", count++);
+    uv_miwear_message_t msg;
+    msg.data = data;
+    msg.len = strlen(data) + 1;
+    msg.type = MIWEAR_MESSAGE_TYPE_DATA;
+    uv_miwear_send(&server, "com.xiaomi.xms.wearable.demo", &msg, server_sent_cb,
+        NULL);
 }
 
 int miwear_server_main(int argc, char* argv[])
 {
-  static uv_loop_t default_loop_struct;
-  uv_loop_init(&default_loop_struct);
-  uv_loop_t* loop = &default_loop_struct;
-  uv_timer_t timer_handle;
+    static uv_loop_t default_loop_struct;
+    uv_loop_init(&default_loop_struct);
+    uv_loop_t* loop = &default_loop_struct;
+    uv_timer_t timer_handle;
 
-  uv_miwear_start_server(loop, &server, CONFIG_MIWEAR_QAPP_PROXY_SERVER,
-                         server_recv_cb);
+    uv_miwear_start_server(loop, &server, CONFIG_MIWEAR_QAPP_PROXY_SERVER,
+        server_recv_cb);
 
-  /* Sends message to client using timer */
-  if (uv_timer_init(loop, &timer_handle) != 0) {
-    goto testfail;
-  }
+    /* Sends message to client using timer */
+    if (uv_timer_init(loop, &timer_handle) != 0) {
+        goto testfail;
+    }
 
-  if (uv_timer_start(&timer_handle, timer_run_cb, 1, 1000) != 0) {
-    goto testfail;
-  }
+    if (uv_timer_start(&timer_handle, timer_run_cb, 1, 1000) != 0) {
+        goto testfail;
+    }
 
-  uv_run(loop, UV_RUN_DEFAULT);
+    uv_run(loop, UV_RUN_DEFAULT);
 
-  exit(0);
+    exit(0);
 
 testfail:
-  printf("TEST FAILED !\n");
-  exit(1);
+    printf("TEST FAILED !\n");
+    exit(1);
 }

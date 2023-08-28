@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     uv_request_create(&fetch);
     uv_request_set_url(fetch, "http://httpbin.org/post");
     uv_request_append_header(fetch, "Connection: keep-alive");
-    uv_request_set_data(fetch, "post test",9);
+    uv_request_set_data(fetch, "post test", 9);
     uv_request_set_atrribute(fetch, UV_REQUEST, NULL);
     uv_request_commit(handle, fetch, request_cb);
     uv_run(loop, UV_RUN_DEFAULT);
