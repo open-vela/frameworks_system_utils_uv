@@ -32,7 +32,7 @@ int uv_sysbrightness_register(uv_sysbrightness_ops_t* brightness)
     return 0;
 }
 
-int uv_brightness_setval(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb, void *data)
+int uv_brightness_setval(uv_brightness_handle_t handle, int val, uv_brightness_cb_t cb, void* data)
 {
     int ret;
     if (!sysbrightness.setval || !handle || !cb) {
@@ -43,7 +43,7 @@ int uv_brightness_setval(uv_brightness_handle_t handle, int val, uv_brightness_c
     return ret;
 }
 
-int uv_brightness_getval(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data)
+int uv_brightness_getval(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void* data)
 {
     int ret;
     if (!sysbrightness.getval || !handle || !cb) {
@@ -54,7 +54,7 @@ int uv_brightness_getval(uv_brightness_handle_t handle, uv_brightness_cb_t cb, v
     return ret;
 }
 
-int uv_brightness_setmode(uv_brightness_handle_t handle, int mode, uv_brightness_cb_t cb, void *data)
+int uv_brightness_setmode(uv_brightness_handle_t handle, int mode, uv_brightness_cb_t cb, void* data)
 {
     int ret;
     if (!sysbrightness.setmode || !handle || !cb) {
@@ -65,7 +65,7 @@ int uv_brightness_setmode(uv_brightness_handle_t handle, int mode, uv_brightness
     return ret;
 }
 
-int uv_brightness_getmode(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data)
+int uv_brightness_getmode(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void* data)
 {
     int ret;
     if (!sysbrightness.getmode || !handle || !cb) {
@@ -76,7 +76,7 @@ int uv_brightness_getmode(uv_brightness_handle_t handle, uv_brightness_cb_t cb, 
     return ret;
 }
 
-int uv_brightness_setkeepon(uv_brightness_handle_t handle, bool keep, uv_brightness_cb_t cb, void *data)
+int uv_brightness_setkeepon(uv_brightness_handle_t handle, bool keep, uv_brightness_cb_t cb, void* data)
 {
     int ret;
     if (!sysbrightness.keepscreenon || !handle || !cb) {
@@ -87,7 +87,7 @@ int uv_brightness_setkeepon(uv_brightness_handle_t handle, bool keep, uv_brightn
     return ret;
 }
 
-int uv_brightness_recovery(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data)
+int uv_brightness_recovery(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void* data)
 {
     int ret;
     if (!sysbrightness.recovery || !handle) {
@@ -98,7 +98,7 @@ int uv_brightness_recovery(uv_brightness_handle_t handle, uv_brightness_cb_t cb,
     return ret;
 }
 
-int uv_brightness_turnon(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void *data)
+int uv_brightness_turnon(uv_brightness_handle_t handle, uv_brightness_cb_t cb, void* data)
 {
     int ret;
     if (!sysbrightness.turnon || !handle) {

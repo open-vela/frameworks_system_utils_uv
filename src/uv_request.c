@@ -34,7 +34,7 @@
 #endif
 
 #define request_debug(fmt, ...) uv_log_debug("uv_request", fmt, ##__VA_ARGS__)
-#define request_info(fmt, ...)  uv_log_info("uv_request", fmt, ##__VA_ARGS__)
+#define request_info(fmt, ...) uv_log_info("uv_request", fmt, ##__VA_ARGS__)
 #define request_error(fmt, ...) uv_log_error("uv_request", fmt, ##__VA_ARGS__)
 
 struct uv_request_session_s {
@@ -86,11 +86,11 @@ static curl_context_t* create_curl_context(uv_request_session_t* handle, curl_so
 static int recursion_mkdir(const char* path)
 {
     const char s[] = "/";
-    char *data;
+    char* data;
     char* token;
     int res;
 
-    data = (char *)malloc(PATH_MAX);
+    data = (char*)malloc(PATH_MAX);
     if (data == NULL) {
         return -ENOMEM;
     }
@@ -123,9 +123,9 @@ static int recursion_mkdir(const char* path)
 static FILE* mkfile(const char* path)
 {
     char* ret;
-    char *fileName;
+    char* fileName;
 
-    fileName = (char *)malloc(PATH_MAX);
+    fileName = (char*)malloc(PATH_MAX);
     if (fileName == NULL) {
         return NULL;
     }
@@ -157,7 +157,7 @@ static void destroy_curl_context(curl_context_t* context)
 
 static void uv_request_done(CURL* easy_handle, uv_request_t* request)
 {
-    curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, (char **)&request);
+    curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, (char**)&request);
     curl_easy_getinfo(easy_handle, CURLINFO_RESPONSE_CODE, &request->response.httpcode);
 
     if (request->fd) {
@@ -174,7 +174,7 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
         request->cb(UV_REQUEST_DONE, &request->response);
     }
 
-    if (easy_handle != NULL){
+    if (easy_handle != NULL) {
         curl_multi_remove_handle(request->handle->multi_handle, easy_handle);
         curl_easy_cleanup(easy_handle);
     }
@@ -200,7 +200,7 @@ static void check_multi_info(CURLM* multi_handle)
 
     while ((message = curl_multi_info_read(multi_handle, &pending))) {
         if (message->msg == CURLMSG_DONE) {
-            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, (char **)&request);
+            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, (char**)&request);
             request->error_code = message->data.result;
 
             struct uv_request_session_s* handle = request->handle;
@@ -348,10 +348,10 @@ int uv_request_init(uv_loop_t* loop, uv_request_session_t** handle)
     (*handle)->loop = loop;
     (*handle)->multi_handle = curl_multi_init();
     curl_multi_setopt((*handle)->multi_handle,
-                      CURLMOPT_MAX_TOTAL_CONNECTIONS,
-                      CONFIG_UV_REQUEST_MAX_LINKS);
+        CURLMOPT_MAX_TOTAL_CONNECTIONS,
+        CONFIG_UV_REQUEST_MAX_LINKS);
     curl_multi_setopt((*handle)->multi_handle, CURLMOPT_MAXCONNECTS,
-                      CONFIG_UV_REQUEST_MAX_LINKS);
+        CONFIG_UV_REQUEST_MAX_LINKS);
     return 0;
 }
 
@@ -381,7 +381,6 @@ int uv_request_set_method(uv_request_t* request, const char* method)
 
     return 0;
 }
-
 
 int uv_request_delete(uv_request_t* request)
 {
@@ -424,36 +423,36 @@ int uv_request_delete(uv_request_t* request)
     return 0;
 }
 
-const char* uv_request_get_url(uv_request_t* request){
+const char* uv_request_get_url(uv_request_t* request)
+{
     if (!request || !request->url) {
         return NULL;
     }
     return request->url;
 }
 
-uv_request_header_t uv_request_get_header_list(uv_request_t* request){
+uv_request_header_t uv_request_get_header_list(uv_request_t* request)
+{
     uv_request_header_t result;
-    result.currentIndex =0;
+    result.currentIndex = 0;
     if (!request || !request->header_list) {
         return result;
     }
-    struct curl_slist *curr =(struct curl_slist*)request->header_list;
+    struct curl_slist* curr = (struct curl_slist*)request->header_list;
     int count = 0;
-    while (curr)
-    {
+    while (curr) {
         count++;
         curr = curr->next;
     }
     result.data = (char**)malloc(count);
-    if(!result.data){
+    if (!result.data) {
         return result;
     }
-    while (curr)
-    {
+    while (curr) {
         result.data[result.currentIndex++] = curr->data;
         curr = curr->next;
     }
-    return  result;
+    return result;
 }
 
 int uv_request_set_url(uv_request_t* request, const char* url)
@@ -474,8 +473,8 @@ int uv_request_set_url(uv_request_t* request, const char* url)
 }
 
 static int download_progress_callback(void* clientp,
-                                      curl_off_t dltotal,curl_off_t dlnow,
-                                      curl_off_t ultotal, curl_off_t ulnow)
+    curl_off_t dltotal, curl_off_t dlnow,
+    curl_off_t ultotal, curl_off_t ulnow)
 {
     uv_request_t* request = (uv_request_t*)clientp;
     if (!request) {

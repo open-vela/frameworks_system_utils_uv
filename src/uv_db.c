@@ -25,12 +25,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define assert_res(x, code)   \
-    do {                \
-        if (!(x)) {     \
-            res = code; \
-            goto error; \
-        }               \
+#define assert_res(x, code) \
+    do {                    \
+        if (!(x)) {         \
+            res = code;     \
+            goto error;     \
+        }                   \
     } while (0)
 
 #define container_of(ptr, type, member) \
@@ -338,7 +338,7 @@ int uv_db_get(uv_db_t* handle, const char* key, uv_buf_t* value, uv_db_callback 
     int res = UV_EINVAL;
     uv_db_req_t* req = NULL;
 
-    //Illegal parameter hit. Please check whether the parameter is correct
+    // Illegal parameter hit. Please check whether the parameter is correct
     assert_res(handle && handle->loop->idle_handles, UV_EINVAL);
     assert_res(key, UV_EINVAL);
 
