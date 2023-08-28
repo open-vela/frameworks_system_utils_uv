@@ -20,29 +20,29 @@
 
 #include <uv_ext.h>
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-  uv_locale_t locale;
-  int ret;
-
-  if (uv_getlocale(&locale) <= 0) {
-    ret = uv_property_set(NULL, (const char*)UV_EXT_LOCALE_LANG_KEY, "zh_CN", NULL, NULL);
-    if (ret != 0) {
-      goto testfail;
-    }
+    uv_locale_t locale;
+    int ret;
 
     if (uv_getlocale(&locale) <= 0) {
-      goto testfail;
+        ret = uv_property_set(NULL, (const char*)UV_EXT_LOCALE_LANG_KEY, "zh_CN", NULL, NULL);
+        if (ret != 0) {
+            goto testfail;
+        }
+
+        if (uv_getlocale(&locale) <= 0) {
+            goto testfail;
+        }
     }
-  }
 
-  printf("language:%s\n", locale.language);
-  printf("region:%s\n\n", locale.country_region);
+    printf("language:%s\n", locale.language);
+    printf("region:%s\n\n", locale.country_region);
 
-  printf("TEST PASSED !\n");
-  exit(0);
+    printf("TEST PASSED !\n");
+    exit(0);
 
 testfail:
-  printf("TEST FAILED !\n");
-  exit(1);
+    printf("TEST FAILED !\n");
+    exit(1);
 }

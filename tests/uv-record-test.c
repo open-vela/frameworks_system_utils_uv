@@ -19,31 +19,31 @@
  * Included Files
  ****************************************************************************/
 
-#include <uv_ext.h>
-#include <syslog.h>
-#include <stdlib.h>
-#include <time.h>
 #include <semaphore.h>
+#include <stdlib.h>
+#include <syslog.h>
+#include <time.h>
+#include <uv_ext.h>
 
-#define UV_RECORD_TEST_PACKNAME         "uv_record_test"
-#define UV_RECORD_TEST_FILEPATH         "/data/recordtest.wav"
-#define UV_RECORD_TEST_OPTIONS          "format=wav:sample_rate=44100:channel_layout=stereo"
-#define UV_RECORD_TEST_HANDLE_START     1
-#define UV_RECORD_TEST_HANDLE_END       2
+#define UV_RECORD_TEST_PACKNAME "uv_record_test"
+#define UV_RECORD_TEST_FILEPATH "/data/recordtest.wav"
+#define UV_RECORD_TEST_OPTIONS "format=wav:sample_rate=44100:channel_layout=stereo"
+#define UV_RECORD_TEST_HANDLE_START 1
+#define UV_RECORD_TEST_HANDLE_END 2
 
 typedef struct {
     sem_t resultwait;
-    uv_record_ops_t *ops;
-    void *handle;
-    int handlestate;                    // record handle
-    int recordstate;                    // open (prepare, start)
+    uv_record_ops_t* ops;
+    void* handle;
+    int handlestate; // record handle
+    int recordstate; // open (prepare, start)
 } uv_record_test_t;
 
-void *tets;
+void* tets;
 
-void uv_record_callback(void *data, int event, int status, void *result)
+void uv_record_callback(void* data, int event, int status, void* result)
 {
-    uv_record_test_t *th = (uv_record_test_t*)data;
+    uv_record_test_t* th = (uv_record_test_t*)data;
 
     switch (event) {
     case UV_RECORDER_EVENT_OPEN: {
@@ -58,33 +58,31 @@ void uv_record_callback(void *data, int event, int status, void *result)
             sem_post(&th->resultwait);
         }
         syslog(LOG_DEBUG, "[%s %d] record open event, status = %d\n", __func__, __LINE__, status);
-    }
-    break;
+    } break;
 
     case UV_RECORDER_EVENT_PREPARE:
         syslog(LOG_DEBUG, "[%s %d] record prepare event, status = %d\n", __func__, __LINE__, status);
-    break;
+        break;
 
     case UV_RECORDER_EVENT_START:
         syslog(LOG_DEBUG, "[%s %d] record start event, status = %d\n", __func__, __LINE__, status);
-    break;
+        break;
 
     case UV_RECORDER_EVENT_STOP:
         syslog(LOG_DEBUG, "[%s %d] record stop event, status = %d\n", __func__, __LINE__, status);
-    break;
+        break;
 
     case UV_RECORDER_EVENT_READ:
         syslog(LOG_DEBUG, "[%s %d] record read event, status = %d\n", __func__, __LINE__, status);
-    break;
+        break;
 
     case UV_RECORDER_EVENT_PAUSE:
         syslog(LOG_DEBUG, "[%s %d] record pause event, status = %d\n", __func__, __LINE__, status);
-    break;
+        break;
 
     default:
         syslog(LOG_DEBUG, "[%s %d] record default event, status = %d\n", __func__, __LINE__, status);
-        return ;
-
+        return;
     }
 }
 
@@ -93,7 +91,7 @@ int main(int argc, char** argv)
     int ret;
     struct timespec ts = { 0 };
 
-    uv_record_test_t *recordhd = (uv_record_test_t *)malloc(sizeof(uv_record_test_t));
+    uv_record_test_t* recordhd = (uv_record_test_t*)malloc(sizeof(uv_record_test_t));
     if (!recordhd) {
         syslog(LOG_DEBUG, "[%s %d] reocrd struct malloc fail.\n", __func__, __LINE__);
         return UV_ENOMEM;
@@ -109,9 +107,9 @@ int main(int argc, char** argv)
         }
 
         if (!(recordhd->ops->uv_record_open && recordhd->ops->uv_record_prepare
-            && recordhd->ops->uv_record_start && recordhd->ops->uv_record_stop
-            && recordhd->ops->uv_record_pause && recordhd->ops->uv_record_close
-            && recordhd->ops->uv_record_read_data)) {
+                && recordhd->ops->uv_record_start && recordhd->ops->uv_record_stop
+                && recordhd->ops->uv_record_pause && recordhd->ops->uv_record_close
+                && recordhd->ops->uv_record_read_data)) {
             syslog(LOG_DEBUG, "[%s %d] record ops function error.\n", __func__, __LINE__);
             break;
         }

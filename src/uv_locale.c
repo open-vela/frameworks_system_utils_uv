@@ -18,8 +18,8 @@
  * Included Files
  ****************************************************************************/
 
-#include <uv_ext.h>
 #include <string.h>
+#include <uv_ext.h>
 
 /****************************************************************************
  * Name: uv_getlocale
@@ -30,36 +30,36 @@
  *
  ****************************************************************************/
 
-int uv_getlocale(uv_locale_t *locale) {
-  int ret;
-  char buff[20];
-  char *pbuff, *pstr;
+int uv_getlocale(uv_locale_t* locale)
+{
+    int ret;
+    char buff[20];
+    char *pbuff, *pstr;
 
+    if (!locale) {
+        return UV_EINVAL;
+    }
 
-  if (!locale) {
-    return UV_EINVAL;
-  }
+    ret = uv_property_get(NULL, UV_EXT_LOCALE_LANG_KEY, buff, NULL, NULL, NULL);
+    if (ret <= 0) {
+        return ret;
+    }
 
-  ret = uv_property_get(NULL, UV_EXT_LOCALE_LANG_KEY, buff, NULL, NULL, NULL);
-  if (ret <= 0) {
+    pbuff = buff;
+
+    pstr = strsep(&pbuff, "_");
+    if (!pstr) {
+        return UV_ENOENT;
+    }
+
+    snprintf(locale->language, sizeof(locale->language), "%s", pstr);
+
+    pstr = strsep(&pbuff, "_");
+    if (!pstr) {
+        return UV_ENOENT;
+    }
+
+    snprintf(locale->country_region, sizeof(locale->country_region), "%s", pstr);
+
     return ret;
-  }
-
-  pbuff = buff;
-
-  pstr = strsep(&pbuff, "_");
-  if (!pstr) {
-    return UV_ENOENT;
-  }
-
-  snprintf(locale->language, sizeof(locale->language), "%s", pstr);
-
-  pstr = strsep(&pbuff, "_");
-  if (!pstr) {
-    return UV_ENOENT;
-  }
-
-  snprintf(locale->country_region, sizeof(locale->country_region), "%s", pstr);
-
-  return ret;
 }

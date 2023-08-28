@@ -42,7 +42,7 @@ void case1_cb(int status, const char* key, uv_buf_t value, void* cookie)
     res = strcmp(buf.base, value.base);
     assert(res == 0);
     assert(buf.len == value.len);
-    //When synchronizing get data, you need to call free to free up memory
+    // When synchronizing get data, you need to call free to free up memory
     free(buf.base);
 }
 

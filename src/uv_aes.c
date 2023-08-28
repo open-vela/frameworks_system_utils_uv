@@ -19,244 +19,255 @@
  ****************************************************************************/
 
 #include <alloca.h>
+#include <mbedtls/base64.h>
+#include <mbedtls/cipher.h>
+#include <mbedtls/platform.h>
 #include <string.h>
 #include <uv_ext.h>
-#include <mbedtls/platform.h>
-#include <mbedtls/cipher.h>
-#include <mbedtls/base64.h>
 
-static void add_pkcs_padding(unsigned char *output, size_t output_len, size_t data_len) {
+static void add_pkcs_padding(unsigned char* output, size_t output_len, size_t data_len)
+{
     size_t padding_len = output_len - data_len;
 
     memset(output + data_len, padding_len, padding_len);
 }
 
-int uv_aes_init(uv_aes_t *ctx, int aestype, int mode) {
-  if (!ctx)
-    return UV_EINVAL;
+int uv_aes_init(uv_aes_t* ctx, int aestype, int mode)
+{
+    if (!ctx)
+        return UV_EINVAL;
 
-  const mbedtls_cipher_info_t *info;
-  uv_aes_context_t *pctx = &ctx->aes_context;
+    const mbedtls_cipher_info_t* info;
+    uv_aes_context_t* pctx = &ctx->aes_context;
 
-  mbedtls_cipher_init(pctx);
-  info = mbedtls_cipher_info_from_type(aestype);
-  if (!info) {
-    return UV_EFAULT;
-  }
-
-  if (mbedtls_cipher_setup(pctx, info)) {
-    return UV_EFAULT;
-  }
-
-  if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode) {
-    if (MBEDTLS_PADDING_PKCS7 == mode) {
-      pctx->add_padding = add_pkcs_padding;
-    }
-  } else {
-    mbedtls_cipher_set_padding_mode(pctx, mode);
-  }
-
-  return 0;
-}
-
-int uv_aes_set_iv(uv_aes_t *ctx,
-                  const unsigned char *iv,
-                  int ivoffset,
-                  int iv_len) {
-  if (!ctx || !(iv_len == 0 || iv != NULL))
-    return UV_EINVAL;
-
-  const unsigned char *pivoffset = iv + ivoffset;
-  uv_aes_context_t *pctx = &ctx->aes_context;
-
-  return mbedtls_cipher_set_iv(pctx, pivoffset, iv_len);
-}
-
-int uv_aes_set_iv_base64(uv_aes_t *ctx,
-                         const unsigned char *iv,
-                         int ivoffset,
-                         int iv_len) {
-  if (!ctx || !iv)
-    return UV_EINVAL;
-
-  unsigned char ivbuff[64] = {0};
-  size_t ivlen;
-  int ret;
-
-  ret = mbedtls_base64_decode(ivbuff, sizeof(ivbuff), &ivlen, iv, strlen((const char*)iv));
-  if (ret != 0) {
-    return ret;
-  }
-
-  return uv_aes_set_iv(ctx, ivbuff, ivoffset, iv_len);
-}
-
-int uv_aes_set_key(uv_aes_t *ctx,
-                   int optype,
-                   const unsigned char *key,
-                   int key_bitlen) {
-  if (!ctx || !key)
-    return UV_EINVAL;
-
-  uv_aes_context_t *pctx = &ctx->aes_context;
-
-  return mbedtls_cipher_setkey(pctx, key, key_bitlen, optype);
-}
-
-int uv_aes_set_key_base64(uv_aes_t *ctx,
-                          int optype,
-                          const unsigned char *key,
-                          int key_bitlen) {
-  if (!ctx || !key)
-    return UV_EINVAL;
-
-  unsigned char keybuff[64] = {0};
-  size_t keylen;
-  int ret;
-
-  ret = mbedtls_base64_decode(keybuff, sizeof(keybuff), &keylen, key, strlen((const char*)key));
-  if (ret != 0) {
-    return ret;
-  }
-
-  return uv_aes_set_key(ctx, optype, keybuff, key_bitlen);
-}
-
-int uv_aes_encrypt(uv_aes_t *ctx,
-                   const unsigned char *input,
-                   size_t ilen,
-                   unsigned char *output,
-                   size_t *olen) {
-  if (!ctx || !input || !ilen || !output || !olen) {
-    return UV_EINVAL;
-  }
-
-  uv_aes_context_t *pctx = &ctx->aes_context;
-  int ret;
-  size_t len, outlen = 0, i, block_size, blocks, remaining;
-  unsigned char *block;
-
-  block_size = mbedtls_cipher_get_block_size(pctx);
-  if (block_size == 0) {
-    return MBEDTLS_ERR_CIPHER_INVALID_CONTEXT;
-  }
-
-  blocks = ilen / block_size;
-
-  for (i = 0; i < blocks; i++) {
-    ret = mbedtls_cipher_update(pctx, input, block_size, output, &len);
-    if (ret != 0) {
-      return ret;
+    mbedtls_cipher_init(pctx);
+    info = mbedtls_cipher_info_from_type(aestype);
+    if (!info) {
+        return UV_EFAULT;
     }
 
-    input += len;
-    output += len;
-    outlen += len;
-  }
+    if (mbedtls_cipher_setup(pctx, info)) {
+        return UV_EFAULT;
+    }
 
-  /* process the remaining data */
-
-  remaining = ilen - outlen;
-  if (remaining != 0 && pctx->add_padding != NULL) {
     if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode) {
-      block = (unsigned char *)alloca(block_size);
-      memcpy(block, input, remaining);
-      pctx->add_padding(block, block_size, remaining);
-      ret = mbedtls_cipher_update(pctx, block, block_size, output, &len);
-    } else if (MBEDTLS_MODE_CBC == pctx->cipher_info->mode) {
-      ret = mbedtls_cipher_update(pctx, input, remaining, output, &len);
+        if (MBEDTLS_PADDING_PKCS7 == mode) {
+            pctx->add_padding = add_pkcs_padding;
+        }
+    } else {
+        mbedtls_cipher_set_padding_mode(pctx, mode);
     }
 
+    return 0;
+}
+
+int uv_aes_set_iv(uv_aes_t* ctx,
+    const unsigned char* iv,
+    int ivoffset,
+    int iv_len)
+{
+    if (!ctx || !(iv_len == 0 || iv != NULL))
+        return UV_EINVAL;
+
+    const unsigned char* pivoffset = iv + ivoffset;
+    uv_aes_context_t* pctx = &ctx->aes_context;
+
+    return mbedtls_cipher_set_iv(pctx, pivoffset, iv_len);
+}
+
+int uv_aes_set_iv_base64(uv_aes_t* ctx,
+    const unsigned char* iv,
+    int ivoffset,
+    int iv_len)
+{
+    if (!ctx || !iv)
+        return UV_EINVAL;
+
+    unsigned char ivbuff[64] = { 0 };
+    size_t ivlen;
+    int ret;
+
+    ret = mbedtls_base64_decode(ivbuff, sizeof(ivbuff), &ivlen, iv, strlen((const char*)iv));
     if (ret != 0) {
-      return ret;
+        return ret;
     }
 
-    output += len;
+    return uv_aes_set_iv(ctx, ivbuff, ivoffset, iv_len);
+}
+
+int uv_aes_set_key(uv_aes_t* ctx,
+    int optype,
+    const unsigned char* key,
+    int key_bitlen)
+{
+    if (!ctx || !key)
+        return UV_EINVAL;
+
+    uv_aes_context_t* pctx = &ctx->aes_context;
+
+    return mbedtls_cipher_setkey(pctx, key, key_bitlen, optype);
+}
+
+int uv_aes_set_key_base64(uv_aes_t* ctx,
+    int optype,
+    const unsigned char* key,
+    int key_bitlen)
+{
+    if (!ctx || !key)
+        return UV_EINVAL;
+
+    unsigned char keybuff[64] = { 0 };
+    size_t keylen;
+    int ret;
+
+    ret = mbedtls_base64_decode(keybuff, sizeof(keybuff), &keylen, key, strlen((const char*)key));
+    if (ret != 0) {
+        return ret;
+    }
+
+    return uv_aes_set_key(ctx, optype, keybuff, key_bitlen);
+}
+
+int uv_aes_encrypt(uv_aes_t* ctx,
+    const unsigned char* input,
+    size_t ilen,
+    unsigned char* output,
+    size_t* olen)
+{
+    if (!ctx || !input || !ilen || !output || !olen) {
+        return UV_EINVAL;
+    }
+
+    uv_aes_context_t* pctx = &ctx->aes_context;
+    int ret;
+    size_t len, outlen = 0, i, block_size, blocks, remaining;
+    unsigned char* block;
+
+    block_size = mbedtls_cipher_get_block_size(pctx);
+    if (block_size == 0) {
+        return MBEDTLS_ERR_CIPHER_INVALID_CONTEXT;
+    }
+
+    blocks = ilen / block_size;
+
+    for (i = 0; i < blocks; i++) {
+        ret = mbedtls_cipher_update(pctx, input, block_size, output, &len);
+        if (ret != 0) {
+            return ret;
+        }
+
+        input += len;
+        output += len;
+        outlen += len;
+    }
+
+    /* process the remaining data */
+
+    remaining = ilen - outlen;
+    if (remaining != 0 && pctx->add_padding != NULL) {
+        if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode) {
+            block = (unsigned char*)alloca(block_size);
+            memcpy(block, input, remaining);
+            pctx->add_padding(block, block_size, remaining);
+            ret = mbedtls_cipher_update(pctx, block, block_size, output, &len);
+        } else if (MBEDTLS_MODE_CBC == pctx->cipher_info->mode) {
+            ret = mbedtls_cipher_update(pctx, input, remaining, output, &len);
+        }
+
+        if (ret != 0) {
+            return ret;
+        }
+
+        output += len;
+        outlen += len;
+    }
+
+    ret = mbedtls_cipher_finish(pctx, output, &len);
+    if (ret != 0) {
+        return ret;
+    }
+
     outlen += len;
-  }
+    *olen = outlen;
 
-  ret = mbedtls_cipher_finish(pctx, output, &len);
-  if (ret != 0) {
     return ret;
-  }
-
-  outlen += len;
-  *olen = outlen;
-
-  return ret;
 }
 
-int uv_aes_decrypt(uv_aes_t *ctx,
-                   const unsigned char *input,
-                   size_t ilen,
-                   unsigned char *output,
-                   size_t *olen) {
-  if (!ctx || !input || !ilen || !output || !olen) {
-    return UV_EINVAL;
-  }
+int uv_aes_decrypt(uv_aes_t* ctx,
+    const unsigned char* input,
+    size_t ilen,
+    unsigned char* output,
+    size_t* olen)
+{
+    if (!ctx || !input || !ilen || !output || !olen) {
+        return UV_EINVAL;
+    }
 
-  uv_aes_context_t *pctx = &ctx->aes_context;
-  int ret, outlen = 0;
-  size_t len;
+    uv_aes_context_t* pctx = &ctx->aes_context;
+    int ret, outlen = 0;
+    size_t len;
 
-  ret = mbedtls_cipher_update(pctx, input, ilen, output, &len);
-  if (ret !=0) {
+    ret = mbedtls_cipher_update(pctx, input, ilen, output, &len);
+    if (ret != 0) {
+        return ret;
+    }
+
+    outlen += len;
+    ret = mbedtls_cipher_finish(pctx, output + (char)outlen, &len);
+    if (ret != 0) {
+        return ret;
+    }
+    outlen += len;
+    *olen = outlen;
+
     return ret;
-  }
-
-  outlen += len;
-  ret = mbedtls_cipher_finish(pctx, output + (char)outlen, &len);
-  if (ret != 0) {
-    return ret;
-  }
-  outlen += len;
-  *olen = outlen;
-
-  return ret;
 }
 
-int uv_aes_encrypt_base64(uv_aes_t *ctx,
-                          const unsigned char *input,
-                          size_t ilen,
-                          unsigned char *output,
-                          int outsize,
-                          size_t *olen) {
-  int ret;
-  size_t outlen=0;
-  unsigned char *buff = alloca(outsize);
+int uv_aes_encrypt_base64(uv_aes_t* ctx,
+    const unsigned char* input,
+    size_t ilen,
+    unsigned char* output,
+    int outsize,
+    size_t* olen)
+{
+    int ret;
+    size_t outlen = 0;
+    unsigned char* buff = alloca(outsize);
 
-  if (!buff) {
-    return UV_EFAULT;
-  }
+    if (!buff) {
+        return UV_EFAULT;
+    }
 
-  ret = uv_aes_encrypt(ctx, input, ilen, buff, &outlen);
-  if (ret != 0)
-    return ret;
+    ret = uv_aes_encrypt(ctx, input, ilen, buff, &outlen);
+    if (ret != 0)
+        return ret;
 
-  return mbedtls_base64_encode(output, outsize, olen, buff, outlen);
+    return mbedtls_base64_encode(output, outsize, olen, buff, outlen);
 }
 
-int uv_aes_decrypt_base64(uv_aes_t *ctx,
-                          const unsigned char *input,
-                          size_t ilen,
-                          unsigned char *output,
-                          size_t *olen) {
-  int ret;
-  size_t len;
-  unsigned char *buff = alloca(ilen);
+int uv_aes_decrypt_base64(uv_aes_t* ctx,
+    const unsigned char* input,
+    size_t ilen,
+    unsigned char* output,
+    size_t* olen)
+{
+    int ret;
+    size_t len;
+    unsigned char* buff = alloca(ilen);
 
-  if (!buff) {
-    return UV_EFAULT;
-  }
+    if (!buff) {
+        return UV_EFAULT;
+    }
 
-  ret = mbedtls_base64_decode(buff, ilen, &len, input, ilen);
-  if (ret != 0) {
-    return ret;
-  }
+    ret = mbedtls_base64_decode(buff, ilen, &len, input, ilen);
+    if (ret != 0) {
+        return ret;
+    }
 
-  return uv_aes_decrypt(ctx, buff, len, output, olen);
+    return uv_aes_decrypt(ctx, buff, len, output, olen);
 }
 
-void uv_aes_free(uv_aes_t *ctx) {
-  mbedtls_cipher_free(&ctx->aes_context);
+void uv_aes_free(uv_aes_t* ctx)
+{
+    mbedtls_cipher_free(&ctx->aes_context);
 }

@@ -22,41 +22,42 @@
 #include <stdlib.h>
 #include <uv_ext.h>
 
-
-static void uv_topicadv_help(void) {
-  printf("uv_topicadv usage: uv_topicadv start/stop\n");
+static void uv_topicadv_help(void)
+{
+    printf("uv_topicadv usage: uv_topicadv start/stop\n");
 }
 
-int main(int argc, char *argv[]) {
-  int ret;
+int main(int argc, char* argv[])
+{
+    int ret;
 
-  if (argc != 2) {
-    uv_topicadv_help();
-    return -EINVAL;
-  }
-
-  if (strcmp("start", argv[1]) == 0) {
-    ret = uv_topicadv_init(uv_default_loop());
-    if (ret < 0) {
-      printf("topic advertise failed, ret=%d", ret);
-      return ret;
+    if (argc != 2) {
+        uv_topicadv_help();
+        return -EINVAL;
     }
 
-    printf("topic advertise success");
-    uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    if (strcmp("start", argv[1]) == 0) {
+        ret = uv_topicadv_init(uv_default_loop());
+        if (ret < 0) {
+            printf("topic advertise failed, ret=%d", ret);
+            return ret;
+        }
 
-  } else if (strcmp("stop", argv[1]) == 0) {
-    ret = uv_topicadv_close();
-    if (ret < 0) {
-      printf("topic unadvertise failed, ret=%d", ret);
-      return ret;
+        printf("topic advertise success");
+        uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+
+    } else if (strcmp("stop", argv[1]) == 0) {
+        ret = uv_topicadv_close();
+        if (ret < 0) {
+            printf("topic unadvertise failed, ret=%d", ret);
+            return ret;
+        }
+
+        printf("topic unadvertise success");
+
+    } else {
+        uv_topicadv_help();
     }
 
-    printf("topic unadvertise success");
-
-  } else {
-    uv_topicadv_help();
-  }
-
-  return 0;
+    return 0;
 }

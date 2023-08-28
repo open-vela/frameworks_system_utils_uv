@@ -18,61 +18,62 @@
  * Included Files
  ****************************************************************************/
 
-#include <uv_ext.h>
-#include <sys/types.h>
-#include <netutils/netlib.h>
 #include <net/if.h>
+#include <netutils/netlib.h>
+#include <sys/types.h>
+#include <uv_ext.h>
 
-static const char *uv_netstatus_ifname_list[]={
-  "wlan0",
-  "bt-pan",
-  "bt-net",
-  NULL
+static const char* uv_netstatus_ifname_list[] = {
+    "wlan0",
+    "bt-pan",
+    "bt-net",
+    NULL
 };
 
-static bool uv_ifstatus_isup(const char *name){
-  int ret;
-  uint8_t flags;
+static bool uv_ifstatus_isup(const char* name)
+{
+    int ret;
+    uint8_t flags;
 
-  /* Get current network status. */
+    /* Get current network status. */
 
-  ret = netlib_getifstatus(name, &flags);
-  if (ret != 0) {
-    syslog(LOG_ERR, "uv_netstat: getifstatus failed:%d, %d\n", ret, errno);
+    ret = netlib_getifstatus(name, &flags);
+    if (ret != 0) {
+        syslog(LOG_ERR, "uv_netstat: getifstatus failed:%d, %d\n", ret, errno);
+        return false;
+    }
+
+    syslog(LOG_INFO, "uv_netstat: flags: %d\n", flags);
+    if (IFF_IS_RUNNING(flags)) {
+        return true;
+    }
+
     return false;
-  }
-
-  syslog(LOG_INFO, "uv_netstat: flags: %d\n", flags);
-  if (IFF_IS_RUNNING(flags)) {
-    return true;
-  }
-
-  return false;
 }
 
-int uv_netstatus_gettype(uint8_t *type) {
-  int i;
+int uv_netstatus_gettype(uint8_t* type)
+{
+    int i;
 
-  if (!type) {
-    return UV_EINVAL;
-  }
-
-  /* Todo: Get bluetooth connection status. */
-  for (i = 0; uv_netstatus_ifname_list[i] != NULL; i++)
-  {
-    if (uv_ifstatus_isup(uv_netstatus_ifname_list[i])){
-      *type = UV_NETSTATUS_WIFI;
-      syslog(LOG_INFO, "uv_netstat: status :wifi\n");
-      return 0;
+    if (!type) {
+        return UV_EINVAL;
     }
-  }
+
+    /* Todo: Get bluetooth connection status. */
+    for (i = 0; uv_netstatus_ifname_list[i] != NULL; i++) {
+        if (uv_ifstatus_isup(uv_netstatus_ifname_list[i])) {
+            *type = UV_NETSTATUS_WIFI;
+            syslog(LOG_INFO, "uv_netstat: status :wifi\n");
+            return 0;
+        }
+    }
 
 #if defined(CONFIG_ARCH_SIM)
-  *type = UV_NETSTATUS_WIFI;
+    *type = UV_NETSTATUS_WIFI;
 #else
-  *type = UV_NETSTATUS_NONE;
+    *type = UV_NETSTATUS_NONE;
 #endif
 
-  syslog(LOG_INFO, "uv_netstat: status :%d\n", *type);
-  return 0;
+    syslog(LOG_INFO, "uv_netstat: status :%d\n", *type);
+    return 0;
 }

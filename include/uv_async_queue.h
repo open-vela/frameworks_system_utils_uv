@@ -31,18 +31,17 @@
 
 typedef struct uv_async_queue_s uv_async_queue_t;
 
-typedef void (*uv_async_queue_cb)(uv_async_queue_t *, void *);
+typedef void (*uv_async_queue_cb)(uv_async_queue_t*, void*);
 
-typedef struct uv_async_queue_s
-{
+typedef struct uv_async_queue_s {
     /* uv_async_t must be placed first in the structure */
     uv_async_t async;
     uv_mutex_t mutex;
     uv_async_queue_cb cb;
     uv_close_cb close_cb;
-    void *data;
+    void* data;
     QUEUE queue;
-}uv_async_queue_t;
+} uv_async_queue_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,7 +56,7 @@ extern "C" {
  ****************************************************************************/
 
 int uv_async_queue_init(uv_loop_t* loop, uv_async_queue_t* async,
-                        uv_async_queue_cb async_queue_cb);
+    uv_async_queue_cb async_queue_cb);
 
 /****************************************************************************
  * uv_async_queue_send
@@ -69,7 +68,7 @@ int uv_async_queue_send(uv_async_queue_t* async, void* data);
  * uv_async_queue_close
  ****************************************************************************/
 
-void uv_async_queue_close(uv_async_queue_t *queue_async, uv_close_cb cb);
+void uv_async_queue_close(uv_async_queue_t* queue_async, uv_close_cb cb);
 
 #ifdef __cplusplus
 }

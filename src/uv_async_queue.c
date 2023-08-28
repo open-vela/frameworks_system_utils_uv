@@ -27,15 +27,14 @@
  ****************************************************************************/
 
 #define uv_queue_debug(format, ...) uv_log_debug(async_queue, format, ##__VA_ARGS__)
-#define uv_queue_info(format, ...)  uv_log_info(async_queue, format, ##__VA_ARGS__)
+#define uv_queue_info(format, ...) uv_log_info(async_queue, format, ##__VA_ARGS__)
 #define uv_queue_error(format, ...) uv_log_error(async_queue, format, ##__VA_ARGS__)
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 
-struct uv__async_queue_handle_s
-{
+struct uv__async_queue_handle_s {
     void* data;
     QUEUE node;
 };
@@ -48,11 +47,10 @@ static void uv__acync_queue_cb(uv_async_t* async)
 {
     uv_async_queue_t* async_queue = async->data;
     struct uv__async_queue_handle_s* queue_handle;
-    QUEUE *node;
+    QUEUE* node;
 
     uv_mutex_lock(&async_queue->mutex);
-    while (!QUEUE_EMPTY(&async_queue->queue))
-    {
+    while (!QUEUE_EMPTY(&async_queue->queue)) {
         node = QUEUE_HEAD(&async_queue->queue);
         queue_handle = QUEUE_DATA(node, struct uv__async_queue_handle_s, node);
         QUEUE_REMOVE(node);
@@ -74,13 +72,12 @@ static void uv__acync_queue_cb(uv_async_t* async)
  ****************************************************************************/
 
 int uv_async_queue_init(uv_loop_t* loop, uv_async_queue_t* async_queue,
-                        uv_async_queue_cb async_queue_cb)
+    uv_async_queue_cb async_queue_cb)
 {
     int ret;
 
     ret = uv_async_init(loop, &async_queue->async, uv__acync_queue_cb);
-    if (ret != 0)
-    {
+    if (ret != 0) {
         uv_queue_error("async init failed, %d", ret);
         return ret;
     }
@@ -107,8 +104,7 @@ int uv_async_queue_send(uv_async_queue_t* async_queue, void* data)
     QUEUE_INSERT_TAIL(&async_queue->queue, &handle->node);
     uv_mutex_unlock(&async_queue->mutex);
     ret = uv_async_send(&async_queue->async);
-    if (ret != 0)
-    {
+    if (ret != 0) {
         uv_queue_error("async init failed, %d", ret);
     }
 
@@ -122,7 +118,7 @@ int uv_async_queue_send(uv_async_queue_t* async_queue, void* data)
 void uv_async_queue_close(uv_async_queue_t* async_queue, uv_close_cb cb)
 {
     struct uv__async_queue_handle_s* queue_handle;
-    QUEUE *node;
+    QUEUE* node;
 
     uv_mutex_lock(&async_queue->mutex);
     while (!QUEUE_EMPTY(&async_queue->queue)) {

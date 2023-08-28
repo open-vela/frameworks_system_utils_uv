@@ -30,128 +30,136 @@
  *
  ****************************************************************************/
 
-static void uv_topic_poll_cb(uv_poll_t *handle, int status, int events) {
-  uv_topic_t *topic = (uv_topic_t *)handle;
-
-  if (status < 0) {
-    topic->cb(topic, status, NULL, 0);
-  } else if (events & UV_READABLE) {
-    void *data = topic->meta_data ? topic->meta_data : alloca(topic->datalen);
-    ssize_t ret = orb_copy_multi(handle->io_watcher.fd, data, topic->datalen);
-    if (ret > 0) {
-      topic->cb(topic, 0, data, ret);
-    } else if (ret < 0) {
-      topic->cb(topic, -errno, NULL, 0);
-    }
-  } else if (events & UV_DISCONNECT) {
-    topic->cb(topic, UV_ENOTCONN, NULL, 0);
-  }
-}
-
-int uv_topic_subscribe_multi(uv_loop_t *loop, uv_topic_t *topic,
-                             orb_id_t meta, int instance, uv_topic_cb cb) {
-  struct orb_state state = {};
-  int ret;
-  int fd;
-
-  if (!loop || !topic || !meta || !cb)
-    return UV_EINVAL;
-  topic->cb = cb;
-  topic->meta = meta;
-
-  fd = orb_subscribe_multi(meta, instance);
-  if (fd < 0)
-    return -errno;
-
-  ret = uv_poll_init(loop, &topic->handle, fd);
-  if (ret < 0) {
-    orb_unsubscribe(fd);
-    return ret;
-  }
-
-  topic->datalen = meta->o_size;
-  orb_get_state(fd, &state);
-  if (state.queue_size > 1)
-    topic->datalen *= state.queue_size;
-
-  topic->meta_data = NULL;
-  if (topic->datalen > 128) {
-    topic->meta_data = malloc(topic->datalen);
-    if (!topic->meta_data) {
-      orb_unsubscribe(fd);
-      return UV_ENOMEM;
-    }
-  }
-
-  ret = uv_poll_start(&topic->handle, UV_READABLE | UV_DISCONNECT, uv_topic_poll_cb);
-  if (ret < 0) {
-    orb_unsubscribe(fd);
-    if (topic->meta_data != NULL) {
-      free(topic->meta_data);
-      topic->meta_data = NULL;
-    }
-  }
-
-  return ret;
-}
-
-int uv_topic_subscribe(uv_loop_t *loop, uv_topic_t *topic,
-                       orb_id_t meta, uv_topic_cb cb) {
-  return uv_topic_subscribe_multi(loop, topic, meta, 0, cb);
-}
-
-int uv_topic_unsubscribe(uv_topic_t *topic) {
-  int ret;
-
-  if (!topic)
-    return UV_EINVAL;
-
-  ret = uv_poll_stop(&topic->handle);
-  if (ret < 0)
-    return ret;
-
-  ret = orb_unsubscribe(topic->handle.io_watcher.fd);
-  if (ret < 0)
-    ret = -errno;
-
-  if (topic->meta_data != NULL) {
-    free(topic->meta_data);
-    topic->meta_data = NULL;
-  }
-
-  return ret;
-}
-
-int uv_topic_set_frequency(uv_topic_t *topic, unsigned int frequency) {
-  if (!topic)
-    return UV_EINVAL;
-
-  return orb_set_frequency(topic->handle.io_watcher.fd, frequency);
-}
-
-int uv_topic_get_frequency(uv_topic_t *topic, unsigned int *frequency) {
-  if (!topic)
-    return UV_EINVAL;
-
-  return orb_get_frequency(topic->handle.io_watcher.fd, frequency);
-}
-
-int uv_topic_set_interval(uv_topic_t *topic, unsigned int interval) {
-  if (!topic)
-    return UV_EINVAL;
-
-  return orb_set_interval(topic->handle.io_watcher.fd, interval);
-}
-
-int uv_topic_get_interval(uv_topic_t *topic, unsigned int *interval) {
-  if (!topic)
-    return UV_EINVAL;
-
-  return orb_get_interval(topic->handle.io_watcher.fd, interval);
-}
-
-int uv_topic_close(uv_topic_t *topic)
+static void uv_topic_poll_cb(uv_poll_t* handle, int status, int events)
 {
-  uv_close((uv_handle_t *)&topic->handle, NULL);
-  return 0;
+    uv_topic_t* topic = (uv_topic_t*)handle;
+
+    if (status < 0) {
+        topic->cb(topic, status, NULL, 0);
+    } else if (events & UV_READABLE) {
+        void* data = topic->meta_data ? topic->meta_data : alloca(topic->datalen);
+        ssize_t ret = orb_copy_multi(handle->io_watcher.fd, data, topic->datalen);
+        if (ret > 0) {
+            topic->cb(topic, 0, data, ret);
+        } else if (ret < 0) {
+            topic->cb(topic, -errno, NULL, 0);
+        }
+    } else if (events & UV_DISCONNECT) {
+        topic->cb(topic, UV_ENOTCONN, NULL, 0);
+    }
+}
+
+int uv_topic_subscribe_multi(uv_loop_t* loop, uv_topic_t* topic,
+    orb_id_t meta, int instance, uv_topic_cb cb)
+{
+    struct orb_state state = {};
+    int ret;
+    int fd;
+
+    if (!loop || !topic || !meta || !cb)
+        return UV_EINVAL;
+    topic->cb = cb;
+    topic->meta = meta;
+
+    fd = orb_subscribe_multi(meta, instance);
+    if (fd < 0)
+        return -errno;
+
+    ret = uv_poll_init(loop, &topic->handle, fd);
+    if (ret < 0) {
+        orb_unsubscribe(fd);
+        return ret;
+    }
+
+    topic->datalen = meta->o_size;
+    orb_get_state(fd, &state);
+    if (state.queue_size > 1)
+        topic->datalen *= state.queue_size;
+
+    topic->meta_data = NULL;
+    if (topic->datalen > 128) {
+        topic->meta_data = malloc(topic->datalen);
+        if (!topic->meta_data) {
+            orb_unsubscribe(fd);
+            return UV_ENOMEM;
+        }
+    }
+
+    ret = uv_poll_start(&topic->handle, UV_READABLE | UV_DISCONNECT, uv_topic_poll_cb);
+    if (ret < 0) {
+        orb_unsubscribe(fd);
+        if (topic->meta_data != NULL) {
+            free(topic->meta_data);
+            topic->meta_data = NULL;
+        }
+    }
+
+    return ret;
+}
+
+int uv_topic_subscribe(uv_loop_t* loop, uv_topic_t* topic,
+    orb_id_t meta, uv_topic_cb cb)
+{
+    return uv_topic_subscribe_multi(loop, topic, meta, 0, cb);
+}
+
+int uv_topic_unsubscribe(uv_topic_t* topic)
+{
+    int ret;
+
+    if (!topic)
+        return UV_EINVAL;
+
+    ret = uv_poll_stop(&topic->handle);
+    if (ret < 0)
+        return ret;
+
+    ret = orb_unsubscribe(topic->handle.io_watcher.fd);
+    if (ret < 0)
+        ret = -errno;
+
+    if (topic->meta_data != NULL) {
+        free(topic->meta_data);
+        topic->meta_data = NULL;
+    }
+
+    return ret;
+}
+
+int uv_topic_set_frequency(uv_topic_t* topic, unsigned int frequency)
+{
+    if (!topic)
+        return UV_EINVAL;
+
+    return orb_set_frequency(topic->handle.io_watcher.fd, frequency);
+}
+
+int uv_topic_get_frequency(uv_topic_t* topic, unsigned int* frequency)
+{
+    if (!topic)
+        return UV_EINVAL;
+
+    return orb_get_frequency(topic->handle.io_watcher.fd, frequency);
+}
+
+int uv_topic_set_interval(uv_topic_t* topic, unsigned int interval)
+{
+    if (!topic)
+        return UV_EINVAL;
+
+    return orb_set_interval(topic->handle.io_watcher.fd, interval);
+}
+
+int uv_topic_get_interval(uv_topic_t* topic, unsigned int* interval)
+{
+    if (!topic)
+        return UV_EINVAL;
+
+    return orb_get_interval(topic->handle.io_watcher.fd, interval);
+}
+
+int uv_topic_close(uv_topic_t* topic)
+{
+    uv_close((uv_handle_t*)&topic->handle, NULL);
+    return 0;
 }

@@ -18,32 +18,33 @@
  * Included Files
  ****************************************************************************/
 
-#include <uv_ext.h>
 #include <mbedtls/md.h>
 #include <mbedtls/rsa.h>
 #include <string.h>
+#include <uv_ext.h>
 
 static int padding_mode[] = {
-  MBEDTLS_RSA_PKCS_V15, /**< Use PKCS#1 v1.5 encoding. */
-  MBEDTLS_RSA_PKCS_V21  /**< Use PKCS#1 v2.1 encoding. */
+    MBEDTLS_RSA_PKCS_V15, /**< Use PKCS#1 v1.5 encoding. */
+    MBEDTLS_RSA_PKCS_V21 /**< Use PKCS#1 v2.1 encoding. */
 };
 
 static int hashid_mode[] = {
-  MBEDTLS_MD_MD2,       /**< The MD2 message digest. MBEDTLS_RSA_PKCS_V21 is fail */
-  MBEDTLS_MD_MD4,       /**< The MD4 message digest. MBEDTLS_RSA_PKCS_V21 is fail */
-  MBEDTLS_MD_MD5,       /**< The MD5 message digest. */
-  MBEDTLS_MD_SHA1,      /**< The SHA-1 message digest. */
-  MBEDTLS_MD_SHA224,    /**< The SHA-224 message digest. */
-  MBEDTLS_MD_SHA256,    /**< The SHA-256 message digest. */
-  MBEDTLS_MD_SHA384,    /**< The SHA-384 message digest. */
-  MBEDTLS_MD_SHA512,    /**< The SHA-512 message digest. MBEDTLS_RSA_PKCS_V21 is fail */
-  MBEDTLS_MD_RIPEMD160, /**< The RIPEMD-160 message digest. */
+    MBEDTLS_MD_MD2, /**< The MD2 message digest. MBEDTLS_RSA_PKCS_V21 is fail */
+    MBEDTLS_MD_MD4, /**< The MD4 message digest. MBEDTLS_RSA_PKCS_V21 is fail */
+    MBEDTLS_MD_MD5, /**< The MD5 message digest. */
+    MBEDTLS_MD_SHA1, /**< The SHA-1 message digest. */
+    MBEDTLS_MD_SHA224, /**< The SHA-224 message digest. */
+    MBEDTLS_MD_SHA256, /**< The SHA-256 message digest. */
+    MBEDTLS_MD_SHA384, /**< The SHA-384 message digest. */
+    MBEDTLS_MD_SHA512, /**< The SHA-512 message digest. MBEDTLS_RSA_PKCS_V21 is fail */
+    MBEDTLS_MD_RIPEMD160, /**< The RIPEMD-160 message digest. */
 };
 
-static void help(void) {
-  printf("usage:  uv_rsa <mode> <data> \n");
-  printf("<mode>: 1 = base64, 0 = no base64 \n");
-  printf("<data>: a string of data \n");
+static void help(void)
+{
+    printf("usage:  uv_rsa <mode> <data> \n");
+    printf("<mode>: 1 = base64, 0 = no base64 \n");
+    printf("<data>: a string of data \n");
 }
 
 static const unsigned char pubkey[] = "-----BEGIN PUBLIC KEY-----\n\
@@ -69,137 +70,138 @@ MCrTyxvDaqK9X+Hjs6ECQFmMxcGnPxsP71jPQ9XVKd4lkmzcskqtMATm6N8ng+fG\n\
 zyrMcXTwGgtWaQVBWuOCTSXvagFq4/deaZuvucWmlgQ=\n\
 -----END RSA PRIVATE KEY-----\n";
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-  if (argc != 3) {
-      help();
-      return -1;
-  }
-
-  int mode = atoi(argv[1]);
-  const unsigned char *pstr = (unsigned char *)argv[2];
-  unsigned char pstrbuff[1024] = {0};
-  size_t pstrbufflen;
-  unsigned char decbuff[1024] = {0};
-  size_t decbufflen;
-  int i, j;
-
-  if (mode) {
-    uv_rsa_t ctx;
-
-    for (i = 0; i < sizeof(padding_mode) / sizeof(padding_mode[0]); i++) {
-      for (j = 0; j < sizeof(hashid_mode) / sizeof(hashid_mode[0]); j++) {
-
-        printf("\ntest type: padding=%d hash=%d\n", padding_mode[i], hashid_mode[j]);
-
-        /* encryption */
-
-        memset(&ctx, 0, sizeof(uv_rsa_t));
-        memset(pstrbuff, 0, sizeof(pstrbuff));
-
-        if(uv_rsa_parse_key(&ctx, MBEDTLS_RSA_PUBLIC, pubkey, sizeof(pubkey)) != 0) {
-          printf("uv_rsa_parse_key fail\n");
-          goto testfail;
-        }
-
-        if(uv_rsa_set_padding(&ctx, padding_mode[i], hashid_mode[j]) != 0) {
-          printf("uv_rsa_set_padding fail\n");
-          goto testfail;
-        }
-
-        if (uv_rsa_encrypt_base64(&ctx, pstr, pstrbuff, &pstrbufflen, sizeof(pstrbuff)) != 0) {
-          printf("encrypt fail. \n");
-          goto testfail;
-        }
-
-        uv_rsa_free(&ctx);
-
-        /* decryption */
-
-        memset(&ctx, 0, sizeof(uv_rsa_t));
-        memset(decbuff, 0, sizeof(decbuff));
-
-        if(uv_rsa_parse_key(&ctx, MBEDTLS_RSA_PRIVATE, prikey, sizeof(prikey)) != 0) {
-          printf("uv_rsa_parse_key fail\n");
-          goto testfail;
-        }
-
-        if(uv_rsa_set_padding(&ctx, padding_mode[i], hashid_mode[j]) != 0) {
-          printf("uv_rsa_set_padding fail\n");
-          goto testfail;
-        }
-
-        if (uv_rsa_decrypt_base64(&ctx, pstrbuff, pstrbufflen, decbuff,
-                                  &decbufflen, sizeof(decbuff)) != 0) {
-          printf("uv_rsa_base64_decrypt fail\n");
-          goto testfail;
-        }
-
-        uv_rsa_free(&ctx);
-
-        printf("result: %s, len=%d\n", decbuff, decbufflen);
-      }
+    if (argc != 3) {
+        help();
+        return -1;
     }
-  } else {
-    uv_rsa_t ctx;
 
-    for (i = 0; i < sizeof(padding_mode) / sizeof(padding_mode[0]); i++) {
-      for (j = 0; j < sizeof(hashid_mode) / sizeof(hashid_mode[0]); j++) {
+    int mode = atoi(argv[1]);
+    const unsigned char* pstr = (unsigned char*)argv[2];
+    unsigned char pstrbuff[1024] = { 0 };
+    size_t pstrbufflen;
+    unsigned char decbuff[1024] = { 0 };
+    size_t decbufflen;
+    int i, j;
 
-        printf("\ntest type: padding=%d hash=%d\n", padding_mode[i], hashid_mode[j]);
+    if (mode) {
+        uv_rsa_t ctx;
 
-        /* encryption */
+        for (i = 0; i < sizeof(padding_mode) / sizeof(padding_mode[0]); i++) {
+            for (j = 0; j < sizeof(hashid_mode) / sizeof(hashid_mode[0]); j++) {
 
-        memset(&ctx, 0, sizeof(uv_rsa_t));
-        memset(pstrbuff, 0, sizeof(pstrbuff));
+                printf("\ntest type: padding=%d hash=%d\n", padding_mode[i], hashid_mode[j]);
 
-        if(uv_rsa_parse_key(&ctx, MBEDTLS_RSA_PUBLIC, pubkey, sizeof(pubkey)) != 0) {
-          printf("uv_rsa_parse_key fail\n");
-          goto testfail;
+                /* encryption */
+
+                memset(&ctx, 0, sizeof(uv_rsa_t));
+                memset(pstrbuff, 0, sizeof(pstrbuff));
+
+                if (uv_rsa_parse_key(&ctx, MBEDTLS_RSA_PUBLIC, pubkey, sizeof(pubkey)) != 0) {
+                    printf("uv_rsa_parse_key fail\n");
+                    goto testfail;
+                }
+
+                if (uv_rsa_set_padding(&ctx, padding_mode[i], hashid_mode[j]) != 0) {
+                    printf("uv_rsa_set_padding fail\n");
+                    goto testfail;
+                }
+
+                if (uv_rsa_encrypt_base64(&ctx, pstr, pstrbuff, &pstrbufflen, sizeof(pstrbuff)) != 0) {
+                    printf("encrypt fail. \n");
+                    goto testfail;
+                }
+
+                uv_rsa_free(&ctx);
+
+                /* decryption */
+
+                memset(&ctx, 0, sizeof(uv_rsa_t));
+                memset(decbuff, 0, sizeof(decbuff));
+
+                if (uv_rsa_parse_key(&ctx, MBEDTLS_RSA_PRIVATE, prikey, sizeof(prikey)) != 0) {
+                    printf("uv_rsa_parse_key fail\n");
+                    goto testfail;
+                }
+
+                if (uv_rsa_set_padding(&ctx, padding_mode[i], hashid_mode[j]) != 0) {
+                    printf("uv_rsa_set_padding fail\n");
+                    goto testfail;
+                }
+
+                if (uv_rsa_decrypt_base64(&ctx, pstrbuff, pstrbufflen, decbuff,
+                        &decbufflen, sizeof(decbuff))
+                    != 0) {
+                    printf("uv_rsa_base64_decrypt fail\n");
+                    goto testfail;
+                }
+
+                uv_rsa_free(&ctx);
+
+                printf("result: %s, len=%d\n", decbuff, decbufflen);
+            }
         }
+    } else {
+        uv_rsa_t ctx;
 
-        if(uv_rsa_set_padding(&ctx, padding_mode[i], hashid_mode[j]) != 0) {
-          printf("uv_rsa_set_padding fail\n");
-          goto testfail;
+        for (i = 0; i < sizeof(padding_mode) / sizeof(padding_mode[0]); i++) {
+            for (j = 0; j < sizeof(hashid_mode) / sizeof(hashid_mode[0]); j++) {
+
+                printf("\ntest type: padding=%d hash=%d\n", padding_mode[i], hashid_mode[j]);
+
+                /* encryption */
+
+                memset(&ctx, 0, sizeof(uv_rsa_t));
+                memset(pstrbuff, 0, sizeof(pstrbuff));
+
+                if (uv_rsa_parse_key(&ctx, MBEDTLS_RSA_PUBLIC, pubkey, sizeof(pubkey)) != 0) {
+                    printf("uv_rsa_parse_key fail\n");
+                    goto testfail;
+                }
+
+                if (uv_rsa_set_padding(&ctx, padding_mode[i], hashid_mode[j]) != 0) {
+                    printf("uv_rsa_set_padding fail\n");
+                    goto testfail;
+                }
+
+                if (uv_rsa_encrypt(&ctx, strlen((const char*)pstr), pstr, pstrbuff) != 0) {
+                    printf("encrypt fail. \n");
+                    goto testfail;
+                }
+
+                uv_rsa_free(&ctx);
+
+                /* decryption */
+
+                memset(&ctx, 0, sizeof(uv_rsa_t));
+                memset(decbuff, 0, sizeof(decbuff));
+
+                if (uv_rsa_parse_key(&ctx, MBEDTLS_RSA_PRIVATE, prikey, sizeof(prikey)) != 0) {
+                    printf("uv_rsa_parse_key fail\n");
+                    goto testfail;
+                }
+
+                if (uv_rsa_set_padding(&ctx, padding_mode[i], hashid_mode[j]) != 0) {
+                    printf("uv_rsa_set_padding fail\n");
+                    goto testfail;
+                }
+
+                if (uv_rsa_decrypt(&ctx, &decbufflen, pstrbuff, decbuff, sizeof(decbuff)) != 0) {
+                    printf("uv_rsa_base64_decrypt fail\n");
+                    goto testfail;
+                }
+
+                uv_rsa_free(&ctx);
+
+                printf("result: %s, len=%d\n", decbuff, decbufflen);
+            }
         }
-
-        if (uv_rsa_encrypt(&ctx, strlen((const char*)pstr), pstr, pstrbuff) != 0) {
-          printf("encrypt fail. \n");
-          goto testfail;
-        }
-
-        uv_rsa_free(&ctx);
-
-        /* decryption */
-
-        memset(&ctx, 0, sizeof(uv_rsa_t));
-        memset(decbuff, 0, sizeof(decbuff));
-
-        if(uv_rsa_parse_key(&ctx, MBEDTLS_RSA_PRIVATE, prikey, sizeof(prikey)) != 0) {
-          printf("uv_rsa_parse_key fail\n");
-          goto testfail;
-        }
-
-        if(uv_rsa_set_padding(&ctx, padding_mode[i], hashid_mode[j]) != 0) {
-          printf("uv_rsa_set_padding fail\n");
-          goto testfail;
-        }
-
-        if (uv_rsa_decrypt(&ctx, &decbufflen, pstrbuff, decbuff, sizeof(decbuff)) != 0) {
-          printf("uv_rsa_base64_decrypt fail\n");
-          goto testfail;
-        }
-
-        uv_rsa_free(&ctx);
-
-        printf("result: %s, len=%d\n", decbuff, decbufflen);
-      }
     }
-  }
-  printf("TEST PASSED !\n");
-  exit(0);
+    printf("TEST PASSED !\n");
+    exit(0);
 
 testfail:
-  printf("TEST FAILED !\n");
-  exit(1);
+    printf("TEST FAILED !\n");
+    exit(1);
 }

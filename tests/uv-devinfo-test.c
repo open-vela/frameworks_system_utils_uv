@@ -20,47 +20,47 @@
 
 #include <uv_ext.h>
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-  char devinfo[32];
-  int num, i;
-  uv_devinfo_t info;
+    char devinfo[32];
+    int num, i;
+    uv_devinfo_t info;
 
-  for (i = UV_EXT_DEVINFO_SCREENWIDTH; i < UV_EXT_DEVINFO_BRAND; i++) {
-    if (uv_getdevinfonumber(&num, i) != 0) {
-      goto testfail;
+    for (i = UV_EXT_DEVINFO_SCREENWIDTH; i < UV_EXT_DEVINFO_BRAND; i++) {
+        if (uv_getdevinfonumber(&num, i) != 0) {
+            goto testfail;
+        }
+        printf("[%02d], %d\n", i, num);
     }
-    printf("[%02d], %d\n", i, num);
-  }
 
-  for (i = UV_EXT_DEVINFO_BRAND; i < UV_EXT_DEVINFO_MAX; i++) {
-    if (uv_devinfobuff(devinfo, sizeof(devinfo), i) != 0) {
-      goto testfail;
+    for (i = UV_EXT_DEVINFO_BRAND; i < UV_EXT_DEVINFO_MAX; i++) {
+        if (uv_devinfobuff(devinfo, sizeof(devinfo), i) != 0) {
+            goto testfail;
+        }
+        printf("[%02d], %s\n", i, devinfo);
     }
-    printf("[%02d], %s\n", i, devinfo);
-  }
 
-  if (uv_getdeviceinfo(&info) != 0) {
-    goto testfail;
-  }
-  printf("brand:%s\n", info.brand);
-  printf("manufacturer:%s\n", info.manufacturer);
-  printf("model:%s\n", info.model);
-  printf("product:%s\n", info.product);
-  printf("ostype:%s\n", info.ostype);
-  printf("osversionname:%s\n", info.osversionname);
-  printf("language:%s\n", info.language);
-  printf("region:%s\n", info.region);
-  printf("did:%s\n", info.did);
-  printf("screenshape:%d\n", info.screenshape);
-  printf("osversioncode:%d\n", info.osversioncode);
-  printf("screenwidth:%d\n", info.screenwidth);
-  printf("screenheight:%d\n", info.screenheight);
+    if (uv_getdeviceinfo(&info) != 0) {
+        goto testfail;
+    }
+    printf("brand:%s\n", info.brand);
+    printf("manufacturer:%s\n", info.manufacturer);
+    printf("model:%s\n", info.model);
+    printf("product:%s\n", info.product);
+    printf("ostype:%s\n", info.ostype);
+    printf("osversionname:%s\n", info.osversionname);
+    printf("language:%s\n", info.language);
+    printf("region:%s\n", info.region);
+    printf("did:%s\n", info.did);
+    printf("screenshape:%d\n", info.screenshape);
+    printf("osversioncode:%d\n", info.osversioncode);
+    printf("screenwidth:%d\n", info.screenwidth);
+    printf("screenheight:%d\n", info.screenheight);
 
-  printf("TEST PASSED !\n");
-  exit(0);
+    printf("TEST PASSED !\n");
+    exit(0);
 
 testfail:
-  printf("TEST FAILED !\n");
-  exit(1);
+    printf("TEST FAILED !\n");
+    exit(1);
 }
