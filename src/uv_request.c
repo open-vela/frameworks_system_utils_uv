@@ -389,6 +389,8 @@ int uv_request_set_method(uv_request_t* request, const char* method)
     return 0;
 }
 
+CURL_EXTERN void Curl_resolver_cancel(CURL *data);
+
 int uv_request_delete(uv_request_t* request)
 {
     if (!request) {
@@ -414,6 +416,9 @@ int uv_request_delete(uv_request_t* request)
     }
 
     request_info("Cancel a downloading request: %p", request);
+    /* Now, we should simply cancel resolver and clean up any resolver data. */
+    Curl_resolver_cancel(request->easy_handle);
+
     curl_multi_remove_handle(request->handle->multi_handle, request->easy_handle);
     curl_easy_cleanup(request->easy_handle);
     if (request->response.body) {
