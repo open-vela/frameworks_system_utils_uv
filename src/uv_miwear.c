@@ -311,7 +311,9 @@ static void uv__miwear_client_close(struct client* client)
 
     if (client->miwear->is_server) {
         /* For server also need to remove client from list */
-        list_delete(&client->node);
+        if (list_in_list(&client->node)) {
+            list_delete(&client->node);
+        }
     }
 
     /* Make callback to let application know connection lost. */
