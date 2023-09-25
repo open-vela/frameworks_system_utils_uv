@@ -536,7 +536,10 @@ static int download_progress_callback(void* clientp,
     }
 
     if (request->progress_cb != NULL) {
-        return request->progress_cb(request, (off_t)dltotal, (off_t)dlnow);
+        if (dltotal != 0)
+            return request->progress_cb(request, (off_t)dltotal, (off_t)dlnow);
+        else if (ultotal != 0)
+            return request->progress_cb(request, (off_t)ultotal, (off_t)ulnow);
     }
     return 0;
 }
