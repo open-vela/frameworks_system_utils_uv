@@ -979,6 +979,16 @@ int uv_request_set_formdata_buf(uv_request_t* request, const char* name,
     const char* filename, const char* buffer,
     int len);
 
+/****************************************************************************
+ * Name: uv_request_set_timeout
+ *
+ * Description:
+ *   add settimeout function
+ *
+ ****************************************************************************/
+
+int uv_request_set_timeout(uv_request_t* request, long timeout);
+
 typedef struct uv_ncm_s uv_ncm_t;
 typedef void* uv_ncm_handle_t;
 typedef void (*uv_ncm_cb_t)(int, const char*, void*);

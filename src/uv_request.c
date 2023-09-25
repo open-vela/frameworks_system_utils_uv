@@ -517,6 +517,15 @@ int uv_request_set_formdata_buf(uv_request_t* request, const char* name,
     }
 }
 
+int uv_request_set_timeout(uv_request_t* request, long timeout)
+{
+    if (!request) {
+        return -EINVAL;
+    }
+
+    return curl_easy_setopt(request->easy_handle, CURLOPT_TIMEOUT_MS, timeout);
+}
+
 static int download_progress_callback(void* clientp,
     curl_off_t dltotal, curl_off_t dlnow,
     curl_off_t ultotal, curl_off_t ulnow)
