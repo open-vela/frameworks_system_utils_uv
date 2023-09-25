@@ -339,7 +339,7 @@ int uv_db_get(uv_db_t* handle, const char* key, uv_buf_t* value, uv_db_callback 
     uv_db_req_t* req = NULL;
 
     // Illegal parameter hit. Please check whether the parameter is correct
-    assert_res(handle && handle->loop->idle_handles, UV_EINVAL);
+    assert_res(handle, UV_EINVAL);
     assert_res(key, UV_EINVAL);
 
     if (!cb) {
