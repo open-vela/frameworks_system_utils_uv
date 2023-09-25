@@ -59,6 +59,8 @@ struct uv_request_s {
     struct data_block_s header;
     uv_request_session_t* handle;
     uv_response_t response;
+    struct curl_httppost* formpost;
+    struct curl_httppost* lastptr;
 };
 
 typedef struct curl_context_s {
@@ -188,6 +190,11 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
     }
     if (request->response.headers) {
         free(request->response.headers);
+    }
+    if (request->formpost) {
+        curl_formfree(request->formpost);
+        request->formpost = NULL;
+        request->lastptr = NULL;
     }
     free(request);
 }
@@ -416,6 +423,11 @@ int uv_request_delete(uv_request_t* request)
     if (request->response.headers) {
         free(request->response.headers);
     }
+    if (request->formpost) {
+        curl_formfree(request->formpost);
+        request->formpost = NULL;
+        request->lastptr = NULL;
+    }
 
     request->easy_handle = NULL;
     free(request);
@@ -470,6 +482,39 @@ int uv_request_set_url(uv_request_t* request, const char* url)
     request->url = url;
 
     return 0;
+}
+
+int uv_request_set_formdata_file(uv_request_t* request, const char* name,
+    const char* filename, const char* filepath)
+{
+    if (!request || !name || !filename || !filepath) {
+        return -EINVAL;
+    }
+
+    return curl_formadd(&request->formpost, &request->lastptr,
+        CURLFORM_COPYNAME, name, CURLFORM_FILENAME, filename,
+        CURLFORM_FILE, filepath, CURLFORM_END);
+}
+
+int uv_request_set_formdata_buf(uv_request_t* request, const char* name,
+    const char* filename, const char* buffer,
+    int len)
+{
+    if (!request || !name || !filename || !buffer || len == 0) {
+        return -EINVAL;
+    }
+
+    if (strlen(filename) == 0) {
+        return curl_formadd(&request->formpost, &request->lastptr,
+            CURLFORM_COPYNAME, name, CURLFORM_BUFFERPTR,
+            buffer, CURLFORM_BUFFERLENGTH,
+            len, CURLFORM_END);
+    } else {
+        return curl_formadd(&request->formpost, &request->lastptr,
+            CURLFORM_COPYNAME, name, CURLFORM_BUFFER, filename,
+            CURLFORM_BUFFERPTR, buffer,
+            CURLFORM_BUFFERLENGTH, len, CURLFORM_END);
+    }
 }
 
 static int download_progress_callback(void* clientp,
@@ -528,6 +573,14 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
             CURLFORM_FILE, data,
             CURLFORM_END);
         curl_easy_setopt(request->easy_handle, CURLOPT_HTTPPOST, formpost);
+        break;
+    case UV_UPLOAD_TASK:
+        if (data == NULL) {
+            return -EINVAL;
+        }
+        curl_easy_setopt(request->easy_handle, CURLOPT_WRITEFUNCTION, save_request_body);
+        curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request);
+        curl_easy_setopt(request->easy_handle, CURLOPT_HTTPPOST, request->formpost);
         break;
     default:
         return -EINVAL;
