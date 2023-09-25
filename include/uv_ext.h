@@ -776,7 +776,8 @@ enum {
     UV_REQUEST,
     UV_DOWNLOAD,
     UV_DOWNLOAD_PROGRESS,
-    UV_UPLOAD
+    UV_UPLOAD,
+    UV_UPLOAD_TASK
 };
 
 enum {
@@ -954,6 +955,29 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data);
  ****************************************************************************/
 
 int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_request_cb cb);
+
+/****************************************************************************
+ * Name: uv_request_set_formdata_file
+ *
+ * Description:
+ *   upload file in formdata format
+ *
+ ****************************************************************************/
+
+int uv_request_set_formdata_file(uv_request_t* request, const char* name,
+    const char* filename, const char* filepath);
+
+/****************************************************************************
+ * Name: uv_request_set_formdata_buf
+ *
+ * Description:
+ *   upload buffer in formdata format
+ *
+ ****************************************************************************/
+
+int uv_request_set_formdata_buf(uv_request_t* request, const char* name,
+    const char* filename, const char* buffer,
+    int len);
 
 typedef struct uv_ncm_s uv_ncm_t;
 typedef void* uv_ncm_handle_t;
