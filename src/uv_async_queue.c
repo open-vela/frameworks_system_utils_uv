@@ -36,7 +36,7 @@
 
 struct uv__async_queue_handle_s {
     void* data;
-    QUEUE node;
+    struct uv__queue node;
 };
 
 /****************************************************************************
@@ -47,13 +47,13 @@ static void uv__acync_queue_cb(uv_async_t* async)
 {
     uv_async_queue_t* async_queue = async->data;
     struct uv__async_queue_handle_s* queue_handle;
-    QUEUE* node;
+    struct uv__queue* node;
 
     uv_mutex_lock(&async_queue->mutex);
-    while (!QUEUE_EMPTY(&async_queue->queue)) {
-        node = QUEUE_HEAD(&async_queue->queue);
-        queue_handle = QUEUE_DATA(node, struct uv__async_queue_handle_s, node);
-        QUEUE_REMOVE(node);
+    while (!uv__queue_empty(&async_queue->queue)) {
+        node = uv__queue_head(&async_queue->queue);
+        queue_handle = uv__queue_data(node, struct uv__async_queue_handle_s, node);
+        uv__queue_remove(node);
         uv_mutex_unlock(&async_queue->mutex);
         async_queue->cb(async_queue, queue_handle->data);
         uv_mutex_lock(&async_queue->mutex);
@@ -86,7 +86,7 @@ int uv_async_queue_init(uv_loop_t* loop, uv_async_queue_t* async_queue,
     async_queue->cb = async_queue_cb;
     async_queue->async.data = async_queue;
     uv_mutex_init(&async_queue->mutex);
-    QUEUE_INIT(&async_queue->queue);
+    uv__queue_init(&async_queue->queue);
     return ret;
 }
 
@@ -101,7 +101,7 @@ int uv_async_queue_send(uv_async_queue_t* async_queue, void* data)
     struct uv__async_queue_handle_s* handle = malloc(sizeof(*handle));
     handle->data = data;
     uv_mutex_lock(&async_queue->mutex);
-    QUEUE_INSERT_TAIL(&async_queue->queue, &handle->node);
+    uv__queue_insert_tail(&async_queue->queue, &handle->node);
     uv_mutex_unlock(&async_queue->mutex);
     ret = uv_async_send(&async_queue->async);
     if (ret != 0) {
@@ -118,13 +118,13 @@ int uv_async_queue_send(uv_async_queue_t* async_queue, void* data)
 void uv_async_queue_close(uv_async_queue_t* async_queue, uv_close_cb cb)
 {
     struct uv__async_queue_handle_s* queue_handle;
-    QUEUE* node;
+    struct uv__queue* node;
 
     uv_mutex_lock(&async_queue->mutex);
-    while (!QUEUE_EMPTY(&async_queue->queue)) {
-        node = QUEUE_HEAD(&async_queue->queue);
-        queue_handle = QUEUE_DATA(node, struct uv__async_queue_handle_s, node);
-        QUEUE_REMOVE(node);
+    while (!uv__queue_empty(&async_queue->queue)) {
+        node = uv__queue_head(&async_queue->queue);
+        queue_handle = uv__queue_data(node, struct uv__async_queue_handle_s, node);
+        uv__queue_remove(node);
         uv_queue_error("data is discarded: %p", queue_handle->data);
         free(queue_handle);
     }

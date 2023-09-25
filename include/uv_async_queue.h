@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 #include <uv.h>
-#include <uv/queue.h>
+#include "../../libuv/src/queue.h"
 
 /****************************************************************************
  * Public Types
@@ -40,7 +40,7 @@ typedef struct uv_async_queue_s {
     uv_async_queue_cb cb;
     uv_close_cb close_cb;
     void* data;
-    QUEUE queue;
+    struct uv__queue queue;
 } uv_async_queue_t;
 
 #ifdef __cplusplus
