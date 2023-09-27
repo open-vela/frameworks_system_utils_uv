@@ -81,8 +81,8 @@ CSRCS += uv_networkstatus.c
 endif
 
 ifeq ($(CONFIG_LIB_ZLIB)$(CONFIG_CRYPTO_MBEDTLS), yy)
-CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/zlib/zlib/contrib/minizip
-CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/external/zlib/zlib
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/system/zlib/zlib/contrib/minizip
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/system/zlib/zlib
 CSRCS += app_verify.c
 endif
 
