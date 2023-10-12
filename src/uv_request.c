@@ -460,6 +460,7 @@ uv_request_header_t uv_request_get_header_list(uv_request_t* request)
     if (!result.data) {
         return result;
     }
+    curr = (struct curl_slist*)request->header_list;
     while (curr) {
         result.data[result.currentIndex++] = curr->data;
         curr = curr->next;
