@@ -452,6 +452,7 @@ uv_request_header_t uv_request_get_header_list(uv_request_t* request)
 {
     uv_request_header_t result;
     result.currentIndex = 0;
+    result.data = NULL;
     if (!request || !request->header_list) {
         return result;
     }
