@@ -33,7 +33,7 @@
 int uv_getlocale(uv_locale_t* locale)
 {
     int ret;
-    char buff[20];
+    char buff[PROP_VALUE_MAX];
     char *pbuff, *pstr;
 
     if (!locale) {
