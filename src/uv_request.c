@@ -51,7 +51,7 @@ struct uv_request_s {
     void* data;
     const char* url;
     uv_request_cb cb;
-    int (*progress_cb)(uv_request_t*, off_t, off_t);
+    int (*progress_cb)(uv_request_t*, off_t, off_t, off_t, off_t);
     void* easy_handle;
     void* header_list;
     struct list_node node;
@@ -389,7 +389,7 @@ int uv_request_set_method(uv_request_t* request, const char* method)
     return 0;
 }
 
-CURL_EXTERN void Curl_resolver_cancel(CURL *data);
+CURL_EXTERN void Curl_resolver_cancel(CURL* data);
 
 int uv_request_delete(uv_request_t* request)
 {
@@ -543,10 +543,7 @@ static int download_progress_callback(void* clientp,
     }
 
     if (request->progress_cb != NULL) {
-        if (dltotal != 0)
-            return request->progress_cb(request, (off_t)dltotal, (off_t)dlnow);
-        else if (ultotal != 0)
-            return request->progress_cb(request, (off_t)ultotal, (off_t)ulnow);
+        return request->progress_cb(request, (off_t)dltotal, (off_t)dlnow, (off_t)ultotal, (off_t)ulnow);
     }
     return 0;
 }
