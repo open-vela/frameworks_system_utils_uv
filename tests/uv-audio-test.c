@@ -176,7 +176,7 @@ static int audio_test_ctrl_tool(int argc, char* argv[])
         printf("audio_test> ");
         fflush(stdout);
 
-        len = readline(buffer, CONFIG_NSH_LINELEN, stdin, stdout);
+        len = readline_stream(buffer, CONFIG_NSH_LINELEN, stdin, stdout);
         buffer[len] = '\0';
         if (len < 0)
             continue;
