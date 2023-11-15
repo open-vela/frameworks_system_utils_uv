@@ -304,6 +304,7 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
 
     info->screenwidth = videinfo.xres;
     info->screenheight = videinfo.yres;
+    info->screendensity = 1.0;
 #if defined(CONFIG_FB_MODULEINFO)
     int shape;
 
