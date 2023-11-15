@@ -112,6 +112,7 @@ struct uv_devinfo_s {
     int screenwidth;
     int screenheight;
     int devicetype;
+    double screendensity;
 };
 
 /****************************************************************************
