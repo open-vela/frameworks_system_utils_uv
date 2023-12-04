@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <uv_ext.h>
 
+#define UV_HANDLE_INTERNAL 0x00000010
+
 /****************************************************************************
  * Name: uv_topic_poll_cb
  *
@@ -81,6 +83,7 @@ int uv_topic_subscribe_multi(uv_loop_t* loop, uv_topic_t* topic,
     if (fd < 0)
         return -errno;
 
+    topic->handle.flags &= ~UV_HANDLE_INTERNAL;
     ret = uv_poll_init(loop, &topic->handle, fd);
     if (ret < 0) {
         orb_unsubscribe(fd);
@@ -182,6 +185,7 @@ int uv_topic_get_interval(uv_topic_t* topic, unsigned int* interval)
 
 int uv_topic_close(uv_topic_t* topic)
 {
+    topic->handle.flags |= UV_HANDLE_INTERNAL;
     uv_close((uv_handle_t*)&topic->handle, NULL);
     return 0;
 }
