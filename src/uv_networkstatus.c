@@ -28,6 +28,7 @@ static const char* uv_netstatus_ifname_list[] = {
     "bt-pan",
     "bt-net",
     "tun0",
+    "eth0",
     NULL
 };
 
