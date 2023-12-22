@@ -43,7 +43,7 @@
 #define DEVICE_PROPERTY_GET(key, dst_buf, default_value) \
     property_get(key, dst_buf, default_value);
 #else
-#define DEVICE_PROPERTY_GET(ret, key, dst_buf default_value) \
+#define DEVICE_PROPERTY_GET(ret, key, dst_buf, default_value) \
     strlen(strcpy(dst_buf, default_value));
 #endif
 
@@ -330,6 +330,7 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
 
     info->screenwidth = videinfo.xres;
     info->screenheight = videinfo.yres;
+    info->screendensity = 1.0f;
 #if defined(CONFIG_FB_MODULEINFO)
     int shape;
 
