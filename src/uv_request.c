@@ -491,6 +491,17 @@ int uv_request_set_url(uv_request_t* request, const char* url)
     return 0;
 }
 
+int uv_request_set_verbose(uv_request_t* request)
+{
+  if (!request) {
+    return -EINVAL;
+  }
+
+  curl_easy_setopt(request->easy_handle, CURLOPT_VERBOSE, 1L);
+
+  return 0;
+}
+
 int uv_request_set_formdata_file(uv_request_t* request, const char* name,
     const char* filename, const char* filepath)
 {
