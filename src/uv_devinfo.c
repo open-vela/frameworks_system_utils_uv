@@ -28,6 +28,24 @@
 #include <uv_ext.h>
 
 #define CONFIG_FACT_WIFIMAC_KEY "ro.factory.mac_wifi"
+#define CONFIG_DEVICE_BRAND_KEY "ro.product.brand"
+#define CONFIG_DEVICE_MODEL_KEY "ro.product.model"
+#define CONFIG_DEVICE_PRODUCT_KEY "ro.product.name"
+#define CONFIG_DEVICE_MANUFACTURER_KEY "ro.product.manufacturer"
+#define CONFIG_DEVICE_DEVICETYPE_KEY "ro.product.device.devicetype"
+#define CONFIG_DEVICE_SCREENSHAPE_KEY "ro.product.device.screenshape"
+#define CONFIG_DEVICE_SCREENDENSITY_KEY "ro.product.device.screendensity"
+#define CONFIG_DEVICE_LANGUAGE_KEY "ro.system.language"
+#define CONFIG_DEVICE_REGION_KEY "ro.system.region"
+#define CONFIG_DEVICE_OSVERSIONCODE_KEY "ro.system.osversioncode"
+
+#if defined(CONFIG_KVDB)
+#define DEVICE_PROPERTY_GET(key, dst_buf, default_value) \
+    property_get(key, dst_buf, default_value);
+#else
+#define DEVICE_PROPERTY_GET(ret, key, dst_buf default_value) \
+    strlen(strcpy(dst_buf, default_value));
+#endif
 
 #if defined(CONFIG_VIDEO_FB)
 #include <nuttx/video/fb.h>
@@ -128,16 +146,16 @@ int uv_devinfobuff(char* buff, int size, int item)
 
     switch (item) {
     case UV_EXT_DEVINFO_BRAND:
-        snprintf((char*)buff, size, "%s", CONFIG_PRODUCT_BRAND);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_BRAND_KEY, buff, CONFIG_PRODUCT_BRAND);
         break;
     case UV_EXT_DEVINFO_MANUFACTURER:
-        snprintf((char*)buff, size, "%s", CONFIG_PRODUCT_MANUFACTURER);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_MANUFACTURER_KEY, buff, CONFIG_PRODUCT_MANUFACTURER);
         break;
     case UV_EXT_DEVINFO_MODEL:
-        snprintf((char*)buff, size, "%s", CONFIG_PRODUCT_MODEL);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_MODEL_KEY, buff, CONFIG_PRODUCT_MODEL);
         break;
     case UV_EXT_DEVINFO_PRODUCT:
-        snprintf((char*)buff, size, "%s", CONFIG_PRODUCT_NAME);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_PRODUCT_KEY, buff, CONFIG_PRODUCT_NAME);
         break;
     case UV_EXT_DEVINFO_OSTYPE:
         if ((ret = uname(&uv_uanme)) != 0) {
@@ -152,10 +170,10 @@ int uv_devinfobuff(char* buff, int size, int item)
         snprintf(buff, size, "%s", uv_uanme.release);
         break;
     case UV_EXT_DEVINFO_LANGUAGE:
-        snprintf((char*)buff, size, "%s", CONFIG_LANGUAGE_NAME);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_LANGUAGE_KEY, buff, CONFIG_LANGUAGE_NAME);
         break;
     case UV_EXT_DEVINFO_REGION:
-        snprintf((char*)buff, size, "%s", CONFIG_REGION_NAME);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_REGION_KEY, buff, CONFIG_REGION_NAME);
         break;
     case UV_EXT_DEVINFO_DID: {
 #if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
@@ -193,9 +211,12 @@ int uv_getdevinfonumber(int* num, int item)
         return UV_EINVAL;
     }
 
+    *num = 0;
     switch (item) {
     case UV_EXT_DEVINFO_OSVERSIONCODE: {
-        *num = CONFIG_VERSION;
+#if defined(CONFIG_KVDB)
+        *num = property_get_int32(CONFIG_DEVICE_OSVERSIONCODE_KEY, CONFIG_VERSION);
+#endif
         break;
     }
 
@@ -224,8 +245,11 @@ int uv_getdevinfonumber(int* num, int item)
     case UV_EXT_DEVINFO_SCREENSHAPE: {
         int shape;
 
+#if defined(CONFIG_KVDB)
+        *num = property_get_int32(CONFIG_DEVICE_SCREENSHAPE_KEY, 0);
+#endif
         sscanf((const char*)videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
-        *num = shape;
+        *num = *num == 0 ? shape : *num;
         break;
     }
 #endif
@@ -246,33 +270,35 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
         return UV_EINVAL;
     }
 
-    snprintf(info->brand, sizeof(info->brand),
-        "%s", CONFIG_PRODUCT_BRAND);
+    memset(info, 0, sizeof(uv_devinfo_t));
+#if defined(CONFIG_KVDB)
+    {
+        char kvbuf[PROP_VALUE_MAX] = { 0 };
 
-    snprintf(info->manufacturer, sizeof(info->manufacturer),
-        "%s", CONFIG_PRODUCT_MANUFACTURER);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_BRAND_KEY, info->brand, CONFIG_PRODUCT_BRAND);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_MANUFACTURER_KEY, info->manufacturer, CONFIG_PRODUCT_MANUFACTURER);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_MODEL_KEY, info->model, CONFIG_PRODUCT_MODEL);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_PRODUCT_KEY, info->product, CONFIG_PRODUCT_NAME);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_LANGUAGE_KEY, info->language, CONFIG_LANGUAGE_NAME);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_REGION_KEY, info->region, CONFIG_REGION_NAME);
 
-    snprintf(info->model, sizeof(info->model),
-        "%s", CONFIG_PRODUCT_MODEL);
+        info->osversioncode = property_get_int32(CONFIG_DEVICE_OSVERSIONCODE_KEY, CONFIG_VERSION);
 
-    snprintf(info->product, sizeof(info->product),
-        "%s", CONFIG_PRODUCT_NAME);
+        property_get(CONFIG_DEVICE_SCREENDENSITY_KEY, kvbuf, "1.0");
+        info->screendensity = atof(kvbuf);
+
+        info->screenshape = property_get_int32(CONFIG_DEVICE_SCREENSHAPE_KEY, 0);
+        info->devicetype = property_get_int32(CONFIG_DEVICE_DEVICETYPE_KEY, UV_EXT_DEVINFO_UNKNOW);
+    }
+#endif
 
     if ((ret = uname(&uv_uanme)) != 0) {
         return ret;
     }
-    info->osversioncode = CONFIG_VERSION;
     snprintf(info->ostype, sizeof(info->ostype),
         "%s", uv_uanme.sysname);
     snprintf(info->osversionname, sizeof(info->osversionname),
         "%s", uv_uanme.release);
-
-    snprintf(info->language, sizeof(info->language),
-        "%s", CONFIG_LANGUAGE_NAME);
-    snprintf(info->region, sizeof(info->region),
-        "%s", CONFIG_REGION_NAME);
-    snprintf(info->manufacturer, sizeof(info->manufacturer),
-        "%s", CONFIG_PRODUCT_MANUFACTURER);
 
 #if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
     {
@@ -304,21 +330,15 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
 
     info->screenwidth = videinfo.xres;
     info->screenheight = videinfo.yres;
-    info->screendensity = 1.0;
 #if defined(CONFIG_FB_MODULEINFO)
     int shape;
 
     sscanf((const char*)videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
-    info->screenshape = shape;
+    info->screenshape = info->screenshape == 0 ? shape : info->screenshape;
 #else
-  info->screenshape = UV_EXT_SCREENSHAPE_ROUND;
+    info->screenshape = info->screenshape == 0 ? UV_EXT_SCREENSHAPE_ROUND : info->screenshape;
 #endif
 #endif
-
-#ifdef CONFIG_MIWEAR_APPS
-  info->devicetype = UV_EXT_DEVINFO_WATCH;
-#else
-  info->devicetype = UV_EXT_DEVINFO_UNKNOW;
-#endif
+    info->devicetype = info->devicetype == 0 ? UV_EXT_DEVINFO_UNKNOW : info->devicetype;
     return ret;
 }
