@@ -405,9 +405,9 @@ int uv_request_delete(uv_request_t* request)
         curl_slist_free_all(request->header_list);
     }
 
-    request->handle->connections_cnt--;
     if (list_in_list(&request->node)) {
         request_info("cancel pending request: %p", request);
+        request->handle->connections_cnt--;
         curl_easy_cleanup(request->easy_handle);
         list_delete(&request->node);
         request->easy_handle = NULL;
