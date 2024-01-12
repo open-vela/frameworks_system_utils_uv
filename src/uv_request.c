@@ -407,7 +407,6 @@ int uv_request_delete(uv_request_t* request)
 
     if (list_in_list(&request->node)) {
         request_info("cancel pending request: %p", request);
-        request->handle->connections_cnt--;
         curl_easy_cleanup(request->easy_handle);
         list_delete(&request->node);
         request->easy_handle = NULL;
@@ -416,6 +415,7 @@ int uv_request_delete(uv_request_t* request)
     }
 
     request_info("Cancel a downloading request: %p", request);
+    request->handle->connections_cnt--;
     /* Now, we should simply cancel resolver and clean up any resolver data. */
     Curl_resolver_cancel(request->easy_handle);
 
