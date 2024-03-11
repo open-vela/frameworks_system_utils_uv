@@ -23,13 +23,21 @@
 #include <sys/types.h>
 #include <uv_ext.h>
 
-static const char* uv_netstatus_ifname_list[] = {
-    "wlan0",
-    "bt-pan",
-    "bt-net",
-    "tun0",
-    "eth0",
-    NULL
+struct uv_netstatus {
+    const char* ifname;
+    const char* desc;
+    uint8_t type;
+};
+
+static const struct uv_netstatus uv_netstatus_list[] = {
+    { "wlan0", "wifi", UV_NETSTATUS_WIFI },
+    { "wlan1", "wifi", UV_NETSTATUS_WIFI },
+    { "cellsurf", "cellular", UV_NETSTATUS_CELLULAR },
+    { "bt-pan", "bluetooth", UV_NETSTATUS_BLUETOOTH },
+    { "bt-net", "bluetooth", UV_NETSTATUS_BLUETOOTH },
+    { "tun0", "tun", UV_NETSTATUS_TUN },
+    { "eth0", "ethernet", UV_NETSTATUS_ETHERNET },
+    { NULL, "none", UV_NETSTATUS_NONE }
 };
 
 static bool uv_ifstatus_isup(const char* name)
@@ -41,11 +49,11 @@ static bool uv_ifstatus_isup(const char* name)
 
     ret = netlib_getifstatus(name, &flags);
     if (ret != 0) {
-        syslog(LOG_ERR, "uv_netstat: getifstatus failed:%d, %d\n", ret, errno);
+        syslog(LOG_ERR, "uv_ifstatus_isup: getifstatus failed:%d, %d\n", ret, errno);
         return false;
     }
 
-    syslog(LOG_INFO, "uv_netstat: flags: %d\n", flags);
+    syslog(LOG_INFO, "uv_ifstatus_isup: flags: %d\n", flags);
     if (IFF_IS_RUNNING(flags)) {
         return true;
     }
@@ -61,21 +69,13 @@ int uv_netstatus_gettype(uint8_t* type)
         return UV_EINVAL;
     }
 
-    /* Todo: Get bluetooth connection status. */
-    for (i = 0; uv_netstatus_ifname_list[i] != NULL; i++) {
-        if (uv_ifstatus_isup(uv_netstatus_ifname_list[i])) {
-            *type = UV_NETSTATUS_WIFI;
-            syslog(LOG_INFO, "uv_netstat: status :wifi\n");
-            return 0;
+    for (i = 0; uv_netstatus_list[i].ifname != NULL; i++) {
+        if (uv_ifstatus_isup(uv_netstatus_list[i].ifname)) {
+            break;
         }
     }
 
-#if defined(CONFIG_ARCH_SIM)
-    *type = UV_NETSTATUS_WIFI;
-#else
-    *type = UV_NETSTATUS_NONE;
-#endif
-
-    syslog(LOG_INFO, "uv_netstat: status :%d\n", *type);
+    *type = uv_netstatus_list[i].type;
+    syslog(LOG_INFO, "uv_netstatus_gettype: status :%s\n", uv_netstatus_list[i].desc);
     return 0;
 }
