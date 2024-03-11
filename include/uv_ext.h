@@ -1901,6 +1901,9 @@ int uv_mqueue_async_uninit(const char* name, uv_poll_t* pollhandle);
 #define UV_NETSTATUS_WIFI 1
 #define UV_NETSTATUS_BLUETOOTH 2
 #define UV_NETSTATUS_NONE 3
+#define UV_NETSTATUS_ETHERNET 4
+#define UV_NETSTATUS_CELLULAR 5
+#define UV_NETSTATUS_TUN 6
 
 typedef void (*uv_netstatus_ipcb_t)(char* data, int result, void* extra);
 
