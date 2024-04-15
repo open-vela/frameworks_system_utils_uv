@@ -38,8 +38,8 @@
 #define CONFIG_MIWEAR_MESSAGE_MAX_LEN (1024 * 1024 * 2)
 #endif
 
-#ifndef CONFIG_CLIENT_ID_LEN
-#define CONFIG_CLIENT_ID_LEN 64
+#ifndef CONFIG_UV_MIWEAR_CLIENT_ID_LEN
+#define CONFIG_UV_MIWEAR_CLIENT_ID_LEN 64
 #endif
 
 /**
@@ -77,7 +77,7 @@ struct client {
     struct list_node node;
     uv_pipe_t pipe;
 
-    char name[CONFIG_CLIENT_ID_LEN];
+    char name[CONFIG_UV_MIWEAR_CLIENT_ID_LEN];
     enum client_state state;
 
     /* List of all write request sending out waiting for response. */
@@ -383,7 +383,7 @@ static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
         /* The first message from client. Only server could receive this message. */
         struct server* server = client->miwear->server;
         ninfo("Got connection from client: %s\n", (char*)msg->data);
-        strlcpy(client->name, msg->data, CONFIG_CLIENT_ID_LEN);
+        strlcpy(client->name, msg->data, CONFIG_UV_MIWEAR_CLIENT_ID_LEN);
         client->state = CLIENT_STATE_CONNECTED;
 
         /* Add client to list. */
@@ -794,7 +794,7 @@ int uv_miwear_start_client(uv_loop_t* loop, uv_miwear_t* miwear,
     }
     memset(client, 0, sizeof(struct client));
 
-    strlcpy(client->name, name, CONFIG_CLIENT_ID_LEN);
+    strlcpy(client->name, name, CONFIG_UV_MIWEAR_CLIENT_ID_LEN);
     list_initialize(&client->sending_list);
     client->state = CLIENT_STATE_CONNECTING;
     client->miwear = miwear;
@@ -836,7 +836,7 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
     }
     memset(client, 0, sizeof(struct client));
 
-    strlcpy(client->name, client_name, CONFIG_CLIENT_ID_LEN);
+    strlcpy(client->name, client_name, CONFIG_UV_MIWEAR_CLIENT_ID_LEN);
     list_initialize(&client->sending_list);
     client->state = CLIENT_STATE_CONNECTING;
     client->miwear = miwear;

@@ -38,6 +38,18 @@ config LIBUV_EXTENSION_TEST_TASK_STACKSIZE
 
 endif
 
+config UV_MIWEAR
+	bool "enable miwear C/S protocol support"
+	default n
+
+if UV_MIWEAR
+
+config UV_MIWEAR_CLIENT_ID_LEN
+	int "miwear client id length, must more than 0"
+	default 64
+
+endif
+
 endif
 
 endmenu
