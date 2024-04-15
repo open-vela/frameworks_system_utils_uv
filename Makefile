@@ -66,7 +66,7 @@ CSRCS += uv_request.c
 CSRCS += uv_networkcache.c
 endif
 
-ifeq ($(CONFIG_MIWEAR_COMMON), y)
+ifeq ($(CONFIG_UV_MIWEAR), y)
 CSRCS += uv_miwear.c
 endif
 
