@@ -1117,7 +1117,7 @@ void uv_ncm_cancel(uv_ncm_handle_t handle);
 
 #endif
 
-#ifdef CONFIG_MIWEAR_COMMON
+#ifdef CONFIG_UV_MIWEAR
 
 typedef uint8_t miwear_message_type_t;
 
