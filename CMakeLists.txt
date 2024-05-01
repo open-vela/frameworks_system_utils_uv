@@ -21,6 +21,7 @@
 if(CONFIG_LIBUV_EXTENSION)
 
   set(LIBUV_EXT_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+  set(LIBUV_EXT_TEST_DIR ${CMAKE_CURRENT_LIST_DIR}/tests)
 
   list(APPEND EXT_SRCS ${LIBUV_EXT_SRC_DIR}/uv_mqueue.c
        ${LIBUV_EXT_SRC_DIR}/uv_async_queue.c
@@ -45,7 +46,7 @@ if(CONFIG_LIBUV_EXTENSION)
 
   if(CONFIG_UORB)
     list(APPEND EXT_SRCS ${LIBUV_EXT_SRC_DIR}/uv_topic.c
-         ${LIBUV_EXT_SRC_DIR}/uv_topicadv.c)
+         ${LIBUV_EXT_TEST_DIR}/uv_topicadv.c)
   endif()
 
   if(CONFIG_UTILS_CURL)
