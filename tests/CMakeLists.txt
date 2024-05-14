@@ -113,26 +113,6 @@ if(CONFIG_LIBUV_EXTENSION_TEST)
       libuv)
   endif()
 
-  if(CONFIG_UTILS_CURL)
-    nuttx_add_application(
-      MODULE
-      ${CONFIG_LIBUV_EXTENSION_TEST}
-      NAME
-      uv_request
-      STACKSIZE
-      ${CONFIG_LIBUV_EXTENSION_TEST_TASK_STACKSIZE}
-      PRIORITY
-      ${CONFIG_LIBUV_EXTENSION_TEST_PRIORITY}
-      SRCS
-      uv-request-test.c
-      INCLUDE_DIRECTORIES
-      ${INCDIR}
-      COMPILE_FLAGS
-      ${CFLAGS}
-      DEPENDS
-      libuv)
-  endif()
-
   if(CONFIG_UORB)
     nuttx_add_application(
       MODULE
