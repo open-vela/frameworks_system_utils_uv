@@ -52,7 +52,8 @@ if(CONFIG_LIBUV_EXTENSION)
   if(CONFIG_UTILS_CURL)
     list(APPEND EXT_SRCS ${LIBUV_EXT_SRC_DIR}/uv_request.c
          ${LIBUV_EXT_SRC_DIR}/uv_networkcache.c
-         {LIBUV_EXT_SRC_DIR}/uv_networkstatus.c)
+         ${LIBUV_EXT_SRC_DIR}/uv_networkstatus.c)
+
   endif()
 
   if(CONFIG_MIWEAR_COMMON)
