@@ -212,9 +212,11 @@ static void db_work_cb(uv_work_t* work_req)
     case UV_DB_OP_SET:
         len = req->value.len;
         req->status = unqlite_kv_store(req->handle->db, req->key, -1, req->value.base, len);
+        unqlite_commit(req->handle->db);
         break;
     case UV_DB_OP_DELETE:
         req->status = unqlite_kv_delete(req->handle->db, req->key, -1);
+        unqlite_commit(req->handle->db);
         break;
     case UV_DB_OP_KEY:
         req->status = db_index_to_key(req->handle, (int32_t*)&req->value.len, (char**)&req->key);
