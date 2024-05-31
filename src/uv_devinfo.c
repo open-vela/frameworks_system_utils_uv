@@ -214,6 +214,14 @@ int uv_devinfobuff(char* buff, int size, int item)
 #endif
         break;
     }
+    case UV_EXT_DEVINFO_SERIAL: {
+#if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
+        char kvbuf[PROP_VALUE_MAX] = { 0 };
+        property_get(CONFIG_FACT_WIFIMAC_KEY, kvbuf, "NA");
+        strlcpy(buff, kvbuf, size);
+#endif
+        break;
+    }
     default:
         return UV_EINVAL;
     }
