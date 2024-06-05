@@ -32,6 +32,33 @@ static void add_pkcs_padding(unsigned char* output, size_t output_len, size_t da
     memset(output + data_len, padding_len, padding_len);
 }
 
+static int get_pkcs_padding(unsigned char *input, size_t input_len,
+                            size_t *data_len)
+{
+    size_t i, pad_idx;
+    unsigned char padding_len, bad = 0;
+
+    if (NULL == input || NULL == data_len) {
+        return MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA;
+    }
+
+    padding_len = input[input_len - 1];
+    *data_len = input_len - padding_len;
+
+    /* Avoid logical || since it results in a branch */
+    bad |= padding_len > input_len;
+    bad |= padding_len == 0;
+
+    /* The number of bytes checked must be independent of padding_len,
+     * so pick input_len, which is usually 8 or 16 (one block) */
+    pad_idx = input_len - padding_len;
+    for (i = 0; i < input_len; i++) {
+        bad |= (input[i] ^ padding_len) * (i >= pad_idx);
+    }
+
+    return MBEDTLS_ERR_CIPHER_INVALID_PADDING * (bad != 0);
+}
+
 int uv_aes_init(uv_aes_t* ctx, int aestype, int mode)
 {
     if (!ctx)
@@ -53,6 +80,7 @@ int uv_aes_init(uv_aes_t* ctx, int aestype, int mode)
     if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode) {
         if (MBEDTLS_PADDING_PKCS7 == mode) {
             pctx->add_padding = add_pkcs_padding;
+            pctx->get_padding = get_pkcs_padding;
         }
     } else {
         mbedtls_cipher_set_padding_mode(pctx, mode);
@@ -207,12 +235,44 @@ int uv_aes_decrypt(uv_aes_t* ctx,
     int ret, outlen = 0;
     size_t len;
 
-    ret = mbedtls_cipher_update(pctx, input, ilen, output, &len);
-    if (ret != 0) {
-        return ret;
+    if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode) {
+        size_t i, blocks, block_size;
+
+        block_size = mbedtls_cipher_get_block_size(pctx);
+        if (block_size == 0) {
+            return MBEDTLS_ERR_CIPHER_INVALID_CONTEXT;
+        }
+
+        blocks = ilen / block_size;
+
+        for (i = 0; i < blocks - 1; i++) {
+            ret = mbedtls_cipher_update(pctx, input, block_size, output, &len);
+            if (ret != 0) {
+                return ret;
+            }
+
+            input += len;
+            output += len;
+            outlen += len;
+        }
+
+        ret = mbedtls_cipher_update(pctx, input, block_size, output, &len);
+        if (ret != 0) {
+            return ret;
+        }
+
+        pctx->get_padding(output, block_size, &len);
+        output += len;
+        outlen += len;
+    } else {
+        ret = mbedtls_cipher_update(pctx, input, ilen, output, &len);
+        if (ret != 0) {
+            return ret;
+        }
+
+        outlen += len;
     }
 
-    outlen += len;
     ret = mbedtls_cipher_finish(pctx, output + (char)outlen, &len);
     if (ret != 0) {
         return ret;
