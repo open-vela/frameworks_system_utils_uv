@@ -24,7 +24,71 @@
 #include <uv/errno.h>
 #include <uv_ext.h>
 
-int uv_mqueue_async_send(const char* mq_name, void* data, int datasize)
+/****************************************************************************
+ * Name: uv_mqueue_poll_cb
+ *
+ * Description:
+ *   mqueue poll callback.
+ *
+ ****************************************************************************/
+
+static void uv_mqueue_poll_cb(uv_poll_t* handle, int status, int events)
+{
+    uv_mqueue_t* mqueue = (uv_mqueue_t*)handle;
+    if (status < 0) {
+        mqueue->cb(mqueue, status, NULL, 0);
+        return;
+    }
+
+    if (events & UV_READABLE) {
+        struct mq_attr attr = { 0 };
+        int ret = mq_getattr(handle->io_watcher.fd, &attr);
+        if (ret < 0) {
+            mqueue->cb(mqueue, status, NULL, 0);
+            return;
+        }
+        void* data = mqueue->msg_data ? mqueue->msg_data : alloca(attr.mq_msgsize);
+        ssize_t rd_len = 0;
+        do {
+            rd_len = mq_receive(handle->io_watcher.fd, data, attr.mq_msgsize, NULL);
+            if (rd_len > 0) {
+                mqueue->cb(mqueue, 0, data, rd_len);
+                continue;
+            }
+
+            if (rd_len < 0 && errno != EAGAIN) {
+                mqueue->cb(mqueue, -errno, NULL, 0);
+            }
+
+        } while (rd_len > 0);
+    }
+
+    if (events & UV_DISCONNECT) {
+        mqueue->cb(mqueue, UV_ENOTCONN, NULL, 0);
+    }
+}
+
+static void uv_mqueue_close_cb(uv_handle_t* handle)
+{
+    uv_mqueue_t* mqueue = (uv_mqueue_t*)handle;
+
+    if (mqueue->fd >= 0) {
+        mq_close(mqueue->fd);
+        mqueue->fd = -1;
+    }
+
+    if (mqueue->msg_data) {
+        free(mqueue->msg_data);
+        mqueue->msg_data = NULL;
+    }
+
+    if (mqueue->close_cb) {
+        mqueue->close_cb(handle);
+        mqueue->close_cb = NULL;
+    }
+}
+
+int uv_mqueue_send(const char* mq_name, void* data, int datasize)
 {
     int ret;
     int fd;
@@ -37,13 +101,16 @@ int uv_mqueue_async_send(const char* mq_name, void* data, int datasize)
     if (fd < 0) {
         return -errno;
     }
-
     ret = mq_send(fd, (const char*)data, datasize, 0);
+    if (ret < 0) {
+        ret = -errno;
+    }
+
     mq_close(fd);
     return ret;
 }
 
-int uv_mqueue_async_recv(const char* mq_name, void* buff, int buffsize)
+int uv_mqueue_recv(const char* mq_name, void* buff, int buffsize)
 {
     int ret;
     int fd;
@@ -58,68 +125,73 @@ int uv_mqueue_async_recv(const char* mq_name, void* buff, int buffsize)
     }
 
     ret = mq_receive(fd, (char*)buff, buffsize, NULL);
+    if (ret < 0) {
+        ret = -errno;
+    }
+
     mq_close(fd);
     return ret;
 }
 
-int uv_mqueue_async_init(uv_loop_t* loop,
-    uv_poll_t* pollhandle,
-    uv_poll_cb cb,
-    uv_nxmqueue_t* attr)
+int uv_mqueue_init(uv_loop_t* loop, uv_mqueue_t* mqueue, const char* name, struct mq_attr* attr)
 {
     int fd;
     int ret;
-    mode_t mode = 0;
-    struct mq_attr mqattr = { 0 };
 
-    if (!attr || !attr->name) {
+    if (!name || !loop) {
         return UV_EINVAL;
     }
 
-    mqattr.mq_msgsize = attr->mq_msgsize;
-    mqattr.mq_maxmsg = attr->mq_maxmsg;
-    fd = mq_open(attr->name, O_RDWR | O_CREAT | O_NONBLOCK, mode,
-        &mqattr);
+    mqueue->fd = -1;
+    fd = mq_open(name, O_RDWR | O_CREAT | O_NONBLOCK, 0644, attr);
     if (fd < 0) {
         return -errno;
     }
 
-    if (!loop) {
-        return fd;
+    mqueue->msg_data = NULL;
+    if (attr->mq_msgsize > 128) {
+        mqueue->msg_data = malloc(attr->mq_msgsize);
+        if (!mqueue->msg_data) {
+            mq_close(fd);
+            return UV_ENOMEM;
+        }
     }
 
-    ret = uv_poll_init(loop, pollhandle, fd);
+    ret = uv_poll_init(loop, &mqueue->poll, fd);
     if (ret) {
         mq_close(fd);
         return ret;
     }
 
-    ret = uv_poll_start(pollhandle, UV_READABLE, cb);
-    if (ret) {
-        mq_close(fd);
-        return ret;
-    }
+    mqueue->fd = fd;
+    mqueue->cb = NULL;
 
     return ret;
 }
 
-int uv_mqueue_async_uninit(const char* name, uv_poll_t* pollhandle)
+int uv_mqueue_start(uv_mqueue_t* mqueue, uv_mqueue_cb cb)
 {
-    int ret;
+    mqueue->cb = cb;
+    int ret = uv_poll_start(&mqueue->poll, UV_DISCONNECT | UV_READABLE, uv_mqueue_poll_cb);
+    return ret;
+}
 
-    if (!name) {
+int uv_mqueue_stop(uv_mqueue_t* mqueue)
+{
+    if (!mqueue) {
         return UV_EINVAL;
     }
 
-    ret = mq_unlink(name);
-    if (ret < 0) {
-        return ret;
+    return uv_poll_stop(&mqueue->poll);
+}
+
+void uv_mqueue_close(uv_mqueue_t* mqueue, uv_close_cb close_cb)
+{
+    if (!mqueue) {
+        return;
     }
 
-    if (pollhandle) {
-        uv_poll_stop(pollhandle);
-        uv_close((uv_handle_t*)pollhandle, NULL);
-    }
+    mqueue->close_cb = close_cb;
 
-    return ret;
+    uv_close((uv_handle_t*)&mqueue->poll, uv_mqueue_close_cb);
 }
