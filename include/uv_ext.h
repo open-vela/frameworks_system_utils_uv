@@ -44,6 +44,7 @@
 #include <kvdb.h>
 #endif
 
+#include <mqueue.h>
 #include <syslog.h>
 
 #define UV_EXT_OK 0
@@ -1879,19 +1880,131 @@ typedef struct uv_message_s {
     void* data;
 } uv_message_t;
 
-typedef struct uv_nxmqueue_s {
-    char* name;
-    int mq_msgsize;
-    int mq_maxmsg;
-} uv_nxmqueue_t;
+typedef struct uv_mqueue_s uv_mqueue_t;
 
-int uv_mqueue_async_send(const char* mq_name, void* data, int datasize);
-int uv_mqueue_async_recv(const char* mq_name, void* buff, int buffsize);
-int uv_mqueue_async_init(uv_loop_t* loop,
-    uv_poll_t* pollhandle,
-    uv_poll_cb cb,
-    uv_nxmqueue_t* attr);
-int uv_mqueue_async_uninit(const char* name, uv_poll_t* pollhandle);
+typedef void (*uv_mqueue_cb)(uv_mqueue_t* mqueue, int status, void* data, size_t datalen);
+
+struct uv_mqueue_s {
+    uv_poll_t poll;
+    uv_mqueue_cb cb;
+    void* data;
+
+    /** priviate variable */
+    int fd;
+    void* msg_data;
+    uv_close_cb close_cb;
+};
+
+/****************************************************************************
+ * Name: uv_mqueue_send
+ *
+ * Description:
+ *   Send data to mqueue named by mq_name. This function can be called in any
+ *   task and any pthread.
+ *
+ * Input Parameters:
+ *   mq_name   - Message queue name
+ *   data      - Data to send
+ *   datasize  - The size of the data in bytes
+ *
+ * Returned Value:
+ *   Zero (OK) on success
+ *   Negative on fail
+ *
+ ****************************************************************************/
+int uv_mqueue_send(const char* mq_name, void* data, int datasize);
+
+/****************************************************************************
+ * Name: uv_mqueue_recv
+ *
+ * Description:
+ *   Receive data from message queue named by mq_name. This function can be
+ *   called in any task and any pthread.
+ *
+ * Input Parameters:
+ *   mq_name   - Message queue name
+ *   buff      - Buffer to receive the message
+ *   buffsize  - Size of the buffer in bytes
+ *
+ * Returned Value:
+ *   On success, the length of the select message in bytes is returned.
+ *   Negative on fail
+ *
+ ****************************************************************************/
+int uv_mqueue_recv(const char* mq_name, void* buff, int buffsize);
+
+/****************************************************************************
+ * Name: uv_mqueue_init
+ *
+ * Description:
+ *   Initialize uv message queue, will open the message queue or create it if it
+ *   not exist.
+ *
+ * Input Parameters:
+ *   loop      - Event loop
+ *   mqueue    - Pointer to uv message queue handler, each uv_message has one
+ *               handler
+ *   name      - Message queue name
+ *   attr      - Attribuites of message queue
+ *
+ * Returned Value:
+ *   Zero (OK) on success
+ *   Negative on fail
+ *
+ ****************************************************************************/
+int uv_mqueue_init(uv_loop_t* loop, uv_mqueue_t* mqueue, const char* name, struct mq_attr* attr);
+
+/****************************************************************************
+ * Name: uv_mqueue_start
+ *
+ * Description:
+ *   Start to listen message queue reading event or disconnecting event.
+ *
+ * Input Parameters:
+ *   mqueue    - Message queue handler
+ *   cb        - Callback be called when receieving message from queue or
+ *               something is wrong.
+ *
+ * Returned Value:
+ *   Zero (OK) on success
+ *   Negative on fail
+ *
+ ****************************************************************************/
+int uv_mqueue_start(uv_mqueue_t* mqueue, uv_mqueue_cb cb);
+
+/****************************************************************************
+ * Name: uv_mqueue_stop
+ *
+ * Description:
+ *   Stop listening message queue reading event or disconnecting event.
+ *
+ * Input Parameters:
+ *   mqueue    - Message queue handler
+ *
+ * Returned Value:
+ *   Zero (OK) on success
+ *   Negative on fail
+ *
+ ****************************************************************************/
+int uv_mqueue_stop(uv_mqueue_t* mqueue);
+
+/****************************************************************************
+ * Name: uv_mqueue_close
+ *
+ * Description:
+ *   Close uv message queue.
+ *
+ * Input Parameters:
+ *   mqueue    - Message queue handler
+ *   close_cb  - Closing callback be called asynchronously after this call.
+ *               It can be NULL in cases where no cleanup or deallocation is
+ *               necessary.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void uv_mqueue_close(uv_mqueue_t* mqueue, uv_close_cb close_cb);
 
 /****************************************************************************
  * network
