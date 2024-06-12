@@ -397,8 +397,14 @@ int uv_ncm_close(uv_ncm_t* ncm)
         free(cache->url);
         for (int i = 0; i < cache->download_nums; i++) {
             download_t* ret = cache->download_list[i];
-            free(ret->cache->url);
-            free(ret->cache);
+            if (ret->cache != cache) {
+                free(ret->cache->url);
+                free(ret->cache);
+            }
+            if (ret->timer != NULL) {
+                uv_timer_stop(ret->timer);
+                uv_close((uv_handle_t*)ret->timer, timer_close_cb);
+            }
             free(ret);
         }
         free(cache->download_list);
