@@ -38,7 +38,7 @@ static void uv_topic_poll_cb(uv_poll_t* handle, int status, int events)
         topic->cb(topic, status, NULL, 0);
     } else if (events & UV_READABLE) {
         void* data = topic->meta_data ? topic->meta_data : alloca(topic->datalen);
-        ssize_t ret = orb_copy_multi(handle->io_watcher.fd, data, topic->datalen);
+        ssize_t ret = orb_copy_multi(topic->fd, data, topic->datalen);
         if (ret > 0) {
             topic->cb(topic, 0, data, ret);
         } else if (ret < 0) {
@@ -92,8 +92,10 @@ int uv_topic_subscribe_multi(uv_loop_t* loop, uv_topic_t* topic,
             free(topic->meta_data);
             topic->meta_data = NULL;
         }
+        return ret;
     }
 
+    topic->fd = fd;
     return ret;
 }
 
@@ -114,9 +116,13 @@ int uv_topic_unsubscribe(uv_topic_t* topic)
     if (ret < 0)
         return ret;
 
-    ret = orb_unsubscribe(topic->handle.io_watcher.fd);
-    if (ret < 0)
-        ret = -errno;
+    if (topic->fd >= 0) {
+        ret = orb_unsubscribe(topic->fd);
+        if (ret < 0)
+            ret = -errno;
+        else
+            topic->fd = -1;
+    }
 
     if (topic->meta_data != NULL) {
         free(topic->meta_data);
@@ -128,34 +134,34 @@ int uv_topic_unsubscribe(uv_topic_t* topic)
 
 int uv_topic_set_frequency(uv_topic_t* topic, unsigned int frequency)
 {
-    if (!topic)
+    if (!topic || topic->fd < 0)
         return UV_EINVAL;
 
-    return orb_set_frequency(topic->handle.io_watcher.fd, frequency);
+    return orb_set_frequency(topic->fd, frequency);
 }
 
 int uv_topic_get_frequency(uv_topic_t* topic, unsigned int* frequency)
 {
-    if (!topic)
+    if (!topic || topic->fd < 0)
         return UV_EINVAL;
 
-    return orb_get_frequency(topic->handle.io_watcher.fd, frequency);
+    return orb_get_frequency(topic->fd, frequency);
 }
 
 int uv_topic_set_interval(uv_topic_t* topic, unsigned int interval)
 {
-    if (!topic)
+    if (!topic || topic->fd < 0)
         return UV_EINVAL;
 
-    return orb_set_interval(topic->handle.io_watcher.fd, interval);
+    return orb_set_interval(topic->fd, interval);
 }
 
 int uv_topic_get_interval(uv_topic_t* topic, unsigned int* interval)
 {
-    if (!topic)
+    if (!topic || topic->fd < 0)
         return UV_EINVAL;
 
-    return orb_get_interval(topic->handle.io_watcher.fd, interval);
+    return orb_get_interval(topic->fd, interval);
 }
 
 int uv_topic_close(uv_topic_t* topic)
