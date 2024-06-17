@@ -42,15 +42,15 @@ static void uv_mqueue_poll_cb(uv_poll_t* handle, int status, int events)
 
     if (events & UV_READABLE) {
         struct mq_attr attr = { 0 };
-        int ret = mq_getattr(handle->io_watcher.fd, &attr);
+        int ret = mq_getattr(mqueue->fd, &attr);
         if (ret < 0) {
-            mqueue->cb(mqueue, status, NULL, 0);
+            mqueue->cb(mqueue, ret, NULL, 0);
             return;
         }
         void* data = mqueue->msg_data ? mqueue->msg_data : alloca(attr.mq_msgsize);
         ssize_t rd_len = 0;
         do {
-            rd_len = mq_receive(handle->io_watcher.fd, data, attr.mq_msgsize, NULL);
+            rd_len = mq_receive(mqueue->fd, data, attr.mq_msgsize, NULL);
             if (rd_len > 0) {
                 mqueue->cb(mqueue, 0, data, rd_len);
                 continue;
