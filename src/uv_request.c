@@ -172,7 +172,7 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
         request->response.body = (char*)strdup(curl_easy_strerror(request->error_code));
         request->cb(UV_REQUEST_ERROR, &request->response);
     } else {
-        request_info("request done: %p", request);
+        request_debug("request done: %p", request);
         request->cb(UV_REQUEST_DONE, &request->response);
     }
 
@@ -215,7 +215,7 @@ static void check_multi_info(CURLM* multi_handle)
 
             if (!list_is_empty(&handle->list)) {
                 uv_request_t* new_request;
-                request_info("Leave queue, start downloading: %p", request);
+                request_debug("Leave queue, start downloading: %p", request);
                 struct list_node* node = list_remove_head(&handle->list);
                 new_request = container_of(node, uv_request_t, node);
                 curl_multi_add_handle(multi_handle, new_request->easy_handle);
@@ -406,7 +406,7 @@ int uv_request_delete(uv_request_t* request)
     }
 
     if (list_in_list(&request->node)) {
-        request_info("cancel pending request: %p", request);
+        request_debug("cancel pending request: %p", request);
         curl_easy_cleanup(request->easy_handle);
         list_delete(&request->node);
         request->easy_handle = NULL;
@@ -414,7 +414,7 @@ int uv_request_delete(uv_request_t* request)
         return 0;
     }
 
-    request_info("Cancel a downloading request: %p", request);
+    request_debug("Cancel a downloading request: %p", request);
     request->handle->connections_cnt--;
     /* Now, we should simply cancel resolver and clean up any resolver data. */
     Curl_resolver_cancel(request->easy_handle);
@@ -481,7 +481,7 @@ int uv_request_set_url(uv_request_t* request, const char* url)
     }
 
     memset(request, 0, sizeof(uv_request_t));
-    request_info("request url: %p, %s", request, url);
+    request_debug("request url: %p, %s", request, url);
     request->easy_handle = curl_easy_init();
     request->header_list = NULL;
     request->fd = NULL;
@@ -663,11 +663,11 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
     request->handle = handle;
 
     if (handle->connections_cnt < CONFIG_UV_REQUEST_MAX_LINKS) {
-        request_info("start download: %p", request);
+        request_debug("start download: %p", request);
         curl_multi_add_handle(handle->multi_handle, request->easy_handle);
         handle->connections_cnt++;
     } else {
-        request_info("join the waiting queue: %p", request);
+        request_debug("join the waiting queue: %p", request);
         list_initialize(&request->node);
         list_add_tail(&handle->list, &request->node);
     }
