@@ -405,6 +405,7 @@ int uv_ncm_close(uv_ncm_t* ncm)
                 uv_timer_stop(ret->timer);
                 uv_close((uv_handle_t*)ret->timer, timer_close_cb);
             }
+            uv_request_delete(ret->request);
             free(ret);
         }
         free(cache->download_list);
