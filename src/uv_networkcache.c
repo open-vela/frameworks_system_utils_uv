@@ -176,6 +176,7 @@ static void download_file_cb(int state, uv_response_t* response)
         download->cache->path = NULL;
         RB_REMOVE(file_cache_tree_s, &download->ncm->file_cache_tree, download->cache);
         free(download->cache->url);
+        download->cache->url = NULL;
     }
 
     download->retry_count = 0;
@@ -225,9 +226,8 @@ void uv_ncm_download_retry(download_t* download)
     if (download->timer == NULL) {
         download->timer = malloc(sizeof(uv_timer_t));
         uv_timer_init(download->ncm->loop, download->timer);
+        download->timer->data = download;
     }
-
-    download->timer->data = download;
 
     uv_timer_stop(download->timer);
     uv_timer_start(download->timer, (uv_timer_cb)uv_ncm_download, RETRY_INTERVAL, 0);
@@ -396,17 +396,17 @@ int uv_ncm_close(uv_ncm_t* ncm)
         free(cache->path);
         free(cache->url);
         for (int i = 0; i < cache->download_nums; i++) {
-            download_t* ret = cache->download_list[i];
-            if (ret->cache != cache) {
-                free(ret->cache->url);
-                free(ret->cache);
+            download_t* download = cache->download_list[i];
+            if (download->cache != cache) {
+                free(download->cache->url);
+                free(download->cache);
             }
-            if (ret->timer != NULL) {
-                uv_timer_stop(ret->timer);
-                uv_close((uv_handle_t*)ret->timer, timer_close_cb);
+            if (download->timer != NULL) {
+                uv_timer_stop(download->timer);
+                uv_close((uv_handle_t*)download->timer, timer_close_cb);
             }
-            uv_request_delete(ret->request);
-            free(ret);
+            uv_request_delete(download->request);
+            free(download);
         }
         free(cache->download_list);
         RB_REMOVE(file_cache_tree_s, &ncm->file_cache_tree, cache);

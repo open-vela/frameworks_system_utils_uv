@@ -157,6 +157,23 @@ static void destroy_curl_context(curl_context_t* context)
     uv_close((uv_handle_t*)&context->poll_handle, curl_close_cb);
 }
 
+static void uv_request_cleanup(uv_request_t* request)
+{
+    if (request->header_list) {
+        curl_slist_free_all(request->header_list);
+    }
+
+    if (request->response.body) {
+        free(request->response.body);
+    }
+
+    if (request->response.headers) {
+        free(request->response.headers);
+    }
+
+    free(request);
+}
+
 static void uv_request_done(CURL* easy_handle, uv_request_t* request)
 {
     curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, (char**)&request);
@@ -180,23 +197,13 @@ static void uv_request_done(CURL* easy_handle, uv_request_t* request)
         curl_multi_remove_handle(request->handle->multi_handle, easy_handle);
         curl_easy_cleanup(easy_handle);
     }
-
-    if (request->header_list) {
-        curl_slist_free_all(request->header_list);
-    }
-
-    if (request->response.body) {
-        free(request->response.body);
-    }
-    if (request->response.headers) {
-        free(request->response.headers);
-    }
     if (request->formpost) {
         curl_formfree(request->formpost);
         request->formpost = NULL;
         request->lastptr = NULL;
     }
-    free(request);
+
+    uv_request_cleanup(request);
 }
 
 static void check_multi_info(CURLM* multi_handle)
@@ -401,16 +408,14 @@ int uv_request_delete(uv_request_t* request)
         fclose(request->fd);
     }
 
-    if (request->header_list) {
-        curl_slist_free_all(request->header_list);
-    }
-
     if (list_in_list(&request->node)) {
         request_debug("cancel pending request: %p", request);
-        curl_easy_cleanup(request->easy_handle);
         list_delete(&request->node);
+
+        curl_easy_cleanup(request->easy_handle);
         request->easy_handle = NULL;
-        free(request);
+
+        uv_request_cleanup(request);
         return 0;
     }
 
@@ -421,22 +426,15 @@ int uv_request_delete(uv_request_t* request)
 
     curl_multi_remove_handle(request->handle->multi_handle, request->easy_handle);
     curl_easy_cleanup(request->easy_handle);
-    if (request->response.body) {
-        free(request->response.body);
-    }
+    request->easy_handle = NULL;
 
-    if (request->response.headers) {
-        free(request->response.headers);
-    }
     if (request->formpost) {
         curl_formfree(request->formpost);
         request->formpost = NULL;
         request->lastptr = NULL;
     }
 
-    request->easy_handle = NULL;
-    free(request);
-
+    uv_request_cleanup(request);
     return 0;
 }
 
