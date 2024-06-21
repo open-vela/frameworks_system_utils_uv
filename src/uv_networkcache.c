@@ -156,6 +156,7 @@ static void download_file_cb(int state, uv_response_t* response)
     download_t** download_list = download->cache->download_list;
     int download_nums = download->cache->download_nums;
 
+    download->request = NULL;
     if(download->retry_count < MAX_RETRIES){
         if (state == UV_REQUEST_DONE) {
             if (response->httpcode != 200) {
