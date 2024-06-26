@@ -127,6 +127,7 @@ static int uv_getscreeninfo(struct fb_videoinfo_s* videinfo)
 
     ret = ioctl(fd, DEVINFO_LCD_IOCDIDEOINFO, videinfo);
     if (ret != 0) {
+        close(fd);
         return ret;
     }
 
