@@ -42,6 +42,12 @@ typedef struct uv_ncm_s {
     char* cache_path;
     uv_request_session_t* handle;
     struct file_cache_tree_s file_cache_tree;
+
+    /* The download failed but cache was hold by upper layer,
+     * Will be hold in gc, and free in uv_ncm_close.
+     */
+    int gc_cnt;
+    file_cache_t** gc_nodes;
 } uv_ncm_t;
 
 static void uv_ncm_download_retry(download_t* download);
@@ -153,56 +159,72 @@ static void timer_close_cb(uv_handle_t* handle)
 static void download_file_cb(int state, uv_response_t* response)
 {
     download_t* download = (download_t*)response->userp;
-    download_t** download_list = download->cache->download_list;
-    int download_nums = download->cache->download_nums;
+    bool retry = false;
 
-    download->request = NULL;
-    if(download->retry_count < MAX_RETRIES){
+    if (download->retry_count < MAX_RETRIES) {
         if (state == UV_REQUEST_DONE) {
             if (response->httpcode != 200) {
-                uv_ncm_download_retry(download);
-                return;
+                retry = true;
             }
         } else {
-            uv_ncm_download_retry(download);
-            return;
+            retry = true;
         }
     }
 
-    if (state == UV_REQUEST_ERROR)
-    {
-        syslog(LOG_ERR, "download url fail: %s", download->cache->url);
-        unlink(download->cache->path);
-        free(download->cache->path);
-        download->cache->path = NULL;
-        RB_REMOVE(file_cache_tree_s, &download->ncm->file_cache_tree, download->cache);
-        free(download->cache->url);
-        download->cache->url = NULL;
-    }
+    if (retry) {
+        /* will be free after cb done */
+        download->request = NULL;
+        uv_ncm_download_retry(download);
+    } else {
+        file_cache_t* cache = download->cache;
+        download_t** download_list = cache->download_list;
+        int download_nums = cache->download_nums;
 
-    download->retry_count = 0;
-    if (download->timer != NULL) {
-        uv_timer_stop(download->timer);
-        uv_close((uv_handle_t*)download->timer, timer_close_cb);
-    }
+        cache->download_nums = 0;
+        cache->download_list = NULL;
 
-    download->cache->download_nums = 0;
-    download->cache->download_list = NULL;
-    download->cache->ready = true;
+        if (state == UV_REQUEST_ERROR) {
+            uv_ncm_t* ncm = download->ncm;
+            int gc_cnt = ncm->gc_cnt;
+            syslog(LOG_ERR, "download fail %d url %s", ncm->gc_cnt, cache->url);
+            unlink(cache->path);
+            free(cache->path);
+            cache->path = NULL;
 
-    for (int i = 0; i < download_nums; i++) {
-        if (download_list == NULL) {
-            break;
+            RB_REMOVE(file_cache_tree_s, &download->ncm->file_cache_tree, cache);
+            free(cache->url);
+            cache->url = NULL;
+
+            ncm->gc_nodes = realloc(ncm->gc_nodes, (gc_cnt + 1)*sizeof(void*));
+            ncm->gc_nodes[gc_cnt] = cache;
+            ncm->gc_cnt = gc_cnt + 1;
+        } else {
+            cache->ready = true;
         }
-        download = download_list[i];
-        if (download->cb != NULL) {
-            download->cb(state != UV_REQUEST_DONE ? response->httpcode : UV_REQUEST_DONE,
-                state != UV_REQUEST_DONE ? NULL : response->body,
-                (void*)download->userp);
+
+        download->retry_count = 0;
+        if (download->timer != NULL) {
+            uv_timer_stop(download->timer);
+            uv_close((uv_handle_t*)download->timer, timer_close_cb);
         }
+
+        if (download_list != NULL) {
+            for (int i = 0; i < download_nums; i++) {
+                download_t* item = download_list[i];
+                if (item->cb != NULL) {
+                    item->cb(state != UV_REQUEST_DONE ? response->httpcode : UV_REQUEST_DONE,
+                        state != UV_REQUEST_DONE ? NULL : response->body,
+                        (void*)item->userp);
+                }
+                if (item != download) {
+                    free(item);
+                }
+            }
+        }
+
+        free(download_list);
         free(download);
     }
-    free(download_list);
     return;
 }
 
@@ -274,8 +296,12 @@ static int checkpath(const char* path)
 static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
     void* userp, file_cache_t** handle)
 {
+    download_t* download;
     char* temp_path;
-    download_t* download = calloc(1, sizeof(download_t));
+    int res;
+    int fd;
+
+    download = calloc(1, sizeof(download_t));
     download->cb = cb;
     download->userp = userp;
     download->ncm = ncm;
@@ -284,7 +310,7 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
 
     file_cache_t* cache_res;
     file_cache_t* cache;
-    cache_res = RB_INSERT(file_cache_tree_s, &download->ncm->file_cache_tree,
+    cache_res = RB_INSERT(file_cache_tree_s, &ncm->file_cache_tree,
         download->cache);
     cache = cache_res == NULL ? download->cache : cache_res;
 
@@ -294,6 +320,7 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
     cache->download_list[cache->download_nums - 1] = download;
 
     if (cache_res != NULL) {
+        /* already cached */
         *handle = cache;
         free(download->cache->url);
         free(download->cache);
@@ -301,35 +328,47 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
         return 0;
     }
 
-    uv_request_create(&download->request);
-    uv_request_set_url(download->request, url);
-    uv_request_set_userp(download->request, download);
-
-    temp_path = (char*)malloc(PATH_MAX);
+   temp_path = (char*)malloc(PATH_MAX);
     if (temp_path == NULL) {
-        return -1;
+        goto error;
     }
 
     strcpy(temp_path, ncm->cache_path);
     checkpath(temp_path);
     strcat(temp_path, "/ncm_XXXXXX");
-    int fd = mkstemp(temp_path);
+    fd = mkstemp(temp_path);
     close(fd);
-    if (fd < 0) {
-        free(temp_path);
-        return -1;
-    }
     download->cache->path = strdup(temp_path);
     free(temp_path);
-    int res = uv_request_set_atrribute(download->request, UV_DOWNLOAD,
+
+    if (fd < 0) {
+        goto error;
+    }
+
+    uv_request_create(&download->request);
+    uv_request_set_url(download->request, url);
+    uv_request_set_userp(download->request, download);
+
+
+    res = uv_request_set_atrribute(download->request, UV_DOWNLOAD,
         (void*)download->cache->path);
     if (res != 0) {
-        return -1;
+        goto error;
     }
 
     uv_request_commit(ncm->handle, download->request, (uv_request_cb)download_file_cb);
     *handle = download->cache;
     return 0;
+
+error:
+    syslog(LOG_ERR, "download error url %s\n", url);
+    RB_REMOVE(file_cache_tree_s, &ncm->file_cache_tree, cache);
+    free(download->cache->path);
+    free(download->cache->url);
+    free(download->cache);
+    uv_request_delete(download->request);
+    free(download);
+    return -1;
 }
 
 uv_ncm_res_t uv_ncm_get_resource(uv_ncm_t* ncm, const uv_ncm_cfg_t* cfg, uv_ncm_handle_t* handle)
@@ -399,6 +438,7 @@ int uv_ncm_close(uv_ncm_t* ncm)
         for (int i = 0; i < cache->download_nums; i++) {
             download_t* download = cache->download_list[i];
             if (download->cache != cache) {
+                free(download->cache->path);
                 free(download->cache->url);
                 free(download->cache);
             }
@@ -416,6 +456,12 @@ int uv_ncm_close(uv_ncm_t* ncm)
 
     uv_request_close(ncm->handle);
     free((void*)ncm->cache_path);
+
+    for(int i = 0; i < ncm->gc_cnt; i++) {
+        free(ncm->gc_nodes[i]);
+    }
+    free(ncm->gc_nodes);
+
     free(ncm);
     return 0;
 }

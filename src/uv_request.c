@@ -159,8 +159,20 @@ static void destroy_curl_context(curl_context_t* context)
 
 static void uv_request_cleanup(uv_request_t* request)
 {
+    if (request->fd) {
+        fclose(request->fd);
+    }
+
+    if(request->easy_handle) {
+        curl_easy_cleanup(request->easy_handle);
+    }
+
     if (request->header_list) {
         curl_slist_free_all(request->header_list);
+    }
+
+    if (request->formpost) {
+        curl_formfree(request->formpost);
     }
 
     if (request->response.body) {
@@ -176,33 +188,32 @@ static void uv_request_cleanup(uv_request_t* request)
 
 static void uv_request_done(CURL* easy_handle, uv_request_t* request)
 {
+    enum uv_request_state_e state;
     curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, (char**)&request);
     curl_easy_getinfo(easy_handle, CURLINFO_RESPONSE_CODE, &request->response.httpcode);
 
     if (request->fd) {
         fclose(request->fd);
+        request->fd = 0;
     }
 
     if (request->error_code != CURLE_OK) {
         request_error("request error: %p, %s", request, curl_easy_strerror(request->error_code));
         request->response.httpcode = request->error_code;
+        if (request->response.body) {
+            free(request->response.body);
+        }
         request->response.body = (char*)strdup(curl_easy_strerror(request->error_code));
-        request->cb(UV_REQUEST_ERROR, &request->response);
+        state = UV_REQUEST_ERROR;
     } else {
         request_debug("request done: %p", request);
-        request->cb(UV_REQUEST_DONE, &request->response);
+        state = UV_REQUEST_DONE;
     }
+    request->cb(state, &request->response);
 
     if (easy_handle != NULL) {
         curl_multi_remove_handle(request->handle->multi_handle, easy_handle);
-        curl_easy_cleanup(easy_handle);
     }
-    if (request->formpost) {
-        curl_formfree(request->formpost);
-        request->formpost = NULL;
-        request->lastptr = NULL;
-    }
-
     uv_request_cleanup(request);
 }
 
@@ -406,32 +417,22 @@ int uv_request_delete(uv_request_t* request)
 
     if (request->fd) {
         fclose(request->fd);
+        request->fd = 0;
     }
 
     if (list_in_list(&request->node)) {
         request_debug("cancel pending request: %p", request);
         list_delete(&request->node);
+    } else {
+        request_debug("Cancel a downloading request: %p", request);
+        request->handle->connections_cnt--;
+        /* Now, we should simply cancel resolver and clean up any resolver data. */
+        if(request->easy_handle){
+            Curl_resolver_cancel(request->easy_handle);
+        }
 
-        curl_easy_cleanup(request->easy_handle);
-        request->easy_handle = NULL;
-
-        uv_request_cleanup(request);
-        return 0;
-    }
-
-    request_debug("Cancel a downloading request: %p", request);
-    request->handle->connections_cnt--;
-    /* Now, we should simply cancel resolver and clean up any resolver data. */
-    Curl_resolver_cancel(request->easy_handle);
-
-    curl_multi_remove_handle(request->handle->multi_handle, request->easy_handle);
-    curl_easy_cleanup(request->easy_handle);
-    request->easy_handle = NULL;
-
-    if (request->formpost) {
-        curl_formfree(request->formpost);
-        request->formpost = NULL;
-        request->lastptr = NULL;
+        curl_multi_remove_handle(request->handle->multi_handle,
+                                 request->easy_handle);
     }
 
     uv_request_cleanup(request);

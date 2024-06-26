@@ -775,7 +775,7 @@ struct uv_response_s {
     void* userp;
 };
 
-enum {
+enum uv_request_type_e {
     UV_REQUEST,
     UV_DOWNLOAD,
     UV_DOWNLOAD_PROGRESS,
@@ -783,7 +783,7 @@ enum {
     UV_UPLOAD_TASK
 };
 
-enum {
+enum uv_request_state_e {
     UV_REQUEST_DONE,
     UV_REQUEST_ERROR
 };
