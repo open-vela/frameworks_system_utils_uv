@@ -194,7 +194,7 @@ int uv_aes_encrypt(uv_aes_t* ctx,
     remaining = ilen - outlen;
     if (remaining != 0 && pctx->add_padding != NULL) {
         if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode) {
-            block = (unsigned char*)alloca(block_size);
+            block = alloca(block_size);
             memcpy(block, input, remaining);
             pctx->add_padding(block, block_size, remaining);
             ret = mbedtls_cipher_update(pctx, block, block_size, output, &len);
@@ -205,6 +205,18 @@ int uv_aes_encrypt(uv_aes_t* ctx,
         if (ret != 0) {
             return ret;
         }
+
+        output += len;
+        outlen += len;
+    }
+
+    /* If encrypt one block length (16 bytes) exactly, need to add a fully filled block */
+
+    if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode && ilen == block_size) {
+        block = (unsigned char*)alloca(block_size);
+        memset(block, 0, block_size);
+        pctx->add_padding(block, block_size, 0);
+        ret = mbedtls_cipher_update(pctx, block, block_size, output, &len);
 
         output += len;
         outlen += len;
