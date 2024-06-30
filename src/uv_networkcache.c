@@ -336,14 +336,15 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
     strcpy(temp_path, ncm->cache_path);
     checkpath(temp_path);
     strcat(temp_path, "/ncm_XXXXXX");
+    umask(0177);
     fd = mkstemp(temp_path);
-    close(fd);
     download->cache->path = strdup(temp_path);
     free(temp_path);
 
     if (fd < 0) {
         goto error;
     }
+    close(fd);
 
     uv_request_create(&download->request);
     uv_request_set_url(download->request, url);
