@@ -111,6 +111,9 @@
 #if defined(CONFIG_VIDEO_FB) && !defined(CONFIG_LCD_DEV)
 #define DEVINFO_LCD_NAME "/dev/fb0"
 #define DEVINFO_LCD_IOCDIDEOINFO FBIOGET_VIDEOINFO
+#ifdef CONFIG_QUICKAPP_TEST_FRAMEWORK
+#define DEVINFO_LCD_PLANEINFO FBIOGET_PLANEINFO
+#endif
 #elif defined(CONFIG_LCD_DEV)
 #define DEVINFO_LCD_NAME "/dev/lcd0"
 #define DEVINFO_LCD_IOCDIDEOINFO LCDDEVIO_GETVIDEOINFO
@@ -134,6 +137,23 @@ static int uv_getscreeninfo(struct fb_videoinfo_s* videinfo)
     close(fd);
     return 0;
 }
+
+#ifdef CONFIG_QUICKAPP_TEST_FRAMEWORK
+static int uv_getplaneinfo(struct fb_planeinfo_s* planeinfo)
+{
+    int fd, ret;
+    fd = open(DEVINFO_LCD_NAME, O_RDWR);
+    if (fd < 0) {
+        return -errno;
+    }
+
+    ret = ioctl(fd, DEVINFO_LCD_PLANEINFO, planeinfo);
+
+    close(fd);
+    return ret;
+}
+#endif
+
 #endif
 
 int uv_devinfobuff(char* buff, int size, int item)
@@ -331,7 +351,17 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
 
     info->screenwidth = videinfo.xres;
     info->screenheight = videinfo.yres;
-    info->screendensity = 1.0f;
+    info->screendensity = abs(info->screendensity) < 0.000001 ? 1.0f : info->screendensity;
+
+#ifdef CONFIG_QUICKAPP_TEST_FRAMEWORK
+    struct fb_planeinfo_s planeinfo = {};
+    ret = uv_getplaneinfo(&planeinfo);
+    if (ret < 0) {
+        return ret;
+    }
+    info->bpp = planeinfo.bpp;
+#endif
+
 #if defined(CONFIG_FB_MODULEINFO)
     int shape;
 
