@@ -114,6 +114,9 @@ struct uv_devinfo_s {
     int screenheight;
     int devicetype;
     float screendensity;
+#ifdef CONFIG_QUICKAPP_TEST_FRAMEWORK
+    uint8_t bpp;
+#endif
 };
 
 /****************************************************************************
