@@ -496,9 +496,7 @@ int uv_request_set_verbose(uv_request_t* request)
     return -EINVAL;
   }
 
-  curl_easy_setopt(request->easy_handle, CURLOPT_VERBOSE, 1L);
-
-  return 0;
+  return curl_easy_setopt(request->easy_handle, CURLOPT_VERBOSE, 1L);
 }
 
 int uv_request_set_formdata_file(uv_request_t* request, const char* name,
