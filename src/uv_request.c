@@ -734,6 +734,7 @@ void* uv_request_get_userp(uv_request_t* request)
 static void __uv_time_close(uv_handle_t* handle)
 {
     uv_request_session_t* session = (uv_request_session_t*)handle->data;
+    curl_multi_cleanup(session->multi_handle);
     free(session);
 }
 
@@ -744,7 +745,6 @@ int uv_request_close(uv_request_session_t* handle)
     }
 
     uv_close((uv_handle_t*)&handle->timeout, __uv_time_close);
-    curl_multi_cleanup(handle->multi_handle);
 
     return 0;
 }
