@@ -308,8 +308,8 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
         property_get(CONFIG_DEVICE_SCREENDENSITY_KEY, kvbuf, "1.0");
         info->screendensity = atof(kvbuf);
 
-        info->screenshape = property_get_int32(CONFIG_DEVICE_SCREENSHAPE_KEY, 0);
-        info->devicetype = property_get_int32(CONFIG_DEVICE_DEVICETYPE_KEY, UV_EXT_DEVINFO_UNKNOW);
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_SCREENSHAPE_KEY, info->screenshape, "unknown");
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_DEVICETYPE_KEY, info->devicetype, "unknown");
     }
 #endif
 
@@ -362,15 +362,6 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
     info->bpp = planeinfo.bpp;
 #endif
 
-#if defined(CONFIG_FB_MODULEINFO)
-    int shape;
-
-    sscanf((const char*)videinfo.moduleinfo, "%*[^:]:%*[^:]:%*[^:]:%*[^:]:%d", &shape);
-    info->screenshape = info->screenshape == 0 ? shape : info->screenshape;
-#else
-    info->screenshape = info->screenshape == 0 ? UV_EXT_SCREENSHAPE_ROUND : info->screenshape;
 #endif
-#endif
-    info->devicetype = info->devicetype == 0 ? UV_EXT_DEVINFO_UNKNOW : info->devicetype;
     return ret;
 }

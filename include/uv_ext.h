@@ -86,14 +86,6 @@ extern "C" {
 #define UV_EXT_DEVINFO_DID (UV_EXT_DEVINFO_REGION + 1)
 #define UV_EXT_DEVINFO_MAX (UV_EXT_DEVINFO_DID + 1)
 
-#define UV_EXT_DEVINFO_UNKNOW 0
-#define UV_EXT_DEVINFO_WATCH 1
-#define UV_EXT_DEVINFO_BAND 2
-#define UV_EXT_DEVINFO_SMARTSPEAKER 3
-
-#define UV_EXT_SCREENSHAPE_ROUND 1
-#define UV_EXT_SCREENSHAPE_SQUARE 2
-
 #define UV_EXT_DEVINFO_MAXLEN (32 + 1)
 
 typedef struct uv_devinfo_s uv_devinfo_t;
@@ -108,11 +100,11 @@ struct uv_devinfo_s {
     char language[UV_EXT_DEVINFO_MAXLEN];
     char region[UV_EXT_DEVINFO_MAXLEN];
     char did[UV_EXT_DEVINFO_MAXLEN];
-    int screenshape;
+    char screenshape[UV_EXT_DEVINFO_MAXLEN];
+    char devicetype[UV_EXT_DEVINFO_MAXLEN];
     int osversioncode;
     int screenwidth;
     int screenheight;
-    int devicetype;
     float screendensity;
 #ifdef CONFIG_QUICKAPP_TEST_FRAMEWORK
     uint8_t bpp;
