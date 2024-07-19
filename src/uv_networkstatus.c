@@ -23,6 +23,10 @@
 #include <sys/types.h>
 #include <uv_ext.h>
 
+#define uv_netstatus_debug(fmt, ...) uv_log_debug("uv_netstatus", fmt, ##__VA_ARGS__)
+#define uv_netstatus_info(fmt, ...)  uv_log_info("uv_netstatus", fmt, ##__VA_ARGS__)
+#define uv_netstatus_error(fmt, ...) uv_log_error("uv_netstatus", fmt, ##__VA_ARGS__)
+
 struct uv_netstatus {
     const char* ifname;
     const char* desc;
@@ -48,12 +52,9 @@ static bool uv_ifstatus_isup(const char* name)
     /* Get current network status. */
 
     ret = netlib_getifstatus(name, &flags);
-    if (ret != 0) {
-        syslog(LOG_ERR, "uv_ifstatus_isup: getifstatus failed:%d, %d\n", ret, errno);
-        return false;
-    }
+    if (ret != 0) return false;
 
-    syslog(LOG_INFO, "uv_ifstatus_isup: flags: %d\n", flags);
+    uv_netstatus_debug("uv_ifstatus_isup: name: %s, flags: %d\n", name, flags);
     if (IFF_IS_RUNNING(flags)) {
         return true;
     }
@@ -76,6 +77,6 @@ int uv_netstatus_gettype(uint8_t* type)
     }
 
     *type = uv_netstatus_list[i].type;
-    syslog(LOG_INFO, "uv_netstatus_gettype: status :%s\n", uv_netstatus_list[i].desc);
+    uv_netstatus_debug("uv_netstatus_gettype: name: %s, status :%s\n", uv_netstatus_list[i].ifname, uv_netstatus_list[i].desc);
     return 0;
 }
