@@ -168,7 +168,7 @@ static app_block_t parse_app_block(const char* app_path, ssize_t comment_len)
 {
     int fd = -1;
 
-    app_block_t app_block;
+    app_block_t app_block = {0};
     off_t central_directory_offset = 0;
     off_t file_offset;
 
