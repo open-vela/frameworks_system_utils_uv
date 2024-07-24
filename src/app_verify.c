@@ -508,10 +508,13 @@ app_verify_t* app_verify_init(const char* app_path, const char* pkg_path)
 
     return app_verify_info;
 error:
-    unzClose(app_verify_info->zFile);
-    free(app_verify_info->pkg_path);
-    free(app_verify_info->app_path);
-    free(app_verify_info);
+    if (app_verify_info != NULL) {
+        unzClose(app_verify_info->zFile);
+        free(app_verify_info->pkg_path);
+        free(app_verify_info->app_path);
+        free(app_verify_info);
+    }
+
     return NULL;
 }
 
