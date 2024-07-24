@@ -177,20 +177,20 @@ static app_block_t parse_app_block(const char* app_path, ssize_t comment_len)
     // Get Central_Directory start offset
     off_t central_directory_ptr_offset = -comment_len - 4 - 2;
     lseek(fd, central_directory_ptr_offset, SEEK_END);
-    assert_res(read(fd, &central_directory_offset, 4) > 0);
+    assert_res(read(fd, &central_directory_offset, 4) == 4);
 
     // Get the length of the signature block
     off_t signature_block_len_offset = central_directory_offset - 16 - 8;
     lseek(fd, signature_block_len_offset, SEEK_SET);
-    assert_res(read(fd, &app_block.signature_block.length, 4) > 0);
+    assert_res(read(fd, &app_block.signature_block.length, 4) == 4);
 
     // Read the signature block
     off_t signature_block_offset = central_directory_offset - app_block.signature_block.length;
     file_offset = lseek(fd, signature_block_offset, SEEK_SET);
     assert_res((app_block.signature_block.data = malloc(app_block.signature_block.length)) != NULL);
     assert_res((read(fd, app_block.signature_block.data,
-                   app_block.signature_block.length))
-        > 0);
+                     app_block.signature_block.length))
+                     == app_block.signature_block.length);
 
     // Read EOCD
     off_t ecod_start_offset = central_directory_ptr_offset - 16;
