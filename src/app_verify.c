@@ -209,7 +209,10 @@ static app_block_t parse_app_block(const char* app_path, ssize_t comment_len)
     app_block.data_block.data = app_block.signature_block.data;
 
 error:
-    close(fd);
+    if (fd >= 0) {
+        close(fd);
+    }
+
     return app_block;
 }
 
@@ -342,6 +345,7 @@ static int app_unzip(unzFile zFile, const char* pkg_path)
     int res = 0, fd = -1;
     char path[PATH_MAX];
     char *fileData = NULL, *fileName = path;
+    int fileLength = 0;
 
     unz_global_info64 zGlobalInfo;
 
@@ -370,7 +374,7 @@ static int app_unzip(unzFile zFile, const char* pkg_path)
 
         assert_res((res = fd = mkfile(path)) > 0);
 
-        int fileLength = zFileInfo.uncompressed_size;
+        fileLength = zFileInfo.uncompressed_size;
         assert_res((fileData = malloc(fileLength)) != NULL);
 
         // unzip file
@@ -381,16 +385,28 @@ static int app_unzip(unzFile zFile, const char* pkg_path)
         // Close the current compressed file and switch to the next file
         unzCloseCurrentFile(zFile);
         unzGoToNextFile(zFile);
-        close(fd);
-        free(fileData);
-        fileData = NULL;
+        if (fd >= 0) {
+            close(fd);
+            fd = -1;
+        }
+
+        if (fileData != NULL) {
+            free(fileData);
+            fileData = NULL;
+        }
+
         fileName = path;
-        fd = -1;
     }
     res = 0;
 error:
-    free(fileData);
-    close(fd);
+    if (fileData != NULL) {
+        free(fileData);
+    }
+
+    if (fd >= 0) {
+        close(fd);
+    }
+
     return res;
 }
 
@@ -399,6 +415,7 @@ int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
     int res = -1, fd = -1;
     char path[PATH_MAX];
     char *fileData = NULL, *fileName = path;
+    int fileLength = 0;
 
     unz_file_info64 zFileInfo;
     unz_global_info64 zGlobalInfo;
@@ -431,7 +448,7 @@ int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
     assert_res(unzOpenCurrentFile(app_verify_info->zFile) == UNZ_OK);
     assert_res((res = fd = mkfile(path)) > 0);
 
-    int fileLength = zFileInfo.uncompressed_size;
+    fileLength = zFileInfo.uncompressed_size;
     assert_res((fileData = malloc(fileLength)) != NULL);
 
     assert_res((res = unzReadCurrentFile(app_verify_info->zFile, (voidp)fileData, fileLength)) >= 0);
@@ -442,8 +459,15 @@ error:
     if (app_verify_info != NULL) {
         unzCloseCurrentFile(app_verify_info->zFile);
     }
-    free(fileData);
-    close(fd);
+
+    if (fileData != NULL) {
+        free(fileData);
+    }
+
+    if (fd >= 0) {
+        close(fd);
+    }
+
     return res;
 }
 
