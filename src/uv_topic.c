@@ -49,6 +49,22 @@ static void uv_topic_poll_cb(uv_poll_t* handle, int status, int events)
     }
 }
 
+int uv_topic_publish(orb_id_t meta, void* data) {
+    int ret;
+    int fd;
+
+    if(!meta || !data)
+        return UV_EINVAL;
+
+    fd = orb_advertise(meta, NULL);
+    if(fd < 0)
+        return fd;
+
+    ret = orb_publish(meta, fd, data);
+    orb_unadvertise(fd);
+    return ret;
+}
+
 int uv_topic_subscribe_multi(uv_loop_t* loop, uv_topic_t* topic,
     orb_id_t meta, int instance, uv_topic_cb cb)
 {

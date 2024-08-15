@@ -413,6 +413,16 @@ struct uv_topic_s {
 };
 
 /****************************************************************************
+ * Name: uv_topic_publish
+ *
+ * Description:
+ *   topic publish.
+ *
+ ****************************************************************************/
+
+int uv_topic_publish(orb_id_t meta, void* data);
+
+/****************************************************************************
  * Name: uv_topic_subscribe_multi
  *
  * Description:
