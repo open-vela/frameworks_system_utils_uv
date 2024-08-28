@@ -49,6 +49,8 @@ enum {
 typedef struct uv_db_s {
     unqlite* db;
     uv_loop_t* loop;
+    struct uv__queue queue;
+    int closing;
 } uv_db_t;
 
 typedef struct uv_db_req_s {
@@ -61,6 +63,7 @@ typedef struct uv_db_req_s {
     uv_db_t* handle;
     uv_work_t work_req;
     uv_sem_t* sem;
+    struct uv__queue node;
 } uv_db_req_t;
 
 static int db_get(uv_db_t* handle, const char* key, uv_buf_t* value)
@@ -233,6 +236,21 @@ static void async_close(uv_handle_t* handle)
     free(handle);
 }
 
+static int uv_db_try_close(uv_db_t* handle)
+{
+    int res = 0;
+    if (handle->closing && uv__queue_empty(&handle->queue)) {
+        assert_res(handle->db, UV_EINVAL);
+
+        res = unqlite_close(handle->db);
+        assert_res(res == UNQLITE_OK, res);
+
+        free(handle);
+    }
+error:
+    return res;
+}
+
 static void db_after_work_cb(uv_work_t* work_req, int status)
 {
     uv_async_t* async;
@@ -257,6 +275,8 @@ static void db_after_work_cb(uv_work_t* work_req, int status)
         free(req->sem);
         break;
     }
+    uv__queue_remove(&req->node);
+    uv_db_try_close(req->handle);
     free(req);
 }
 
@@ -273,23 +293,25 @@ int uv_db_init(uv_loop_t* loop, uv_db_t** handle, const char* name)
     (*handle)->loop = loop;
     res = unqlite_open(&(*handle)->db, name, UNQLITE_OPEN_CREATE);
     assert_res(res == UNQLITE_OK, res);
-
+    uv__queue_init(&(*handle)->queue);
+    (*handle)->closing = 0;
 error:
     return res;
 }
 
 int uv_db_close(uv_db_t* handle)
 {
-    int res = UV_EINVAL;
-
-    assert_res(handle->db, UV_EINVAL);
-
-    res = unqlite_close(handle->db);
-    assert_res(res == UNQLITE_OK, res);
-
-    free(handle);
-error:
-    return res;
+    struct uv__queue* tmp;
+    struct uv__queue* q;
+    handle->closing = 1;
+    uv__queue_foreach_safe(q, tmp, &handle->queue)
+    {
+        uv_db_req_t* req = container_of(q, uv_db_req_t, node);
+        if (uv_cancel((uv_req_t*)&req->work_req) == 0) {
+            uv__queue_remove(q);
+        }
+    }
+    return uv_db_try_close(handle);
 }
 
 int uv_db_commit(uv_db_t* handle)
@@ -327,6 +349,7 @@ int uv_db_set(uv_db_t* handle, const char* key, uv_buf_t* value, uv_db_callback 
     req->value.len = value->len;
     req->handle = handle;
     req->op = UV_DB_OP_SET;
+    uv__queue_insert_tail(&handle->queue, &req->node);
 
     res = uv_queue_work(handle->loop, &req->work_req, db_work_cb, db_after_work_cb);
     assert_res(res == 0, res);
@@ -361,6 +384,7 @@ int uv_db_get(uv_db_t* handle, const char* key, uv_buf_t* value, uv_db_callback 
     req->key = key;
     req->handle = handle;
     req->op = UV_DB_OP_GET;
+    uv__queue_insert_tail(&handle->queue, &req->node);
 
     res = uv_queue_work(handle->loop, &req->work_req, db_work_cb, db_after_work_cb);
     assert_res(res == 0, res);
@@ -391,6 +415,7 @@ int uv_db_delete(uv_db_t* handle, const char* key, uv_db_callback cb, void* arg)
     req->key = key;
     req->handle = handle;
     req->op = UV_DB_OP_DELETE;
+    uv__queue_insert_tail(&handle->queue, &req->node);
 
     res = uv_queue_work(handle->loop, &req->work_req, db_work_cb, db_after_work_cb);
     assert_res(res == 0, res);
@@ -422,6 +447,7 @@ int uv_db_key(uv_db_t* handle, int index, char** key, uv_db_callback cb, void* a
     req->value.len = index;
     req->handle = handle;
     req->op = UV_DB_OP_KEY;
+    uv__queue_insert_tail(&handle->queue, &req->node);
 
     res = uv_queue_work(handle->loop, &req->work_req, db_work_cb, db_after_work_cb);
     assert_res(res == 0, res);
@@ -459,6 +485,7 @@ int uv_db_list(uv_db_t* handle, uv_db_callback cb, void* arg, int is_sync)
     assert_res(req->sem, UV_ENOMEM);
     res = uv_sem_init(req->sem, 0);
     assert_res(res == 0, res);
+    uv__queue_insert_tail(&handle->queue, &req->node);
 
     res = uv_queue_work(handle->loop, &req->work_req, db_work_cb, db_after_work_cb);
     assert_res(res == 0, res);
