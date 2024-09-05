@@ -50,6 +50,10 @@ config UV_MIWEAR_CLIENT_ID_LEN
 
 endif
 
+config LIBUV_EXTENSION_UNZIP_FILE_CHUNKSIZE
+	int "libuv chunk size for rpk unzip"
+	default 512000
+
 endif
 
 endmenu
