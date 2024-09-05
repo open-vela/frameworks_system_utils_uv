@@ -44,19 +44,24 @@ int uv_rsa(uv_buf_t key, uv_buf_t text, uv_buf_t* output, int mode)
         goto exit;
     }
 
-    ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0,
-        mbedtls_ctr_drbg_random, &ctr_drbg);
+    // To support encrypt with private key
+    ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)key.base, key.len + 1, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char*)key.base, key.len + 1);
-    }
-
-    if (ret != 0) {
-        crypto_error("Could not parse key, returned -0x%04x\n", (unsigned int)-ret);
-        goto exit;
+        if (ret != 0) {
+            crypto_error("Could not parse key, returned -0x%04x\n", (unsigned int)-ret);
+            goto exit;
+        }
     }
 
     len = mbedtls_pk_get_bitlen(&pk);
     output->base = malloc(len);
+    if (output->base == NULL) {
+        crypto_error("malloc ouput->base failed\n");
+        ret = UV_ENOMEM;
+        goto exit;
+    }
+
     if (mode == UV_EXT_DECRYPT) {
         ret = mbedtls_pk_decrypt(&pk, (const unsigned char*)text.base, text.len,
             (unsigned char*)output->base, &output->len, len,
@@ -204,20 +209,14 @@ errout_with_batch:
     return ret;
 }
 
-int uv_base64_encode(uv_buf_t input, uv_buf_t* output)
+int uv_base64_encode(const void* input, size_t input_size, void* output, size_t output_size, size_t* exact_size)
 {
-    int res;
-    ssize_t len = (input.len / 3 + 1) * 4 + 1;
-    output->base = malloc(len);
-    res = mbedtls_base64_encode((unsigned char*)output->base, len, &output->len, (const unsigned char*)input.base, input.len);
-    return res;
+    return mbedtls_base64_encode((unsigned char*)output, output_size, exact_size, (const unsigned char*)input, input_size);
 }
 
-int uv_base64_decode(uv_buf_t input, uv_buf_t* output)
+int uv_base64_decode(const void* input, size_t input_size, void* output, size_t output_size, size_t* exact_size)
 {
-    ssize_t len = (input.len / 4) * 3;
-    output->base = malloc(len);
-    return mbedtls_base64_decode((unsigned char*)output->base, len, &output->len, (const unsigned char*)input.base, input.len);
+    return mbedtls_base64_decode((unsigned char*)output, output_size, exact_size, (const unsigned char*)input, input_size);
 }
 
 int uv_sign(const char* md_type, uv_buf_t key, uv_buf_t text, uv_buf_t* output, int type)
@@ -353,6 +352,11 @@ exit:
 void uv_hexify(uv_buf_t input, uv_buf_t* output)
 {
     char* obuf = malloc(input.len * 2 + 1);
+    if (obuf == NULL) {
+        output->base = NULL;
+        output->len = 0;
+        return;
+    }
     const unsigned char* ibuf = (const unsigned char*)input.base;
     int len = input.len;
     output->base = obuf;

@@ -194,7 +194,7 @@ typedef struct uv_aes_s {
  * Name: uv_aes_init
  *
  * Description:
- *   AES contex initialization, set the AES type and padding mode.
+ *   AES context initialization, set the AES type and padding mode.
  *
  ****************************************************************************/
 
@@ -252,7 +252,7 @@ int uv_aes_set_key(uv_aes_t* ctx,
 int uv_aes_set_key_base64(uv_aes_t* ctx,
     int optype,
     const unsigned char* key,
-    int key_bitlen);
+    int key_size);
 
 /****************************************************************************
  * Name: uv_aes_encrypt
@@ -313,6 +313,48 @@ int uv_aes_decrypt_base64(uv_aes_t* ctx,
     size_t* olen);
 
 /****************************************************************************
+ * Name: uv_aes_auth_decrypt
+ *
+ * Description:
+ *   The authenticated decryption (AEAD/NIST_KW) function.
+ *
+ ****************************************************************************/
+
+int uv_aes_auth_decrypt(uv_aes_t* ctx,
+    const void* iv,
+    size_t iv_len,
+    const void* aad,
+    size_t aad_size,
+    size_t tag_len,
+    const void* input,
+    size_t input_size,
+    void* output,
+    size_t output_len,
+    size_t* olen);
+
+/****************************************************************************
+ * Name: uv_aes_auth_encrypt
+ *
+ * Description:
+ *   The authenticated decryption (AEAD/NIST_KW) function.And deal with the
+ * base64 encoding.
+ *
+ *
+ ****************************************************************************/
+
+int uv_aes_auth_encrypt(uv_aes_t* ctx,
+    const void* iv,
+    size_t iv_len,
+    const void* aad,
+    size_t aad_size,
+    size_t tag_len,
+    const void* input,
+    size_t input_size,
+    void* output,
+    size_t output_len,
+    size_t* olen);
+
+/****************************************************************************
  * Name: uv_aes_free
  *
  * Description:
@@ -341,13 +383,13 @@ void uv_aes_free(uv_aes_t* ctx);
  * Name: uv_base64_encode
  ****************************************************************************/
 
-int uv_base64_encode(uv_buf_t input, uv_buf_t* output);
+int uv_base64_encode(const void* input, size_t input_size, void* output, size_t output_size, size_t* exact_size);
 
 /****************************************************************************
- * Name: uv_base64_decode
+ * Name: uv_base64_decode_ext
  ****************************************************************************/
 
-int uv_base64_decode(uv_buf_t input, uv_buf_t* output);
+int uv_base64_decode(const void* input, size_t input_size, void* output, size_t output_size, size_t* exact_size);
 
 /****************************************************************************
  * Name: uv_sign

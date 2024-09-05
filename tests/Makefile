@@ -34,6 +34,9 @@ endif
 ifeq ($(CONFIG_CRYPTO_MBEDTLS), y)
 PROGNAME += uv_aes
 MAINSRC  += uv-aes-test.c
+PROGNAME += uv_aes_ccm
+MAINSRC  += uv-aes-ccm-test.c
+
 endif
 
 ifeq ($(CONFIG_KVDB), y)
