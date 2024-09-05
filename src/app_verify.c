@@ -346,6 +346,8 @@ static int app_unzip(unzFile zFile, const char* pkg_path)
     char path[PATH_MAX];
     char *fileData = NULL, *fileName = path;
     int fileLength = 0;
+    int chunkSize = 0;
+    int totalSize = 0;
 
     unz_global_info64 zGlobalInfo;
 
@@ -375,12 +377,16 @@ static int app_unzip(unzFile zFile, const char* pkg_path)
         assert_res((res = fd = mkfile(path)) > 0);
 
         fileLength = zFileInfo.uncompressed_size;
-        assert_res((fileData = malloc(fileLength)) != NULL);
+        chunkSize = fileLength > CONFIG_LIBUV_EXTENSION_UNZIP_FILE_CHUNKSIZE ? CONFIG_LIBUV_EXTENSION_UNZIP_FILE_CHUNKSIZE : fileLength;
+        totalSize = 0;
+        assert_res((fileData = malloc(chunkSize)) != NULL);
 
-        // unzip file
-        assert_res((res = unzReadCurrentFile(zFile, (voidp)fileData, fileLength)) >= 0);
-
-        assert_res((res = write(fd, fileData, res)) > 0);
+        do {
+            // unzip file
+            assert_res((res = unzReadCurrentFile(zFile, (voidp)fileData, chunkSize)) >= 0);
+            totalSize += res;
+            assert_res((res = write(fd, fileData, res)) > 0);
+        } while(totalSize < fileLength);
     next:
         // Close the current compressed file and switch to the next file
         unzCloseCurrentFile(zFile);
@@ -416,6 +422,8 @@ int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
     char path[PATH_MAX];
     char *fileData = NULL, *fileName = path;
     int fileLength = 0;
+    int chunkSize = 0;
+    int totalSize = 0;
 
     unz_file_info64 zFileInfo;
     unz_global_info64 zGlobalInfo;
@@ -449,11 +457,17 @@ int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
     assert_res((res = fd = mkfile(path)) > 0);
 
     fileLength = zFileInfo.uncompressed_size;
-    assert_res((fileData = malloc(fileLength)) != NULL);
 
-    assert_res((res = unzReadCurrentFile(app_verify_info->zFile, (voidp)fileData, fileLength)) >= 0);
+    chunkSize = fileLength > CONFIG_LIBUV_EXTENSION_UNZIP_FILE_CHUNKSIZE ? CONFIG_LIBUV_EXTENSION_UNZIP_FILE_CHUNKSIZE : fileLength;
+    totalSize = 0;
+    assert_res((fileData = malloc(chunkSize)) != NULL);
 
-    assert_res((res = write(fd, fileData, res)) > 0);
+    do {
+        // unzip file
+        assert_res((res = unzReadCurrentFile(app_verify_info->zFile, (voidp)fileData, chunkSize)) >= 0);
+        totalSize += res;
+        assert_res((res = write(fd, fileData, res)) > 0);
+    } while(totalSize < fileLength);
     res = 0;
 error:
     if (app_verify_info != NULL) {
