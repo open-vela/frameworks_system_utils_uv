@@ -771,7 +771,7 @@ int uv_brightness_init(uv_loop_t* loop, uv_brightness_handle_t* handle);
 
 int uv_brightness_close(uv_brightness_handle_t handle);
 
-#if defined(CONFIG_UTILS_CURL) || defined(MOCK_LIBUV_FEATURE)
+#if defined(CONFIG_LIB_CURL) || defined(MOCK_LIBUV_FEATURE)
 
 struct uv_response_s {
     long httpcode;
@@ -2017,7 +2017,7 @@ void uv_mqueue_close(uv_mqueue_t* mqueue, uv_close_cb close_cb);
  * network
  ****************************************************************************/
 
-#if defined(CONFIG_UTILS_CURL)
+#if defined(CONFIG_LIB_CURL)
 #define UV_NETSTATUS_WIFI 1
 #define UV_NETSTATUS_BLUETOOTH 2
 #define UV_NETSTATUS_NONE 3
