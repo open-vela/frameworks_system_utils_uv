@@ -61,7 +61,7 @@ CSRCS += uv_topic.c
 CSRCS += uv_topicadv.c
 endif
 
-ifeq ($(CONFIG_UTILS_CURL),y)
+ifeq ($(CONFIG_LIB_CURL),y)
 CSRCS += uv_request.c
 CSRCS += uv_networkcache.c
 endif
@@ -76,7 +76,7 @@ CSRCS += uv_record.c
 CSRCS += uv_volume.c
 endif
 
-ifeq ($(CONFIG_UTILS_CURL), y)
+ifeq ($(CONFIG_LIB_CURL), y)
 CSRCS += uv_networkstatus.c
 endif
 
