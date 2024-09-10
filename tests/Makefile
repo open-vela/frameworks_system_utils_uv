@@ -38,8 +38,8 @@ PROGNAME += uv_aes_ccm
 MAINSRC  += uv-aes-ccm-test.c
 PROGNAME += uv_hkdf
 MAINSRC  += uv-hkdf-test.c
-
-endif
+PROGNAME += uv_ecdh
+MAINSRC  += uv-ecdh-test.c
 
 endif # CONFIG_CRYPTO_MBEDTLS
 

@@ -439,6 +439,25 @@ int uv_hkdf_key_derivation(const void* algo,
     const void* info, size_t info_len,
     void* okm, size_t okm_len);
 
+/****************************************************************************
+ * ecdh
+ ****************************************************************************/
+
+typedef mbedtls_ecp_keypair uv_ecp_t;
+
+int uv_ecdh_init(uv_ecp_t* ctx, int group_id);
+int uv_ecdh_get_pubkey(uv_ecp_t* ctx, int group_id, void* pubkey, size_t pubkey_len, size_t* out_size);
+int uv_ecdh_get_privkey(uv_ecp_t* ctx, void* privkey, size_t privkey_len);
+int uv_ecdh_gen_keypair(uv_ecp_t* ctx);
+int uv_ecdh_gen_keypair_from_binary(uv_ecp_t* ctx, int group_id, const void* prikey, size_t prikey_size);
+int uv_ecdh_gen_keypair_from_pem(int group_id,
+    const void* prikey_pem, size_t prikey_pem_len,
+    void* prikey, size_t prikey_size,
+    void* pubkey, size_t pubkey_size, size_t* pubkey_out_size);
+int uv_ecdh_compute_sharedkey(uv_ecp_t* ctx, const void* pubkey, size_t pubkey_len, void* sharedkey, size_t* sharedkey_len);
+int uv_ecdh_write_pem_from_binary(const void* keyData, size_t keyData_len, void* pem, size_t pem_size, size_t* out_len);
+void uv_ecdh_free(uv_ecp_t* ctx);
+
 #endif
 
 /****************************************************************************
