@@ -365,13 +365,9 @@ int uv_aes_auth_encrypt(uv_aes_t* ctx,
 
 void uv_aes_free(uv_aes_t* ctx);
 
-#endif
-
 /****************************************************************************
  * cipher
  ****************************************************************************/
-
-#ifdef CONFIG_CRYPTO_MBEDTLS
 
 #define UV_EXT_TYPE_BUFFER 0
 #define UV_EXT_TYPE_FILE 1
@@ -432,6 +428,16 @@ int uv_rsa(uv_buf_t key, uv_buf_t text, uv_buf_t* output, int mode);
  ****************************************************************************/
 
 void uv_hexify(uv_buf_t input, uv_buf_t* output);
+
+/****************************************************************************
+ * hkdf
+ ****************************************************************************/
+
+int uv_hkdf_key_derivation(const void* algo,
+    const void* salt, size_t salt_len,
+    const void* ikm, size_t ikm_len,
+    const void* info, size_t info_len,
+    void* okm, size_t okm_len);
 
 #endif
 

@@ -47,6 +47,7 @@ endif
 
 ifeq ($(CONFIG_CRYPTO_MBEDTLS), y)
 CSRCS += uv_aes.c
+CSRCS += uv_hkdf.c
 endif
 
 CSRCS += uv_brightness.c

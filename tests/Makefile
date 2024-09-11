@@ -36,8 +36,12 @@ PROGNAME += uv_aes
 MAINSRC  += uv-aes-test.c
 PROGNAME += uv_aes_ccm
 MAINSRC  += uv-aes-ccm-test.c
+PROGNAME += uv_hkdf
+MAINSRC  += uv-hkdf-test.c
 
 endif
+
+endif # CONFIG_CRYPTO_MBEDTLS
 
 ifeq ($(CONFIG_KVDB), y)
 PROGNAME += uv_locale
