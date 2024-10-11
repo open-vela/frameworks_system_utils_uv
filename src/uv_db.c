@@ -263,14 +263,18 @@ static void db_after_work_cb(uv_work_t* work_req, int status)
 
     switch (req->op) {
     case UV_DB_OP_GET:
-        free((void*)req->value.base);
+        if (req->value.base != NULL) {
+            free((void*)req->value.base);
+        }
         break;
     case UV_DB_OP_KEY:
-        free((void*)req->key);
+        if (req->key != NULL) {
+            free((void*)req->key);
+        }
         break;
     case UV_DB_OP_LIST:
         async = req->work_req.data;
-        sem_destroy(req->sem);
+        uv_sem_destroy(req->sem);
         uv_close((uv_handle_t*)async, async_close);
         free(req->sem);
         break;
@@ -307,9 +311,7 @@ int uv_db_close(uv_db_t* handle)
     uv__queue_foreach_safe(q, tmp, &handle->queue)
     {
         uv_db_req_t* req = container_of(q, uv_db_req_t, node);
-        if (uv_cancel((uv_req_t*)&req->work_req) == 0) {
-            uv__queue_remove(q);
-        }
+        uv_cancel((uv_req_t*)&req->work_req);
     }
     return uv_db_try_close(handle);
 }
