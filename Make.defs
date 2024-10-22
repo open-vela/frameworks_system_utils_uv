@@ -1,5 +1,5 @@
 ############################################################################
-# system/libuv/ext/Make.defs
+# frameworks/system/utils/uv/Make.defs
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -20,7 +20,9 @@
 
 ifneq ($(CONFIG_LIBUV_EXTENSION),)
 
-CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/system/libuv/ext/include
-CXXFLAGS += ${INCDIR_PREFIX}$(APPDIR)/system/libuv/ext/include
+CONFIGURED_APPS += $(APPDIR)/frameworks/system/utils/uv
+CLEANDIRS += $(APPDIR)/frameworks/system/utils/uv
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/frameworks/system/utils/uv/include
+CXXFLAGS += ${INCDIR_PREFIX}$(APPDIR)/frameworks/system/utils/uv/include
 
 endif
