@@ -1,5 +1,5 @@
 ############################################################################
-# system/libuv/ext/Makefile
+# frameworks/system/utils/uv/Makefile
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,13 +18,25 @@
 #
 ############################################################################
 
-ifneq ($(CONFIG_LIBUV_EXTENSION),)
+include $(APPDIR)/Make.defs
 
-include ext/tests/Makefile
+CFLAGS += -I$(APPDIR)/system/libuv/libuv/src
+CFLAGS += -I$(APPDIR)/system/libuv/libuv/src/unix
+CFLAGS += -I$(APPDIR)/system/libuv/libuv/test
 
-VPATH += ext/tests
-VPATH += ext/src
-DEPPATH += --dep-path ext/src
+CFLAGS += -Wno-shadow -Wno-dangling-pointer
+CFLAGS += -DDEF_THREADPOOL_SIZE=CONFIG_LIBUV_THREADPOOL_SIZE
+CFLAGS += -DDEF_THREADPOOL_STACKSIZE=CONFIG_LIBUV_THREAD_STACKSIZE
+CFLAGS += -DDEF_THREADPOOL_PRIORITY=CONFIG_LIBUV_THREADPOOL_PRIORITY
+CFLAGS += -DMAX_EPOLL_EVENTS=CONFIG_LIBUV_MAX_EPOLL_EVENTS
+CFLAGS += -DPREP_EVENT_SIZE=CONFIG_LIBUV_PREP_EVENT_SIZE
+CFLAGS += -DDEF_STREAM_READ_BUF_SIZE=CONFIG_LIBUV_STREAM_READ_BUF_SIZE
+
+include tests/Makefile
+
+VPATH += tests
+VPATH += src
+DEPPATH += --dep-path src
 
 CSRCS += uv_mqueue.c
 CSRCS += uv_async_queue.c
@@ -86,4 +98,4 @@ CFLAGS += ${INCDIR_PREFIX}$(APPDIR)/system/zlib/zlib
 CSRCS += app_verify.c
 endif
 
-endif #CONFIG_LIBUV_EXTENSION
+include $(APPDIR)/Application.mk

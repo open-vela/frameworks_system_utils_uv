@@ -16,8 +16,8 @@
 
 ifneq ($(CONFIG_LIBUV_EXTENSION_TEST),)
 
-VPATH += ext/tests
-DEPPATH += --dep-path ext/tests
+VPATH += tests
+DEPPATH += --dep-path tests
 
 PRIORITY  = $(CONFIG_LIBUV_EXTENSION_TEST_PRIORITY)
 STACKSIZE = $(CONFIG_LIBUV_EXTENSION_TEST_TASK_STACKSIZE)
@@ -93,6 +93,6 @@ MAINSRC  += uv-db-test.c
 endif
 
 depend::
-	$(Q) touch $(addprefix  ext/tests/,$(MAINSRC) )
+	$(Q) touch $(addprefix  tests/,$(MAINSRC) )
 
 endif #CONFIG_LIBUV_EXTENSION_TEST
