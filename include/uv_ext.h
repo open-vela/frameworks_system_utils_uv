@@ -411,6 +411,7 @@ struct uv_topic_s {
     int fd;
     orb_id_t meta;
     void* meta_data;
+    void* user_data;
 };
 
 /****************************************************************************
