@@ -338,19 +338,22 @@ int uv_aes_encrypt_base64(uv_aes_t* ctx,
     }
 
     int ret;
-    size_t buff_len = 0;
-    uint8_t* buff = alloca(outsize);
+    size_t outlen = 0;
+    unsigned char* buff = malloc(outsize);
 
     if (!buff) {
         return UV_EFAULT;
     }
 
-    ret = uv_aes_encrypt(ctx, input, ilen, buff, &buff_len);
-    if (ret != 0) {
-        return ret;
-    }
+    ret = uv_aes_encrypt(ctx, input, ilen, buff, &outlen);
+    if (ret != 0)
+        goto exit;
 
-    return mbedtls_base64_encode(output, outsize, olen, buff, buff_len);
+    ret = mbedtls_base64_encode(output, outsize, olen, buff, outlen);
+
+exit:
+    free(buff);
+    return ret;
 }
 
 int uv_aes_decrypt_base64(uv_aes_t* ctx,
@@ -365,7 +368,7 @@ int uv_aes_decrypt_base64(uv_aes_t* ctx,
 
     int ret;
     size_t len;
-    uint8_t* buff = alloca(ilen);
+    unsigned char* buff = malloc(ilen);
 
     if (!buff) {
         return UV_EFAULT;
@@ -373,10 +376,14 @@ int uv_aes_decrypt_base64(uv_aes_t* ctx,
 
     ret = mbedtls_base64_decode(buff, ilen, &len, input, ilen);
     if (ret != 0) {
-        return ret;
+        goto exit;
     }
 
-    return uv_aes_decrypt(ctx, buff, len, output, olen);
+    ret = uv_aes_decrypt(ctx, buff, len, output, olen);
+
+exit:
+    free(buff);
+    return ret;
 }
 
 int uv_aes_auth_encrypt(uv_aes_t* ctx,
