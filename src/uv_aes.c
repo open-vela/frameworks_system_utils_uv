@@ -23,22 +23,24 @@
 #include <mbedtls/cipher.h>
 #include <mbedtls/platform.h>
 #include <string.h>
+
 #include <uv_ext.h>
 
-static void add_pkcs_padding(unsigned char* output, size_t output_len, size_t data_len)
+static void add_pkcs_padding(unsigned char* ptr, size_t len, size_t data_len)
 {
-    size_t padding_len = output_len - data_len;
+    size_t padding_len = len - data_len;
 
-    memset(output + data_len, padding_len, padding_len);
+    memset(ptr + data_len, padding_len, padding_len);
 }
 
-static int get_pkcs_padding(unsigned char *input, size_t input_len,
+static int get_pkcs_padding(unsigned char *input,
+                            size_t input_len,
                             size_t *data_len)
 {
     size_t i, pad_idx;
     unsigned char padding_len, bad = 0;
 
-    if (NULL == input || NULL == data_len) {
+    if (NULL == data_len || NULL == input) {
         return MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA;
     }
 
@@ -46,14 +48,20 @@ static int get_pkcs_padding(unsigned char *input, size_t input_len,
     *data_len = input_len - padding_len;
 
     /* Avoid logical || since it results in a branch */
-    bad |= padding_len > input_len;
-    bad |= padding_len == 0;
 
-    /* The number of bytes checked must be independent of padding_len,
-     * so pick input_len, which is usually 8 or 16 (one block) */
+    bad |= input_len < padding_len;
+
+    bad |= 0 == padding_len;
+
+    /*
+     * The number of bytes checked must be independent of padding_len,
+     * so input_len is chosen, which is usually 8 or 16 (one block)
+     */
+
     pad_idx = input_len - padding_len;
-    for (i = 0; i < input_len; i++) {
-        bad |= (input[i] ^ padding_len) * (i >= pad_idx);
+
+    for (i = 0; input_len > i; i++) {
+        bad |= (i >= pad_idx) * (input[i] ^ padding_len);
     }
 
     return MBEDTLS_ERR_CIPHER_INVALID_PADDING * (bad != 0);
