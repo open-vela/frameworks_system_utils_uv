@@ -314,8 +314,7 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
         info->osversioncode = property_get_int32(CONFIG_DEVICE_OSVERSIONCODE_KEY, CONFIG_VERSION);
 
         property_get(CONFIG_DEVICE_SCREENDENSITY_KEY, kvbuf, "160.0");
-        info->screendensity = atof(kvbuf) / 160.0;
-
+        info->screendensity = (int)((atof(kvbuf) / 16.0 + 0.5)) / 10.0;
         DEVICE_PROPERTY_GET(CONFIG_DEVICE_SCREENSHAPE_KEY, info->screenshape, "unknown");
         DEVICE_PROPERTY_GET(CONFIG_DEVICE_DEVICETYPE_KEY, info->devicetype, "unknown");
     }
