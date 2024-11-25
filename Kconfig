@@ -1,0 +1,59 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+menu "libuv extension"
+
+config LIBUV_EXTENSION
+	bool "Enable libuv extension"
+	default n
+	depends on LIBUV
+	---help---
+		Enable libuv extension
+
+if LIBUV_EXTENSION
+
+config UV_REQUEST_MAX_LINKS
+	int "libuv extension maximum number of concurrent network requests"
+	default 5
+	---help---
+		Set -1 for unlimited
+
+config LIBUV_EXTENSION_TEST
+	bool "libuv extension test"
+	default n
+	---help---
+		Enable libuv extension test
+
+if LIBUV_EXTENSION_TEST
+
+config LIBUV_EXTENSION_TEST_PRIORITY
+	int "libuv extension test priority"
+	default 100
+
+config LIBUV_EXTENSION_TEST_TASK_STACKSIZE
+	int "libuv extension test stack size"
+	default 65535
+
+endif
+
+config UV_MIWEAR
+	bool "enable miwear C/S protocol support"
+	default n
+
+if UV_MIWEAR
+
+config UV_MIWEAR_CLIENT_ID_LEN
+	int "miwear client id length, must more than 0"
+	default 64
+
+endif
+
+config LIBUV_EXTENSION_UNZIP_FILE_CHUNKSIZE
+	int "libuv chunk size for rpk unzip"
+	default 512000
+
+endif
+
+endmenu
