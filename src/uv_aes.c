@@ -302,7 +302,10 @@ int uv_aes_decrypt(uv_aes_t* ctx,
             return ret;
         }
 
-        pctx->get_padding(output, block_size, &len);
+        if (pctx->get_padding) {
+            pctx->get_padding(output, block_size, &len);
+        }
+
         output += len;
         outlen += len;
     } else {
