@@ -209,9 +209,9 @@ int uv_aes_init(uv_aes_t* ctx, int aestype, int mode);
  ****************************************************************************/
 
 int uv_aes_set_iv(uv_aes_t* ctx,
-    const unsigned char* iv,
-    int ivoffset,
-    int iv_len);
+    const void* iv,
+    size_t ivoffset,
+    size_t iv_len);
 
 /****************************************************************************
  * Name: uv_aes_set_iv_base64
@@ -223,9 +223,9 @@ int uv_aes_set_iv(uv_aes_t* ctx,
  ****************************************************************************/
 
 int uv_aes_set_iv_base64(uv_aes_t* ctx,
-    const unsigned char* iv,
-    int ivoffset,
-    int iv_len);
+    const void* iv,
+    size_t ivoffset,
+    size_t iv_len);
 
 /****************************************************************************
  * Name: uv_aes_set_key
@@ -236,9 +236,9 @@ int uv_aes_set_iv_base64(uv_aes_t* ctx,
  ****************************************************************************/
 
 int uv_aes_set_key(uv_aes_t* ctx,
-    int optype,
-    const unsigned char* key,
-    int key_bitlen);
+    size_t optype,
+    const void* key,
+    size_t key_bitlen);
 
 /****************************************************************************
  * Name: uv_aes_set_key_base64
@@ -250,9 +250,9 @@ int uv_aes_set_key(uv_aes_t* ctx,
  ****************************************************************************/
 
 int uv_aes_set_key_base64(uv_aes_t* ctx,
-    int optype,
-    const unsigned char* key,
-    int key_size);
+    size_t optype,
+    const void* key,
+    size_t key_size);
 
 /****************************************************************************
  * Name: uv_aes_encrypt
@@ -263,9 +263,9 @@ int uv_aes_set_key_base64(uv_aes_t* ctx,
  ****************************************************************************/
 
 int uv_aes_encrypt(uv_aes_t* ctx,
-    const unsigned char* input,
+    const void* input,
     size_t ilen,
-    unsigned char* output,
+    void* output,
     size_t* olen);
 
 /****************************************************************************
@@ -277,9 +277,9 @@ int uv_aes_encrypt(uv_aes_t* ctx,
  ****************************************************************************/
 
 int uv_aes_decrypt(uv_aes_t* ctx,
-    const unsigned char* input,
+    const void* input,
     size_t ilen,
-    unsigned char* output,
+    void* output,
     size_t* olen);
 
 /****************************************************************************
@@ -292,9 +292,9 @@ int uv_aes_decrypt(uv_aes_t* ctx,
  ****************************************************************************/
 
 int uv_aes_encrypt_base64(uv_aes_t* ctx,
-    const unsigned char* input,
+    const void* input,
     size_t ilen,
-    unsigned char* output,
+    void* output,
     int outsize,
     size_t* olen);
 
@@ -307,9 +307,9 @@ int uv_aes_encrypt_base64(uv_aes_t* ctx,
  ****************************************************************************/
 
 int uv_aes_decrypt_base64(uv_aes_t* ctx,
-    const unsigned char* input,
+    const void* input,
     size_t ilen,
-    unsigned char* output,
+    void* output,
     size_t* olen);
 
 /****************************************************************************
