@@ -21,7 +21,6 @@
 #include <alloca.h>
 #include <mbedtls/base64.h>
 #include <mbedtls/ccm.h>
-#include <mbedtls/cipher.h>
 #include <mbedtls/platform.h>
 #include <string.h>
 

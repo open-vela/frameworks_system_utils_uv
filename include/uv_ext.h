@@ -29,8 +29,7 @@
 
 #ifdef CONFIG_CRYPTO_MBEDTLS
 #include <mbedtls/cipher.h>
-#include <mbedtls/pk.h>
-#include <mbedtls/rsa.h>
+#include <mbedtls/ecp.h>
 #endif
 
 #ifdef CONFIG_MEDIA

@@ -23,6 +23,7 @@
 #include <mbedtls/ecp.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/pem.h>
+#include <mbedtls/pk.h>
 #include <uv_ext.h>
 
 int uv_ecdh_init(uv_ecp_t* ctx, int group_id)
