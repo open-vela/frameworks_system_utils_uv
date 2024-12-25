@@ -168,7 +168,7 @@ static app_block_t parse_app_block(const char* app_path, ssize_t comment_len)
 {
     int fd = -1;
 
-    app_block_t app_block = {0};
+    app_block_t app_block = { 0 };
     off_t central_directory_offset = 0;
     off_t file_offset;
 
@@ -189,8 +189,8 @@ static app_block_t parse_app_block(const char* app_path, ssize_t comment_len)
     file_offset = lseek(fd, signature_block_offset, SEEK_SET);
     assert_res((app_block.signature_block.data = malloc(app_block.signature_block.length)) != NULL);
     assert_res((read(fd, app_block.signature_block.data,
-                     app_block.signature_block.length))
-                     == app_block.signature_block.length);
+                   app_block.signature_block.length))
+        == app_block.signature_block.length);
 
     // Read EOCD
     off_t ecod_start_offset = central_directory_ptr_offset - 16;
@@ -386,7 +386,7 @@ static int app_unzip(unzFile zFile, const char* pkg_path)
             assert_res((res = unzReadCurrentFile(zFile, (voidp)fileData, chunkSize)) >= 0);
             totalSize += res;
             assert_res((res = write(fd, fileData, res)) > 0);
-        } while(totalSize < fileLength);
+        } while (totalSize < fileLength);
     next:
         // Close the current compressed file and switch to the next file
         unzCloseCurrentFile(zFile);
@@ -467,7 +467,7 @@ int app_pre_unzip(app_verify_t* app_verify_info, const char* unzip_filename)
         assert_res((res = unzReadCurrentFile(app_verify_info->zFile, (voidp)fileData, chunkSize)) >= 0);
         totalSize += res;
         assert_res((res = write(fd, fileData, res)) > 0);
-    } while(totalSize < fileLength);
+    } while (totalSize < fileLength);
     res = 0;
 error:
     if (app_verify_info != NULL) {

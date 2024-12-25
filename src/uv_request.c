@@ -163,7 +163,7 @@ static void uv_request_cleanup(uv_request_t* request)
         fclose(request->fd);
     }
 
-    if(request->easy_handle) {
+    if (request->easy_handle) {
         curl_easy_cleanup(request->easy_handle);
     }
 
@@ -427,12 +427,12 @@ int uv_request_delete(uv_request_t* request)
         request_debug("Cancel a downloading request: %p", request);
         request->handle->connections_cnt--;
         /* Now, we should kill resolver and clean up any resolver data. */
-        if(request->easy_handle){
+        if (request->easy_handle) {
             Curl_resolver_kill(request->easy_handle);
         }
 
         curl_multi_remove_handle(request->handle->multi_handle,
-                                 request->easy_handle);
+            request->easy_handle);
     }
 
     uv_request_cleanup(request);
@@ -492,11 +492,11 @@ int uv_request_set_url(uv_request_t* request, const char* url)
 
 int uv_request_set_verbose(uv_request_t* request)
 {
-  if (!request) {
-    return -EINVAL;
-  }
+    if (!request) {
+        return -EINVAL;
+    }
 
-  return curl_easy_setopt(request->easy_handle, CURLOPT_VERBOSE, 1L);
+    return curl_easy_setopt(request->easy_handle, CURLOPT_VERBOSE, 1L);
 }
 
 int uv_request_set_formdata_file(uv_request_t* request, const char* name,
