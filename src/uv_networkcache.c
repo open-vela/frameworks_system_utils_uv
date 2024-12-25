@@ -33,7 +33,7 @@ typedef struct download_s {
     void* userp;
     uv_request_t* request;
     file_cache_t* cache;
-    uv_timer_t *timer;
+    uv_timer_t* timer;
     int retry_count;
 } download_t;
 
@@ -195,7 +195,7 @@ static void download_file_cb(int state, uv_response_t* response)
             free(cache->url);
             cache->url = NULL;
 
-            ncm->gc_nodes = realloc(ncm->gc_nodes, (gc_cnt + 1)*sizeof(void*));
+            ncm->gc_nodes = realloc(ncm->gc_nodes, (gc_cnt + 1) * sizeof(void*));
             ncm->gc_nodes[gc_cnt] = cache;
             ncm->gc_cnt = gc_cnt + 1;
         } else {
@@ -228,7 +228,7 @@ static void download_file_cb(int state, uv_response_t* response)
     return;
 }
 
-static int uv_ncm_download(uv_timer_t *handle)
+static int uv_ncm_download(uv_timer_t* handle)
 {
     download_t* download = (download_t*)handle->data;
     uv_request_create(&download->request);
@@ -328,7 +328,7 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
         return 0;
     }
 
-   temp_path = (char*)malloc(PATH_MAX);
+    temp_path = (char*)malloc(PATH_MAX);
     if (temp_path == NULL) {
         goto error;
     }
@@ -349,7 +349,6 @@ static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
     uv_request_create(&download->request);
     uv_request_set_url(download->request, url);
     uv_request_set_userp(download->request, download);
-
 
     res = uv_request_set_atrribute(download->request, UV_DOWNLOAD,
         (void*)download->cache->path);
@@ -458,7 +457,7 @@ int uv_ncm_close(uv_ncm_t* ncm)
     uv_request_close(ncm->handle);
     free((void*)ncm->cache_path);
 
-    for(int i = 0; i < ncm->gc_cnt; i++) {
+    for (int i = 0; i < ncm->gc_cnt; i++) {
         free(ncm->gc_nodes[i]);
     }
     free(ncm->gc_nodes);

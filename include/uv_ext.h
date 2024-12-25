@@ -21,8 +21,8 @@
  * Included Files
  ****************************************************************************/
 
-#include <stdint.h>
 #include <nuttx/nuttx.h>
+#include <stdint.h>
 #include <uv.h>
 
 #include <uv_async_queue.h>

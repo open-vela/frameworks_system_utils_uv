@@ -51,15 +51,16 @@ static void uv_topic_poll_cb(uv_poll_t* handle, int status, int events)
     }
 }
 
-int uv_topic_publish(orb_id_t meta, void* data) {
+int uv_topic_publish(orb_id_t meta, void* data)
+{
     int ret;
     int fd;
 
-    if(!meta || !data)
+    if (!meta || !data)
         return UV_EINVAL;
 
     fd = orb_advertise(meta, NULL);
-    if(fd < 0)
+    if (fd < 0)
         return fd;
 
     ret = orb_publish(meta, fd, data);
