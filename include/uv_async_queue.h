@@ -21,9 +21,9 @@
  * Included Files
  ****************************************************************************/
 
+#include "../../libuv/src/queue.h"
 #include <stdint.h>
 #include <uv.h>
-#include "../../libuv/src/queue.h"
 
 /****************************************************************************
  * Public Types

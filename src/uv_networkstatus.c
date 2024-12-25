@@ -24,7 +24,7 @@
 #include <uv_ext.h>
 
 #define uv_netstatus_debug(fmt, ...) uv_log_debug("uv_netstatus", fmt, ##__VA_ARGS__)
-#define uv_netstatus_info(fmt, ...)  uv_log_info("uv_netstatus", fmt, ##__VA_ARGS__)
+#define uv_netstatus_info(fmt, ...) uv_log_info("uv_netstatus", fmt, ##__VA_ARGS__)
 #define uv_netstatus_error(fmt, ...) uv_log_error("uv_netstatus", fmt, ##__VA_ARGS__)
 
 struct uv_netstatus {
@@ -52,7 +52,8 @@ static bool uv_ifstatus_isup(const char* name)
     /* Get current network status. */
 
     ret = netlib_getifstatus(name, &flags);
-    if (ret != 0) return false;
+    if (ret != 0)
+        return false;
 
     uv_netstatus_debug("uv_ifstatus_isup: name: %s, flags: %d\n", name, flags);
     if (IFF_IS_RUNNING(flags)) {

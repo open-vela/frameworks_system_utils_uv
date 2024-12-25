@@ -33,9 +33,9 @@ static void add_pkcs_padding(unsigned char* ptr, size_t len, size_t data_len)
     memset(ptr + data_len, padding_len, padding_len);
 }
 
-static int get_pkcs_padding(unsigned char *input,
-                            size_t input_len,
-                            size_t *data_len)
+static int get_pkcs_padding(unsigned char* input,
+    size_t input_len,
+    size_t* data_len)
 {
     size_t i, pad_idx;
     unsigned char padding_len, bad = 0;
@@ -220,8 +220,7 @@ int uv_aes_encrypt(uv_aes_t* ctx,
 
     /* If encrypt one block length (16 bytes) exactly, need to add a fully filled block */
 
-    if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode && ilen == block_size &&
-        pctx->add_padding != NULL) {
+    if (MBEDTLS_MODE_ECB == pctx->cipher_info->mode && ilen == block_size && pctx->add_padding != NULL) {
         block = (unsigned char*)alloca(block_size);
         memset(block, 0, block_size);
         pctx->add_padding(block, block_size, 0);
