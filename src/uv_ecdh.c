@@ -234,7 +234,11 @@ int uv_ecdh_compute_sharedkey(uv_ecp_t* ctx, const void* pubkey, size_t pubkey_l
         goto free_ecdh_and_drbg_entropy_then_exit;
     }
 
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+    ret = mbedtls_ecp_point_read_binary(&ecdh_ctx.grp, &ecdh_ctx.Qp, pubkey, pubkey_len);
+#else
     ret = mbedtls_ecp_point_read_binary(&ecdh_ctx.ctx.mbed_ecdh.grp, &ecdh_ctx.ctx.mbed_ecdh.Qp, pubkey, pubkey_len);
+#endif
     if (ret != 0) {
         goto free_ecdh_and_drbg_entropy_then_exit;
     }
