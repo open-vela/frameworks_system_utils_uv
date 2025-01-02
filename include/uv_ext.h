@@ -505,7 +505,7 @@ int uv_topic_get_interval(uv_topic_t* topic, unsigned int* interval);
  *   in `close_cb`.
  ****************************************************************************/
 
-int uv_topic_close(uv_topic_t* topic);
+int uv_topic_close(uv_topic_t* topic, uv_close_cb close_cb);
 
 #endif
 

@@ -184,9 +184,9 @@ int uv_topic_get_interval(uv_topic_t* topic, unsigned int* interval)
     return orb_get_interval(topic->fd, interval);
 }
 
-int uv_topic_close(uv_topic_t* topic)
+int uv_topic_close(uv_topic_t* topic, uv_close_cb close_cb)
 {
     topic->handle.flags |= UV_HANDLE_INTERNAL;
-    uv_close((uv_handle_t*)&topic->handle, NULL);
+    uv_close((uv_handle_t*)&topic->handle, close_cb);
     return 0;
 }
