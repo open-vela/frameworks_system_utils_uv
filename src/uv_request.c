@@ -321,7 +321,7 @@ static int handle_socket(CURL* easy, curl_socket_t s, int action, void* userp, v
         }
         break;
     default:
-        abort();
+        assert(0);
     }
 
     return 0;
