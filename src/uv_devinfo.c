@@ -34,7 +34,7 @@
 #define CONFIG_DEVICE_MANUFACTURER_KEY "ro.product.manufacturer"
 #define CONFIG_DEVICE_DEVICETYPE_KEY "ro.product.device.devicetype"
 #define CONFIG_DEVICE_SCREENSHAPE_KEY "ro.product.device.screenshape"
-#define CONFIG_DEVICE_SCREENDENSITY_KEY "ro.product.device.screendensity"
+#define CONFIG_DEVICE_SCREENDENSITY_KEY "ro.sf.lcd_density"
 #define CONFIG_DEVICE_LANGUAGE_KEY "ro.system.language"
 #define CONFIG_DEVICE_REGION_KEY "ro.system.region"
 #define CONFIG_DEVICE_OSVERSIONCODE_KEY "ro.system.osversioncode"
@@ -313,8 +313,8 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
 
         info->osversioncode = property_get_int32(CONFIG_DEVICE_OSVERSIONCODE_KEY, CONFIG_VERSION);
 
-        property_get(CONFIG_DEVICE_SCREENDENSITY_KEY, kvbuf, "1.0");
-        info->screendensity = atof(kvbuf);
+        property_get(CONFIG_DEVICE_SCREENDENSITY_KEY, kvbuf, "160.0");
+        info->screendensity = (int)((atof(kvbuf) / 16.0 + 0.5)) / 10.0;
 
         DEVICE_PROPERTY_GET(CONFIG_DEVICE_SCREENSHAPE_KEY, info->screenshape, "unknown");
         DEVICE_PROPERTY_GET(CONFIG_DEVICE_DEVICETYPE_KEY, info->devicetype, "unknown");
