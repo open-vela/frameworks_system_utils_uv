@@ -27,7 +27,7 @@
 #include <sys/utsname.h>
 #include <uv_ext.h>
 
-#define CONFIG_FACT_WIFIMAC_KEY "ro.factory.mac_wifi"
+#define CONFIG_FACT_SN_KEY "ro.factory.psn"
 #define CONFIG_DEVICE_BRAND_KEY "ro.product.brand"
 #define CONFIG_DEVICE_MODEL_KEY "ro.product.model"
 #define CONFIG_DEVICE_PRODUCT_KEY "ro.product.name"
@@ -200,7 +200,7 @@ int uv_devinfobuff(char* buff, int size, int item)
 #if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
         uv_buf_t input, output, ret;
         char kvbuf[PROP_VALUE_MAX] = { 0 };
-        property_get(CONFIG_FACT_WIFIMAC_KEY, kvbuf, "NA");
+        property_get(CONFIG_FACT_SN_KEY, kvbuf, "NA");
         strlcpy(buff, kvbuf, size);
         input.base = (char*)buff;
         input.len = strlen(buff);
@@ -217,7 +217,7 @@ int uv_devinfobuff(char* buff, int size, int item)
     case UV_EXT_DEVINFO_SERIAL: {
 #if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
         char kvbuf[PROP_VALUE_MAX] = { 0 };
-        property_get(CONFIG_FACT_WIFIMAC_KEY, kvbuf, "NA");
+        property_get(CONFIG_FACT_SN_KEY, kvbuf, "NA");
         strlcpy(buff, kvbuf, size);
 #endif
         break;
@@ -333,7 +333,7 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
     {
         uv_buf_t input, output, ret;
         char kvbuf[PROP_VALUE_MAX] = { 0 };
-        property_get(CONFIG_FACT_WIFIMAC_KEY, kvbuf, "NA");
+        property_get(CONFIG_FACT_SN_KEY, kvbuf, "NA");
         strlcpy(info->did, kvbuf, sizeof(info->did));
         input.base = (char*)info->did;
         input.len = strlen(info->did);
