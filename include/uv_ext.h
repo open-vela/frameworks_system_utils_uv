@@ -968,6 +968,26 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data);
 int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_request_cb cb);
 
 /****************************************************************************
+ * Name: uv_request_set_encoding
+ *
+ * Description:
+ *   set encoding mode
+ *
+ ****************************************************************************/
+
+int uv_request_set_encoding(uv_request_t* request, const char* encoding);
+
+/****************************************************************************
+ * Name: uv_request_set_nodecoding
+ *
+ * Description:
+ * set nodecoding mode
+ *
+ ****************************************************************************/
+
+int uv_request_set_nodecoding(uv_request_t* request);
+
+/****************************************************************************
  * Name: uv_request_set_verbose
  *
  * Description:
