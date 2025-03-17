@@ -486,8 +486,27 @@ int uv_request_set_url(uv_request_t* request, const char* url)
     request->fd = NULL;
 
     request->url = url;
+    curl_easy_setopt(request->easy_handle, CURLOPT_ACCEPT_ENCODING, "gzip");
 
     return 0;
+}
+
+int uv_request_set_encoding(uv_request_t* request, const char* encoding)
+{
+    if (!request) {
+        return -EINVAL;
+    }
+
+    return curl_easy_setopt(request->easy_handle, CURLOPT_ACCEPT_ENCODING, encoding);
+}
+
+int uv_request_set_nodecoding(uv_request_t* request)
+{
+    if (!request) {
+        return -EINVAL;
+    }
+
+    return curl_easy_setopt(request->easy_handle, CURLOPT_HTTP_CONTENT_DECODING, 0L);
 }
 
 int uv_request_set_verbose(uv_request_t* request)
@@ -655,7 +674,6 @@ int uv_request_commit(uv_request_session_t* handle, uv_request_t* request, uv_re
     curl_easy_setopt(request->easy_handle, CURLOPT_HEADERDATA, request);
     curl_easy_setopt(request->easy_handle, CURLOPT_URL, request->url);
     curl_easy_setopt(request->easy_handle, CURLOPT_PRIVATE, (void*)request);
-    curl_easy_setopt(request->easy_handle, CURLOPT_ACCEPT_ENCODING, "gzip");
 
     request->handle = handle;
 
