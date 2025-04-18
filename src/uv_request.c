@@ -486,9 +486,8 @@ int uv_request_set_url(uv_request_t* request, const char* url)
     request->fd = NULL;
 
     request->url = url;
-    curl_easy_setopt(request->easy_handle, CURLOPT_ACCEPT_ENCODING, "gzip");
 
-    return 0;
+    return curl_easy_setopt(request->easy_handle, CURLOPT_ACCEPT_ENCODING, "gzip");
 }
 
 int uv_request_set_encoding(uv_request_t* request, const char* encoding)
