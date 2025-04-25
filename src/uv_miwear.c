@@ -750,7 +750,7 @@ static void client_on_connect_callback(uv_connect_t* req, int status)
         if (client->miwear->cb) {
             uv_miwear_status_t data;
             data.status = MIWEAR_STATUS_CONNECT_FAILED;
-            data.parameter = (void*)status;
+            data.parameter = (void*)(uintptr_t)status;
 
             uv_miwear_message_t msg = { 0 };
             msg.header.type = MIWEAR_MESSAGE_TYPE_STATUS;
