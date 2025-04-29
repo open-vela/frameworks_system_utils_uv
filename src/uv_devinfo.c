@@ -39,13 +39,8 @@
 #define CONFIG_DEVICE_REGION_KEY "ro.system.region"
 #define CONFIG_DEVICE_OSVERSIONCODE_KEY "ro.system.osversioncode"
 
-#if defined(CONFIG_KVDB)
 #define DEVICE_PROPERTY_GET(key, dst_buf, default_value) \
-    property_get(key, dst_buf, default_value);
-#else
-#define DEVICE_PROPERTY_GET(ret, key, dst_buf, default_value) \
-    strlen(strcpy(dst_buf, default_value));
-#endif
+    uv_devinfo_property_get(key, dst_buf, sizeof(dst_buf), default_value)
 
 #if defined(CONFIG_VIDEO_FB)
 #include <nuttx/video/fb.h>
@@ -104,7 +99,7 @@
 #define UV_EXT_DEVINFO_DID_INFO "202107261219"
 
 /****************************************************************************
- * Public Function
+ * Private Function
  ****************************************************************************/
 
 #if defined(CONFIG_VIDEO_FB) || defined(CONFIG_LCD_DEV)
@@ -156,6 +151,27 @@ static int uv_getplaneinfo(struct fb_planeinfo_s* planeinfo)
 
 #endif
 
+static int
+uv_devinfo_property_get(const char* key, char* dst_buf, size_t dst_size,
+    const char* default_value)
+{
+    int ret;
+#ifdef CONFIG_KVDB
+    char tmpbuf[PROPERTY_VALUE_MAX + 1] = { 0 };
+    ret = property_get(key, tmpbuf, default_value);
+    if (ret > 0) {
+        ret = strlcpy(dst_buf, tmpbuf, dst_size);
+    }
+#else
+    ret = strlcpy(dst_buf, default_value, dst_size);
+#endif
+    return ret;
+}
+
+/****************************************************************************
+ * Public Function
+ ****************************************************************************/
+
 int uv_devinfobuff(char* buff, int size, int item)
 {
     struct utsname uv_uanme;
@@ -167,16 +183,16 @@ int uv_devinfobuff(char* buff, int size, int item)
 
     switch (item) {
     case UV_EXT_DEVINFO_BRAND:
-        DEVICE_PROPERTY_GET(CONFIG_DEVICE_BRAND_KEY, buff, CONFIG_PRODUCT_BRAND);
+        uv_devinfo_property_get(CONFIG_DEVICE_BRAND_KEY, buff, size, CONFIG_PRODUCT_BRAND);
         break;
     case UV_EXT_DEVINFO_MANUFACTURER:
-        DEVICE_PROPERTY_GET(CONFIG_DEVICE_MANUFACTURER_KEY, buff, CONFIG_PRODUCT_MANUFACTURER);
+        uv_devinfo_property_get(CONFIG_DEVICE_MANUFACTURER_KEY, buff, size, CONFIG_PRODUCT_MANUFACTURER);
         break;
     case UV_EXT_DEVINFO_MODEL:
-        DEVICE_PROPERTY_GET(CONFIG_DEVICE_MODEL_KEY, buff, CONFIG_PRODUCT_MODEL);
+        uv_devinfo_property_get(CONFIG_DEVICE_MODEL_KEY, buff, size, CONFIG_PRODUCT_MODEL);
         break;
     case UV_EXT_DEVINFO_PRODUCT:
-        DEVICE_PROPERTY_GET(CONFIG_DEVICE_PRODUCT_KEY, buff, CONFIG_PRODUCT_NAME);
+        uv_devinfo_property_get(CONFIG_DEVICE_PRODUCT_KEY, buff, size, CONFIG_PRODUCT_NAME);
         break;
     case UV_EXT_DEVINFO_OSTYPE:
         if ((ret = uname(&uv_uanme)) != 0) {
@@ -191,17 +207,15 @@ int uv_devinfobuff(char* buff, int size, int item)
         snprintf(buff, size, "%s", uv_uanme.release);
         break;
     case UV_EXT_DEVINFO_LANGUAGE:
-        DEVICE_PROPERTY_GET(CONFIG_DEVICE_LANGUAGE_KEY, buff, CONFIG_LANGUAGE_NAME);
+        uv_devinfo_property_get(CONFIG_DEVICE_LANGUAGE_KEY, buff, size, CONFIG_LANGUAGE_NAME);
         break;
     case UV_EXT_DEVINFO_REGION:
-        DEVICE_PROPERTY_GET(CONFIG_DEVICE_REGION_KEY, buff, CONFIG_REGION_NAME);
+        uv_devinfo_property_get(CONFIG_DEVICE_REGION_KEY, buff, size, CONFIG_REGION_NAME);
         break;
     case UV_EXT_DEVINFO_DID: {
 #if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
         uv_buf_t input, output, ret;
-        char kvbuf[PROP_VALUE_MAX] = { 0 };
-        property_get(CONFIG_FACT_SN_KEY, kvbuf, "NA");
-        strlcpy(buff, kvbuf, size);
+        uv_devinfo_property_get(CONFIG_FACT_SN_KEY, buff, size, "NA");
         input.base = (char*)buff;
         input.len = strlen(buff);
         if (uv_md("MD5", input, &output) == 0) {
@@ -216,9 +230,7 @@ int uv_devinfobuff(char* buff, int size, int item)
     }
     case UV_EXT_DEVINFO_SERIAL: {
 #if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
-        char kvbuf[PROP_VALUE_MAX] = { 0 };
-        property_get(CONFIG_FACT_SN_KEY, kvbuf, "NA");
-        strlcpy(buff, kvbuf, size);
+        uv_devinfo_property_get(CONFIG_FACT_SN_KEY, buff, size, "NA");
 #endif
         break;
     }
@@ -302,7 +314,7 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
     memset(info, 0, sizeof(uv_devinfo_t));
 #if defined(CONFIG_KVDB)
     {
-        char kvbuf[PROP_VALUE_MAX] = { 0 };
+        char kvbuf[UV_EXT_DEVINFO_MAXLEN] = { 0 };
 
         DEVICE_PROPERTY_GET(CONFIG_DEVICE_BRAND_KEY, info->brand, CONFIG_PRODUCT_BRAND);
         DEVICE_PROPERTY_GET(CONFIG_DEVICE_MANUFACTURER_KEY, info->manufacturer, CONFIG_PRODUCT_MANUFACTURER);
@@ -313,7 +325,7 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
 
         info->osversioncode = property_get_int32(CONFIG_DEVICE_OSVERSIONCODE_KEY, CONFIG_VERSION);
 
-        property_get(CONFIG_DEVICE_SCREENDENSITY_KEY, kvbuf, "160.0");
+        DEVICE_PROPERTY_GET(CONFIG_DEVICE_SCREENDENSITY_KEY, kvbuf, "160.0");
         info->screendensity = (int)((atof(kvbuf) / 16.0 + 0.5)) / 10.0;
         DEVICE_PROPERTY_GET(CONFIG_DEVICE_SCREENSHAPE_KEY, info->screenshape, "unknown");
         DEVICE_PROPERTY_GET(CONFIG_DEVICE_DEVICETYPE_KEY, info->devicetype, "unknown");
@@ -331,9 +343,7 @@ int uv_getdeviceinfo(uv_devinfo_t* info)
 #if defined(CONFIG_KVDB) && defined(CONFIG_CRYPTO_MBEDTLS)
     {
         uv_buf_t input, output, ret;
-        char kvbuf[PROP_VALUE_MAX] = { 0 };
-        property_get(CONFIG_FACT_SN_KEY, kvbuf, "NA");
-        strlcpy(info->did, kvbuf, sizeof(info->did));
+        DEVICE_PROPERTY_GET(CONFIG_FACT_SN_KEY, info->did, "NA");
         input.base = (char*)info->did;
         input.len = strlen(info->did);
         if (uv_md("MD5", input, &output) == 0) {
