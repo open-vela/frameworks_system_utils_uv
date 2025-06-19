@@ -48,19 +48,25 @@ static void uv__acync_queue_cb(uv_async_t* async)
     uv_async_queue_t* async_queue = async->data;
     struct uv__async_queue_handle_s* queue_handle;
     struct uv__queue* node;
+    struct uv__queue local_queue;
+
+    uv__queue_init(&local_queue);
+
+    /* Move data to a temporary queue */
 
     uv_mutex_lock(&async_queue->mutex);
-    while (!uv__queue_empty(&async_queue->queue)) {
-        node = uv__queue_head(&async_queue->queue);
+    uv__queue_move(&async_queue->queue, &local_queue);
+    uv_mutex_unlock(&async_queue->mutex);
+
+    /* Process data in the temporary queue, no longer check the original queue */
+
+    while (!uv__queue_empty(&local_queue)) {
+        node = uv__queue_head(&local_queue);
         queue_handle = uv__queue_data(node, struct uv__async_queue_handle_s, node);
         uv__queue_remove(node);
-        uv_mutex_unlock(&async_queue->mutex);
         async_queue->cb(async_queue, queue_handle->data);
-        uv_mutex_lock(&async_queue->mutex);
         free(queue_handle);
     }
-
-    uv_mutex_unlock(&async_queue->mutex);
 }
 
 /****************************************************************************
