@@ -425,14 +425,17 @@ int uv_request_delete(uv_request_t* request)
         list_delete(&request->node);
     } else {
         request_debug("Cancel a downloading request: %p", request);
-        request->handle->connections_cnt--;
+
         /* Now, we should kill resolver and clean up any resolver data. */
         if (request->easy_handle) {
             Curl_resolver_kill(request->easy_handle);
         }
 
-        curl_multi_remove_handle(request->handle->multi_handle,
-            request->easy_handle);
+        if (request->handle) {
+            request->handle->connections_cnt--;
+            curl_multi_remove_handle(request->handle->multi_handle,
+                request->easy_handle);
+        }
     }
 
     uv_request_cleanup(request);

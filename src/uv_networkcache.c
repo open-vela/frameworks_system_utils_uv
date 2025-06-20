@@ -1,4 +1,5 @@
 #include "assert.h"
+#include "libgen.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -228,37 +229,6 @@ static void download_file_cb(int state, uv_response_t* response)
     return;
 }
 
-static int uv_ncm_download(uv_timer_t* handle)
-{
-    download_t* download = (download_t*)handle->data;
-    uv_request_create(&download->request);
-    uv_request_set_url(download->request, download->cache->url);
-    uv_request_set_userp(download->request, download);
-    int res = uv_request_set_atrribute(download->request, UV_DOWNLOAD,
-        (void*)download->cache->path);
-    if (res != 0) {
-        return -1;
-    }
-
-    uv_request_commit(download->ncm->handle, download->request, (uv_request_cb)download_file_cb);
-    return 0;
-}
-
-void uv_ncm_download_retry(download_t* download)
-{
-    if (download->timer == NULL) {
-        download->timer = malloc(sizeof(uv_timer_t));
-        uv_timer_init(download->ncm->loop, download->timer);
-        download->timer->data = download;
-    }
-
-    uv_timer_stop(download->timer);
-    uv_timer_start(download->timer, (uv_timer_cb)uv_ncm_download, RETRY_INTERVAL, 0);
-    syslog(LOG_INFO, "download retry :%s, %d", download->cache->url,
-        download->retry_count);
-    download->retry_count++;
-}
-
 static int checkpath(const char* path)
 {
     const char s[] = "/";
@@ -276,9 +246,10 @@ static int checkpath(const char* path)
         return -ENOMEM;
     }
 
-    token = strtok(data, s);
+    char* saveptr;
+    token = strtok_r(data, s, &saveptr);
     while (token != NULL) {
-        token = strtok(NULL, s);
+        token = strtok_r(NULL, s, &saveptr);
         if (token != NULL) {
             *(token - 1) = '/';
         }
@@ -291,6 +262,62 @@ static int checkpath(const char* path)
 
     free(data);
     return res;
+}
+
+static int uv_ncm_download(uv_timer_t* handle)
+{
+    download_t* download = (download_t*)handle->data;
+    uv_request_create(&download->request);
+    uv_request_set_url(download->request, download->cache->url);
+    uv_request_set_userp(download->request, download);
+    struct stat st;
+    if (lstat(download->cache->path, &st) < 0) {
+        syslog(LOG_WARNING, "recreate %s", download->cache->path);
+        char* dir = strdup(download->cache->path);
+        dir = dirname(dir);
+        int r = checkpath(dir);
+        if (r < 0) {
+            syslog(LOG_ERR, "recreate %s fail while creating pareng dir", download->cache->path);
+            free(dir);
+            goto error;
+        }
+        int fd = open(download->cache->path, O_RDWR | O_CREAT, 0644);
+        if (fd < 0) {
+            syslog(LOG_ERR, "recreate %s fail", download->cache->path);
+            free(dir);
+            goto error;
+        }
+        free(dir);
+        close(fd);
+    }
+    int res = uv_request_set_atrribute(download->request, UV_DOWNLOAD,
+        (void*)download->cache->path);
+    if (res != 0) {
+        goto error;
+    }
+
+    uv_request_commit(download->ncm->handle, download->request, (uv_request_cb)download_file_cb);
+    return 0;
+
+error:
+    uv_request_delete(download->request);
+    download->request = NULL;
+    return -1;
+}
+
+void uv_ncm_download_retry(download_t* download)
+{
+    if (download->timer == NULL) {
+        download->timer = malloc(sizeof(uv_timer_t));
+        uv_timer_init(download->ncm->loop, download->timer);
+        download->timer->data = download;
+    }
+
+    uv_timer_stop(download->timer);
+    uv_timer_start(download->timer, (uv_timer_cb)uv_ncm_download, RETRY_INTERVAL, 0);
+    syslog(LOG_INFO, "download retry :%s, %d", download->cache->url,
+        download->retry_count);
+    download->retry_count++;
 }
 
 static int download_file(uv_ncm_t* ncm, const char* url, uv_ncm_cb_t cb,
