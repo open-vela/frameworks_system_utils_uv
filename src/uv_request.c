@@ -602,6 +602,20 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
         }
         curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request->fd);
         break;
+    case UV_DOWNLOAD_RESUME:
+        if (data == NULL) {
+            return -EINVAL;
+        }
+        request->response.body = (char*)strdup(data);
+        if (access(data, F_OK) == -1) {
+            return -ENOENT;
+        }
+        request->fd = fopen(data, "ab");
+        if (request->fd == NULL) {
+            return -EMFILE;
+        }
+        curl_easy_setopt(request->easy_handle, CURLOPT_WRITEDATA, request->fd);
+        break;
     case UV_DOWNLOAD_PROGRESS:
         request->progress_cb = data;
         curl_easy_setopt(request->easy_handle, CURLOPT_NOPROGRESS, 0L);
