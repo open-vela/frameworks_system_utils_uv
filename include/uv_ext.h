@@ -786,6 +786,7 @@ struct uv_response_s {
 enum uv_request_type_e {
     UV_REQUEST,
     UV_DOWNLOAD,
+    UV_DOWNLOAD_RESUME,
     UV_DOWNLOAD_PROGRESS,
     UV_UPLOAD,
     UV_UPLOAD_TASK
