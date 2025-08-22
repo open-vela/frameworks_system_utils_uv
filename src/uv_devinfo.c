@@ -30,7 +30,7 @@
 #define CONFIG_FACT_SN_KEY "ro.factory.psn"
 #define CONFIG_DEVICE_BRAND_KEY "ro.product.brand"
 #define CONFIG_DEVICE_MODEL_KEY "ro.product.model"
-#define CONFIG_DEVICE_PRODUCT_KEY "ro.product.name"
+#define CONFIG_DEVICE_PRODUCT_KEY "ro.product.marketname"
 #define CONFIG_DEVICE_MANUFACTURER_KEY "ro.product.manufacturer"
 #define CONFIG_DEVICE_DEVICETYPE_KEY "ro.product.device.devicetype"
 #define CONFIG_DEVICE_SCREENSHAPE_KEY "ro.product.device.screenshape"
