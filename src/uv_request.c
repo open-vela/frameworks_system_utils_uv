@@ -607,9 +607,6 @@ int uv_request_set_atrribute(uv_request_t* request, int type, void* data)
             return -EINVAL;
         }
         request->response.body = (char*)strdup(data);
-        if (access(data, F_OK) == -1) {
-            return -ENOENT;
-        }
         request->fd = fopen(data, "ab");
         if (request->fd == NULL) {
             return -EMFILE;
