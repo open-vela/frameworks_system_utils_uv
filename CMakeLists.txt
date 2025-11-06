@@ -36,7 +36,9 @@ if(CONFIG_LIBUV_EXTENSION)
 
   if(CONFIG_CRYPTO_MBEDTLS)
     list(APPEND EXT_SRCS ${LIBUV_EXT_SRC_DIR}/uv_aes.c
-         ${LIBUV_EXT_SRC_DIR}/uv_crypto.c)
+         ${LIBUV_EXT_SRC_DIR}/uv_crypto.c
+         ${LIBUV_EXT_SRC_DIR}/uv_hkdf.c
+         ${LIBUV_EXT_SRC_DIR}/uv_ecdh.c)
   endif()
 
   if(CONFIG_UNQLITE)
