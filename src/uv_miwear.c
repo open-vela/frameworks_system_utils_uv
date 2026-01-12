@@ -330,6 +330,7 @@ static void uv__miwear_client_close(struct client* client)
         client->miwear->cb(client->miwear, 0, &msg, client->name);
     }
 
+    client->miwear->client = NULL;
     free(client);
 }
 
@@ -351,7 +352,9 @@ static void pipe_close_callback2(uv_handle_t* handle)
         free(reader);
 
     struct client* client = miwear->client;
-    uv__miwear_client_close(client);
+    if (client) {
+        uv__miwear_client_close(client);
+    }
 }
 
 static void message_reader_stop(uv_stream_t* stream)
@@ -711,6 +714,11 @@ static void client_id_sent_callback(uv_miwear_t* miwear, int status,
     void* cb_para)
 {
     struct client* client = miwear->client;
+    if (!client) {
+        nerr("client is NULL\n");
+        return;
+    }
+
     if (status != 0) {
         client->state = CLIENT_STATE_DISCONNECTED;
         return;
@@ -863,7 +871,10 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
 static int uv_miwear_stop_client(uv_miwear_t* miwear)
 {
     ninfo("stop client: %p\n", miwear);
-
+    if (!miwear->client) {
+        nerr("client not started.\n");
+        return UV_EINVAL;
+    }
     miwear->client->pipe.data = miwear;
     uv_close((uv_handle_t*)&miwear->client->pipe, pipe_close_callback2);
     return 0;
@@ -877,6 +888,10 @@ static int uv_miwear_send_to_server(uv_miwear_t* miwear,
         return UV_EINVAL;
 
     struct client* client = miwear->client;
+    if (!client) {
+        nerr("client not started.\n");
+        return UV_EINVAL;
+    }
 
     if (client->state == CLIENT_STATE_HANDSHAKING) {
         /* only CLIENT_ID message could be sent at this stage. */
