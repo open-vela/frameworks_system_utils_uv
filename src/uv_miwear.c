@@ -42,6 +42,9 @@
 #define CONFIG_UV_MIWEAR_CLIENT_ID_LEN 64
 #endif
 
+#define uv_miwear_debug(fmt, ...) uv_log_debug("uv_miwear", fmt, ##__VA_ARGS__)
+#define uv_miwear_info(fmt, ...) uv_log_info("uv_miwear", fmt, ##__VA_ARGS__)
+#define uv_miwear_error(fmt, ...) uv_log_error("uv_miwear", fmt, ##__VA_ARGS__)
 /**
  * The actual message send over socket, added id field for auto response
  * process.
@@ -296,7 +299,7 @@ static void uv__miwear_client_close(struct client* client)
 {
     miwear_wreq_t* wreq;
     miwear_wreq_t* wreq_next;
-
+    uv_miwear_info("uv__miwear_client_close, client: %p\n", client);
     list_for_every_entry_safe(&client->sending_list, wreq, wreq_next,
         miwear_wreq_t, node)
     {
@@ -336,6 +339,7 @@ static void uv__miwear_client_close(struct client* client)
 
 static void pipe_close_callback(uv_handle_t* handle)
 {
+    uv_miwear_info("pipe_close_callback\n");
     struct reader* reader = handle->data;
     uv__miwear_client_close(reader->client);
     free(reader);
@@ -343,6 +347,7 @@ static void pipe_close_callback(uv_handle_t* handle)
 
 static void pipe_close_callback2(uv_handle_t* handle)
 {
+    uv_miwear_info("pipe_close_callback2\n");
     uv_miwear_t* miwear = handle->data;
     if (miwear->is_server)
         return;
@@ -359,6 +364,7 @@ static void pipe_close_callback2(uv_handle_t* handle)
 
 static void message_reader_stop(uv_stream_t* stream)
 {
+    uv_miwear_info("message_reader_stop\n");
     uv_close((uv_handle_t*)stream, pipe_close_callback);
 }
 
@@ -373,6 +379,7 @@ static void response_sent_callback(uv_miwear_t* miwear, int status,
 static void stream_read_callback(uv_stream_t* stream, uv_miwear_message_t* msg,
     struct client* client)
 {
+    uv_miwear_info("stream_read_callback\n");
     if (msg == NULL) {
         /**
          * A null pointer means stream disconnected. Terminate the client.
@@ -723,7 +730,7 @@ static void client_id_sent_callback(uv_miwear_t* miwear, int status,
         client->state = CLIENT_STATE_DISCONNECTED;
         return;
     }
-
+    uv_miwear_info("CLIENT_ID message sent, server connected\n");
     ninfo("CLIENT_ID message sent, server connected\n");
     client->state = CLIENT_STATE_CONNECTED;
 
@@ -749,7 +756,7 @@ static void client_id_sent_callback(uv_miwear_t* miwear, int status,
 static void client_on_connect_callback(uv_connect_t* req, int status)
 {
     struct client* client = req->data;
-
+    uv_miwear_info("client on connect callback.\n");
     /* Check connection status. */
     if (status != 0) {
         client->state = CLIENT_STATE_DISCONNECTED;
@@ -870,6 +877,7 @@ int uv_miwear_start_rpmsg_client(uv_loop_t* loop, uv_miwear_t* miwear,
 
 static int uv_miwear_stop_client(uv_miwear_t* miwear)
 {
+    uv_miwear_info("uv_miwear_stop_client: %p\n", miwear);
     ninfo("stop client: %p\n", miwear);
     if (!miwear->client) {
         nerr("client not started.\n");
@@ -940,6 +948,7 @@ send_msg_continue:
 int uv_miwear_connect(uv_loop_t* loop, uv_miwear_t* miwear,
     const char* pkg_name, uv_miwear_recv_cb cb)
 {
+    uv_miwear_info("uv_miwear_connect: %p %s\n", miwear, pkg_name);
     return uv_miwear_start_client(loop, miwear, pkg_name,
         CONFIG_MIWEAR_QAPP_PROXY_SERVER, cb);
 }
