@@ -347,7 +347,13 @@ static void pipe_close_callback(uv_handle_t* handle)
 static void pipe_close_callback2(uv_handle_t* handle)
 {
     uv_miwear_info("pipe_close_callback2\n");
-    uv_miwear_t* miwear = handle->data;
+
+    /* Get client from pipe address using container_of pattern.
+     * handle points to client->pipe, so we can calculate client address.
+     */
+    struct client* client = container_of(handle, struct client, pipe);
+    uv_miwear_t* miwear = client->miwear;
+
     if (miwear->is_server)
         return;
 
@@ -355,7 +361,6 @@ static void pipe_close_callback2(uv_handle_t* handle)
     if (reader)
         free(reader);
 
-    struct client* client = miwear->client;
     uv__miwear_client_close(client);
 }
 
@@ -872,7 +877,6 @@ static int uv_miwear_stop_client(uv_miwear_t* miwear)
     uv_miwear_info("uv_miwear_stop_client: %p\n", miwear);
     ninfo("stop client: %p\n", miwear);
 
-    miwear->client->pipe.data = miwear;
     uv_close((uv_handle_t*)&miwear->client->pipe, pipe_close_callback2);
     return 0;
 }
