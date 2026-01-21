@@ -398,7 +398,14 @@ int uv_aes_auth_encrypt(uv_aes_t* ctx,
     size_t output_len,
     size_t* olen)
 {
-    if (!ctx || (iv_len > 0 && !iv) || (iv_len == 0 && iv) || !aad || !input || !output || !olen || input_size == 0) {
+    if (!ctx
+        || (iv_len > 0 && !iv)
+        || (iv_len == 0 && iv)
+        || (!aad && aad_size > 0)
+        || !input
+        || !output
+        || !olen
+        || input_size == 0) {
         return UV_EINVAL;
     }
 
@@ -425,7 +432,14 @@ int uv_aes_auth_decrypt(uv_aes_t* ctx,
     size_t output_len,
     size_t* olen)
 {
-    if (!ctx || (iv_len > 0 && !iv) || (iv_len == 0 && iv) || !aad || !input || !output || !olen || input_size == 0) {
+    if (!ctx
+        || (iv_len > 0 && !iv)
+        || (iv_len == 0 && iv)
+        || (!aad && aad_size > 0)
+        || !input
+        || !output
+        || !olen
+        || input_size == 0) {
         return UV_EINVAL;
     }
 
